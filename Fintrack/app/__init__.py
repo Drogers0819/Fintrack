@@ -5,29 +5,24 @@ from flask_bcrypt import Bcrypt
 
 from config import DevelopmentConfig
 
+from flask import Flask
+from flask_sqlalchemy import SQLAlchemy
+from flask_bcrypt import Bcrypt
+from flask_login import LoginManager
 
-# Create extensions at module level
 db = SQLAlchemy()
-login_manager = LoginManager()
 bcrypt = Bcrypt()
+login_manager = LoginManager()
 
-
-def create_app(config_class=DevelopmentConfig):
-    # 1. Create Flask app
+def create_app():
     app = Flask(__name__)
+    app.config['SECRET_KEY'] = 'your_secret_key'
+    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///site.db'
 
-    # 2. Load configuration
-    app.config.from_object(config_class)
-
-    # 3. Initialise SQLAlchemy
     db.init_app(app)
-
-    # 4. Initialise Flask-Login
-    login_manager.init_app(app)
-    login_manager.login_view = "login"
-
-    # 5. Initialise Flask-Bcrypt
     bcrypt.init_app(app)
+    login_manager.init_app(app)
 
-    # 6. Return the configured app
+    from app.models import user
+
     return app
