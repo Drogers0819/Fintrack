@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+{% block title %}Overview — FinTrack{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="section-label">Private Overview</div>
+    <h1 style="font-style: italic;">Good {{ greeting }}, {{ current_user.name }}.</h1>
+</div>
+
+<div class="grid-hero">
+    <div class="glass-card">
+        <div class="metric-label">Current Balance</div>
+        <div class="metric-value gold">£{{ "%.2f" | format(summary.balance) }}</div>
+        <div class="metric-subtext" style="margin-top: 12px;">
+            {{ summary.transaction_count }} transaction{{ "s" if summary.transaction_count != 1 else "" }} recorded
+        </div>
+    </div>
+
+    <div class="gold-card">
+        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 12px;">
+            <span class="ai-pulse"></span>
+            <span class="metric-label" style="margin-bottom: 0; color: var(--roman-gold);">Intelligence</span>
+        </div>
+        <p style="font-size: 0.85rem; font-style: italic; color: var(--text-secondary); line-height: 1.7;">
+            {% if summary.transaction_count > 0 %}
+                "{{ current_user.name }}, you've recorded £{{ "%.2f" | format(summary.total_expenses) }} in expenses so far. Keep tracking to unlock spending insights."
+            {% else %}
+                "Welcome, {{ current_user.name }}. Start by adding your first transaction — even one entry begins to build your financial picture."
+            {% endif %}
+        </p>
+    </div>
+</div>
+
+<div class="grid-3" style="margin-bottom: 32px;">
+    <div class="glass-card">
+        <div class="metric-label">Money In</div>
+        <div class="metric-value" style="font-size: 1.5rem;">£{{ "%.2f" | format(summary.total_income) }}</div>
+    </div>
+    <div class="glass-card">
+        <div class="metric-label">Money Out</div>
+        <div class="metric-value" style="font-size: 1.5rem;">£{{ "%.2f" | format(summary.total_expenses) }}</div>
+    </div>
+    <div class="glass-card">
+        <div class="metric-label">Transactions</div>
+        <div class="metric-value" style="font-size: 1.5rem;">{{ summary.transaction_count }}</div>
+    </div>
+</div>
+
+<div class="section-label">Recent Activity</div>
+<div class="glass-card">
+    {% if recent_transactions | length > 0 %}
+        {% for t in recent_transactions %}
+        <div class="transaction-row">
+            <div class="transaction-info">
+                <div class="transaction-description">{{ t.description }}</div>
+                <div class="transaction-meta">{{ t.date }} · {{ t.category }}</div>
+            </div>
+            <div class="transaction-amount {{ t.type }}">
+                {% if t.type == "income" %}+{% else %}-{% endif %}£{{ "%.2f" | format(t.amount) }}
+            </div>
+        </div>
+        {% endfor %}
+        <div style="text-align: center; margin-top: 16px;">
+            <a href="{{ url_for('pages.transactions') }}" style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.1em;">View All Transactions →</a>
+        </div>
+    {% else %}
+        <div class="empty-state">
+            No transactions yet. <a href="{{ url_for('pages.add_transaction') }}">Add your first one.</a>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

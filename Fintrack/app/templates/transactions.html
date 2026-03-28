@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block title %}Transactions — FinTrack{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="section-label">Financial Record</div>
+    <h1 style="font-style: italic;">Your Transactions</h1>
+    <p>{{ transactions | length }} transaction{{ "s" if transactions | length != 1 else "" }} recorded</p>
+</div>
+
+<div style="margin-bottom: 24px;">
+    <a href="{{ url_for('pages.add_transaction') }}" class="btn-outline" style="display: inline-block; padding: 10px 24px;">
+        + Add Transaction
+    </a>
+</div>
+
+<div class="glass-card">
+    {% if transactions | length > 0 %}
+        {% for t in transactions %}
+        <div class="transaction-row">
+            <div class="transaction-info">
+                <div class="transaction-description">{{ t.description }}</div>
+                <div class="transaction-meta">
+                    {{ t.date }} · {{ t.category }}{% if t.merchant %} · {{ t.merchant }}{% endif %}
+                </div>
+            </div>
+            <div class="transaction-amount {{ t.type }}">
+                {% if t.type == "income" %}+{% else %}-{% endif %}£{{ "%.2f" | format(t.amount) }}
+            </div>
+            <form action="{{ url_for('pages.delete_transaction', transaction_id=t.id) }}" method="POST" style="margin-left: 12px;" onsubmit="return confirm('Delete this transaction?')">
+                <button type="submit" class="btn-danger">Delete</button>
+            </form>
+        </div>
+        {% endfor %}
+    {% else %}
+        <div class="empty-state">
+            No transactions yet. <a href="{{ url_for('pages.add_transaction') }}">Add your first one.</a>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

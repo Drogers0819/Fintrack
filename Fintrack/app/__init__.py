@@ -1,4 +1,4 @@
-from flask import Flask, jsonify
+from flask import Flask, jsonify, redirect, url_for
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager
 from flask_bcrypt import Bcrypt
@@ -22,7 +22,10 @@ def create_app(config_class=None):
 
     @login_manager.unauthorized_handler
     def unauthorized():
-        return jsonify({"error": "Authentication required"}), 401
+        from flask import request as req
+        if req.path.startswith("/api/"):
+            return jsonify({"error": "Authentication required"}), 401
+        return redirect(url_for("pages.login"))
 
     with app.app_context():
         from app.models.user import User
@@ -32,8 +35,10 @@ def create_app(config_class=None):
     from app.routes.auth_routes import auth_bp
     from app.routes.transaction_routes import transaction_bp
     from app.routes.dashboard_routes import dashboard_bp
+    from app.routes.page_routes import page_bp
     app.register_blueprint(auth_bp)
     app.register_blueprint(transaction_bp)
     app.register_blueprint(dashboard_bp)
+    app.register_blueprint(page_bp)
 
     return app
