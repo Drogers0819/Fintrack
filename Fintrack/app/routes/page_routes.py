@@ -1,3 +1,5 @@
+from app.services.allocator_service import generate_waterfall_summary
+from app.models.goal import Goal
 from app.services.csv_parser import extract_transactions_from_csv, CSVParseError
 from flask import Blueprint, render_template, request, redirect, url_for, flash
 from flask_login import login_user, logout_user, login_required, current_user
@@ -85,6 +87,10 @@ def logout():
 @page_bp.route("/dashboard")
 @login_required
 def dashboard():
+    if not current_user.factfind_completed:
+        flash("Complete your financial profile to get started", "success")
+        return redirect(url_for("pages.factfind"))
+
     income = db.session.query(
         func.coalesce(func.sum(Transaction.amount), 0)
     ).filter_by(user_id=current_user.id, type="income").scalar()
@@ -184,6 +190,7 @@ def add_transaction():
     categories = Category.query.order_by(Category.name).all()
     return render_template("add_transaction.html", categories=categories)
 
+
 @page_bp.route("/upload", methods=["GET", "POST"])
 @login_required
 def upload_statement():
@@ -269,6 +276,49 @@ def upload_statement():
         flash(f"Import complete. {created_count} transactions imported.", "success")
 
     return render_template("upload.html", result=result)
+
+
+@page_bp.route("/factfind", methods=["GET", "POST"])
+@login_required
+def factfind():
+    if request.method == "POST":
+        try:
+            monthly_income = round(float(request.form.get("monthly_income", 0)), 2)
+        except (ValueError, TypeError):
+            flash("Invalid income amount", "error")
+            return redirect(url_for("pages.factfind"))
+
+        if monthly_income <= 0:
+            flash("Monthly income must be greater than zero", "error")
+            return redirect(url_for("pages.factfind"))
+
+        try:
+            rent_amount = round(float(request.form.get("rent_amount", 0)), 2)
+        except (ValueError, TypeError):
+            flash("Invalid rent amount", "error")
+            return redirect(url_for("pages.factfind"))
+
+        try:
+            bills_amount = round(float(request.form.get("bills_amount", 0)), 2)
+        except (ValueError, TypeError):
+            flash("Invalid bills amount", "error")
+            return redirect(url_for("pages.factfind"))
+
+        income_day = request.form.get("income_day", type=int)
+
+        current_user.monthly_income = monthly_income
+        current_user.rent_amount = rent_amount
+        current_user.bills_amount = bills_amount
+        current_user.income_day = income_day
+        current_user.factfind_completed = True
+
+        db.session.commit()
+
+        flash("Financial profile saved successfully", "success")
+        return redirect(url_for("pages.dashboard"))
+
+    return render_template("factfind.html", profile=current_user.profile_dict())
+
 
 @page_bp.route("/delete-transaction/<int:transaction_id>", methods=["POST"])
 @login_required

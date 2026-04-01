@@ -16,11 +16,44 @@ class User(db.Model, UserMixin):
     name = db.Column(db.String(100), nullable=False)
     created_at = db.Column(db.DateTime, server_default=db.func.now())
 
+    # Financial profile — populated by fact-find
+    monthly_income = db.Column(db.Numeric(10, 2), nullable=True)
+    rent_amount = db.Column(db.Numeric(10, 2), nullable=True)
+    bills_amount = db.Column(db.Numeric(10, 2), nullable=True)
+    income_day = db.Column(db.Integer, nullable=True)
+    factfind_completed = db.Column(db.Boolean, default=False)
+
+    # Relationships
+    transactions = db.relationship("Transaction", backref="user", lazy=True)
+    goals = db.relationship("Goal", backref="user", lazy=True)
+
     def set_password(self, password):
         self.password_hash = bcrypt.generate_password_hash(password).decode("utf-8")
 
     def check_password(self, password):
         return bcrypt.check_password_hash(self.password_hash, password)
+
+    @property
+    def fixed_commitments(self):
+        rent = float(self.rent_amount) if self.rent_amount else 0
+        bills = float(self.bills_amount) if self.bills_amount else 0
+        return rent + bills
+
+    @property
+    def monthly_surplus(self):
+        income = float(self.monthly_income) if self.monthly_income else 0
+        return income - self.fixed_commitments
+
+    def profile_dict(self):
+        return {
+            "monthly_income": float(self.monthly_income) if self.monthly_income else None,
+            "rent_amount": float(self.rent_amount) if self.rent_amount else None,
+            "bills_amount": float(self.bills_amount) if self.bills_amount else None,
+            "income_day": self.income_day,
+            "fixed_commitments": self.fixed_commitments,
+            "monthly_surplus": self.monthly_surplus,
+            "factfind_completed": self.factfind_completed
+        }
 
     def __repr__(self):
         return f"<User {self.id}: {self.email}>"

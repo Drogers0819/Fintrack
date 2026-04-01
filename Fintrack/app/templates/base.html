@@ -30,6 +30,10 @@
                     <span class="nav-icon">↑</span> Upload Statement
                 </a>
 
+                <a href="{{ url_for('pages.factfind') }}" class="nav-link {% if request.endpoint == 'pages.factfind' %}active{% endif %}">
+                    <span class="nav-icon">☰</span> My Profile
+                </a>
+
             </nav>
 
             <div class="sidebar-footer">
