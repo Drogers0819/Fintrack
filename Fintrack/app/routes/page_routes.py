@@ -1,3 +1,4 @@
+from app.services.csv_parser import extract_transactions_from_csv, CSVParseError
 from flask import Blueprint, render_template, request, redirect, url_for, flash
 from flask_login import login_user, logout_user, login_required, current_user
 from app import db, bcrypt
@@ -182,6 +183,92 @@ def add_transaction():
 
     categories = Category.query.order_by(Category.name).all()
     return render_template("add_transaction.html", categories=categories)
+
+@page_bp.route("/upload", methods=["GET", "POST"])
+@login_required
+def upload_statement():
+    result = None
+
+    if request.method == "POST":
+        if "file" not in request.files:
+            flash("No file provided", "error")
+            return redirect(url_for("pages.upload_statement"))
+
+        file = request.files["file"]
+
+        if file.filename == "":
+            flash("No file selected", "error")
+            return redirect(url_for("pages.upload_statement"))
+
+        if not file.filename.lower().endswith(".csv"):
+            flash("File must be a CSV", "error")
+            return redirect(url_for("pages.upload_statement"))
+
+        file_content = file.read()
+
+        if len(file_content) == 0:
+            flash("File is empty", "error")
+            return redirect(url_for("pages.upload_statement"))
+
+        if len(file_content) > 5 * 1024 * 1024:
+            flash("File too large. Maximum size is 5MB", "error")
+            return redirect(url_for("pages.upload_statement"))
+
+        try:
+            parse_result = extract_transactions_from_csv(file_content)
+        except CSVParseError as e:
+            flash(str(e), "error")
+            return redirect(url_for("pages.upload_statement"))
+
+        if not parse_result["transactions"]:
+            flash("No valid transactions found in file", "error")
+            return redirect(url_for("pages.upload_statement"))
+
+        other_category = Category.query.filter_by(name="Other").first()
+        default_category_id = other_category.id if other_category else 1
+
+        created_count = 0
+        skipped_count = 0
+
+        for t in parse_result["transactions"]:
+            existing = Transaction.query.filter_by(
+                user_id=current_user.id,
+                amount=t["amount"],
+                description=t["description"],
+                date=t["date"],
+                type=t["type"]
+            ).first()
+
+            if existing:
+                skipped_count += 1
+                continue
+
+            transaction = Transaction(
+                user_id=current_user.id,
+                amount=t["amount"],
+                description=t["description"],
+                category_id=default_category_id,
+                type=t["type"],
+                date=t["date"],
+                merchant=t.get("merchant")
+            )
+
+            db.session.add(transaction)
+            created_count += 1
+
+        db.session.commit()
+
+        result = {
+            "bank_detected": parse_result["bank_detected"],
+            "created": created_count,
+            "skipped": skipped_count,
+            "errors": parse_result["errors"],
+            "error_count": parse_result["error_count"]
+        }
+
+        flash(f"Import complete. {created_count} transactions imported.", "success")
+
+    return render_template("upload.html", result=result)
 
 @page_bp.route("/delete-transaction/<int:transaction_id>", methods=["POST"])
 @login_required

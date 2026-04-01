@@ -25,6 +25,11 @@
                 <a href="{{ url_for('pages.add_transaction') }}" class="nav-link {% if request.endpoint == 'pages.add_transaction' %}active{% endif %}">
                     <span class="nav-icon">+</span> Add Transaction
                 </a>
+
+                <a href="{{ url_for('pages.upload_statement') }}" class="nav-link {% if request.endpoint == 'pages.upload_statement' %}active{% endif %}">
+                    <span class="nav-icon">↑</span> Upload Statement
+                </a>
+
             </nav>
 
             <div class="sidebar-footer">

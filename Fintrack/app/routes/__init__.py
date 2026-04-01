@@ -4,3 +4,4 @@ from app.routes.dashboard_routes import dashboard_bp
 from app.routes.page_routes import page_bp
 from app.routes.category_routes import category_bp
 from app.routes.goal_routes import goal_bp
+from app.routes.upload_routes import upload_bp

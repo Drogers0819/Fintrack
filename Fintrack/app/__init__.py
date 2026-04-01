@@ -60,6 +60,8 @@ def create_app(config_class=None):
     from app.routes.page_routes import page_bp
     from app.routes.category_routes import category_bp
     from app.routes.goal_routes import goal_bp
+    from app.routes.upload_routes import upload_bp
+    app.register_blueprint(upload_bp)
     app.register_blueprint(auth_bp)
     app.register_blueprint(transaction_bp)
     app.register_blueprint(dashboard_bp)

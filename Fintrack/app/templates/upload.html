@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{% block title %}Upload Statement — FinTrack{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="section-label">Data Bridge</div>
+    <h1 style="font-style: italic;">Upload bank statement</h1>
+    <p>Upload your bank statement as a CSV file. We'll detect your bank automatically and import your transactions.</p>
+</div>
+
+<div class="glass-card" style="max-width: 560px;">
+    <form method="POST" action="{{ url_for('pages.upload_statement') }}" enctype="multipart/form-data">
+        <div class="form-group">
+            <label class="form-label">Bank statement (CSV)</label>
+            <input type="file" name="file" accept=".csv" class="form-input" required
+                   style="padding: 12px; cursor: pointer;">
+        </div>
+
+        <div style="margin-bottom: 24px; padding: 16px; border-radius: 12px; background: rgba(255,255,255,0.02); border: 0.5px solid rgba(255,255,255,0.05);">
+            <p class="metric-label" style="margin-bottom: 12px;">Supported banks</p>
+            <p style="font-size: 0.8rem; color: var(--text-secondary); line-height: 1.8;">
+                Monzo · Starling · Barclays · HSBC · Lloyds · Nationwide
+                <br>
+                <span style="color: var(--text-tertiary); font-style: italic;">Other banks may work automatically if they use a standard CSV format.</span>
+            </p>
+        </div>
+
+        <button type="submit" class="btn-gold">Upload & Import</button>
+    </form>
+</div>
+
+{% if result %}
+<div class="glass-card" style="max-width: 560px; margin-top: 24px;">
+    <div class="section-label">Import Results</div>
+
+    {% if result.bank_detected and result.bank_detected != "unknown" %}
+    <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 16px;">
+        Bank detected: <span style="color: var(--roman-gold); text-transform: capitalize;">{{ result.bank_detected }}</span>
+    </p>
+    {% endif %}
+
+    <div class="grid-2" style="margin-bottom: 16px;">
+        <div style="padding: 12px; background: rgba(45, 106, 79, 0.1); border-radius: 12px; text-align: center;">
+            <div class="metric-label">Imported</div>
+            <div style="font-family: var(--font-serif); font-size: 1.5rem; color: var(--success);">{{ result.created }}</div>
+        </div>
+        <div style="padding: 12px; background: rgba(255,255,255,0.02); border-radius: 12px; text-align: center;">
+            <div class="metric-label">Skipped (duplicates)</div>
+            <div style="font-family: var(--font-serif); font-size: 1.5rem; color: var(--text-secondary);">{{ result.skipped }}</div>
+        </div>
+    </div>
+
+    {% if result.errors %}
+    <details style="margin-top: 12px;">
+        <summary style="font-size: 0.75rem; color: var(--text-tertiary); cursor: pointer;">
+            {{ result.error_count }} row{{ "s" if result.error_count != 1 else "" }} had issues
+        </summary>
+        <ul style="margin-top: 8px; padding-left: 20px;">
+            {% for error in result.errors %}
+            <li style="font-size: 0.75rem; color: var(--text-tertiary); margin-bottom: 4px;">{{ error }}</li>
+            {% endfor %}
+        </ul>
+    </details>
+    {% endif %}
+
+    <a href="{{ url_for('pages.transactions') }}" style="display: inline-block; margin-top: 16px; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.1em;">
+        View transactions →
+    </a>
+</div>
+{% endif %}
+{% endblock %}
