@@ -45,6 +45,7 @@ def create_app(config_class=None):
         from app.models.user import User
         from app.models.category import Category
         from app.models.transaction import Transaction
+        from app.models.goal import Goal
         db.create_all()
 
         if Category.query.count() == 0:
@@ -58,10 +59,12 @@ def create_app(config_class=None):
     from app.routes.dashboard_routes import dashboard_bp
     from app.routes.page_routes import page_bp
     from app.routes.category_routes import category_bp
+    from app.routes.goal_routes import goal_bp
     app.register_blueprint(auth_bp)
     app.register_blueprint(transaction_bp)
     app.register_blueprint(dashboard_bp)
     app.register_blueprint(page_bp)
     app.register_blueprint(category_bp)
+    app.register_blueprint(goal_bp)
 
     return app
