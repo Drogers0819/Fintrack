@@ -713,10 +713,23 @@ def goal_detail(goal_id):
     projection = project_goal_timeline(goal_data, contribution)
     multi_horizon = generate_multi_horizon_projection(goal_data, contribution)
 
+    # Calculate slider range — max is 2x current or user's surplus, whichever is larger
+    if current_user.factfind_completed and current_user.monthly_income:
+        surplus = current_user.monthly_surplus
+        max_contribution = max(contribution * 2.5, surplus, 500)
+    else:
+        max_contribution = max(contribution * 2.5, 1000)
+
+    max_contribution = round(max_contribution / 10) * 10  # Round to nearest 10
+
+    slider_percent = round((contribution / max_contribution * 100), 1) if max_contribution > 0 else 50
+
     return render_template("goal_detail.html",
         goal=goal,
         projection=projection,
-        multi_horizon=multi_horizon
+        multi_horizon=multi_horizon,
+        max_contribution=max_contribution,
+        slider_percent=slider_percent
     )
 
 

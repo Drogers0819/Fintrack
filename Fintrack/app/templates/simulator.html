@@ -65,8 +65,8 @@
         {% endif %}
 
         <div style="margin-top: 16px;">
-            <a href="{{ url_for('pages.goal_detail', goal_id=p.goal_id) }}" style="font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.1em;">
-                View full projection →
+            <a href="{{ url_for('pages.goal_detail', goal_id=p.goal_id) }}" class="btn-outline" style="display: inline-block; padding: 8px 20px; font-size: 0.7rem;">
+                Open projection →
             </a>
         </div>
     </div>
@@ -82,7 +82,7 @@
 
 <!-- Habit Cost Calculator -->
 <div class="section-label">What does your habit actually cost?</div>
-<div class="glass-card" style="max-width: 560px; margin-bottom: 40px;">
+<div class="glass-card" style="max-width: 560px; margin-bottom: 24px;">
     <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 20px; font-style: italic;">
         Enter a monthly spending habit to see its true cost over time — including the growth you miss out on.
     </p>
@@ -105,7 +105,7 @@
 </div>
 
 {% if habit_result %}
-<div class="section-label">The cost of {{ habit_description if habit_description else "this habit" }}</div>
+<!-- Insight card -->
 <div class="gold-card" style="margin-bottom: 24px;">
     <div style="font-family: var(--font-serif); font-size: 1.3rem; color: var(--roman-gold); margin-bottom: 8px;">
         {{ habit_result.insight.headline }}
@@ -118,6 +118,15 @@
     </p>
 </div>
 
+<!-- Habit cost chart -->
+<div class="glass-card" style="margin-bottom: 24px;">
+    <div class="section-label" style="margin-top: 0;">The cost of {{ habit_description if habit_description else "this habit" }}</div>
+    <div style="height: 280px; position: relative;">
+        <canvas id="habit-chart"></canvas>
+    </div>
+</div>
+
+<!-- Horizon cards -->
 <div class="grid-3" style="margin-bottom: 40px;">
     {% for key in ["5_year", "10_year", "20_year"] %}
     {% set h = habit_result.horizons[key] %}
@@ -134,12 +143,20 @@
                 Spent: £{{ "{:,.2f}".format(h.simple_cost) }}
             </div>
             <div style="font-size: 0.75rem; color: var(--success);">
-                Lost growth: £{{ "{:,.2f}".format(h.lost_growth) }}
+                Lost growth: +£{{ "{:,.2f}".format(h.lost_growth) }}
             </div>
         </div>
     </div>
     {% endfor %}
 </div>
+
+<script src="{{ url_for('static', filename='js/simulator.js') }}"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const horizons = {{ habit_result.horizons | tojson }};
+        initHabitChart('habit-chart', horizons);
+    });
+</script>
 {% endif %}
 
 <!-- Scenario Link -->

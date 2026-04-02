@@ -8,20 +8,57 @@
 </div>
 
 {% if projection.reachable %}
+
+<!-- The arrival card — the most important number on the page -->
 <div class="gold-card" style="margin-bottom: 32px;">
     <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
         <span class="ai-pulse"></span>
         <span class="metric-label" style="margin-bottom: 0; color: var(--roman-gold);">Projection</span>
     </div>
-    <div style="font-family: var(--font-serif); font-size: 1.8rem; color: var(--roman-gold); margin-bottom: 4px;">
+    <div id="arrival-date" style="font-family: var(--font-serif); font-size: 2rem; color: var(--roman-gold); margin-bottom: 4px; transition: all 0.3s ease;">
         {{ projection.completion_date_human }}
     </div>
     <p style="font-size: 0.85rem; color: var(--text-secondary); font-style: italic;">
-        At £{{ "%.2f" | format(projection.monthly_contribution) }}/month with {{ "%.0f" | format(projection.growth_rate_used * 100) }}% growth,
-        {{ goal.name }} is {{ projection.months_to_target }} months away.
+        <span id="months-display">{{ projection.months_to_target }} months</span> away at
+        <span id="slider-value">£{{ "%.2f" | format(projection.monthly_contribution) }}</span>/month
     </p>
 </div>
 
+<!-- The slider — THE moment -->
+<div class="glass-card" style="margin-bottom: 32px;">
+    <div class="section-label" style="margin-top: 0;">What if you changed your contribution?</div>
+    <p style="font-size: 0.8rem; color: var(--text-tertiary); margin-bottom: 16px; font-style: italic;">
+        Move the slider to see your future change in real time.
+    </p>
+
+    <div style="display: flex; justify-content: space-between; font-size: 0.7rem; color: var(--text-tertiary); margin-bottom: 4px;">
+        <span>£0</span>
+        <span>£{{ "%.0f" | format(max_contribution) }}</span>
+    </div>
+
+    <input type="range" id="contribution-slider"
+           min="0" max="{{ max_contribution }}" step="10"
+           value="{{ projection.monthly_contribution }}"
+           style="width: 100%; height: 6px; -webkit-appearance: none; appearance: none;
+                  background: linear-gradient(to right, var(--roman-gold) 0%, var(--roman-gold) {{ slider_percent }}%, rgba(255,255,255,0.08) {{ slider_percent }}%, rgba(255,255,255,0.08) 100%);
+                  border-radius: 3px; outline: none; cursor: pointer;">
+
+    <div style="text-align: center; margin-top: 12px;">
+        <span style="font-family: var(--font-serif); font-size: 1.5rem; color: var(--roman-gold);" id="slider-amount">
+            £{{ "%.2f" | format(projection.monthly_contribution) }}/month
+        </span>
+    </div>
+</div>
+
+<!-- The chart — two-mode contrast -->
+<div class="glass-card" style="margin-bottom: 32px;">
+    <div class="section-label" style="margin-top: 0;">Timeline projection</div>
+    <div style="height: 320px; position: relative;">
+        <canvas id="projection-chart"></canvas>
+    </div>
+</div>
+
+<!-- Key metrics — update with slider -->
 <div class="grid-3" style="margin-bottom: 32px;">
     <div class="glass-card">
         <div class="metric-label">Target</div>
@@ -29,11 +66,11 @@
     </div>
     <div class="glass-card">
         <div class="metric-label">You'll contribute</div>
-        <div style="font-family: var(--font-serif); font-size: 1.3rem;">£{{ "{:,.2f}".format(projection.total_contributed) }}</div>
+        <div id="contribution-total" style="font-family: var(--font-serif); font-size: 1.3rem;">£{{ "{:,.2f}".format(projection.total_contributed) }}</div>
     </div>
     <div class="glass-card">
         <div class="metric-label">Growth earns you</div>
-        <div style="font-family: var(--font-serif); font-size: 1.3rem; color: var(--success);">+£{{ "{:,.2f}".format(projection.total_interest_earned) }}</div>
+        <div id="interest-total" style="font-family: var(--font-serif); font-size: 1.3rem; color: var(--success);">+£{{ "{:,.2f}".format(projection.total_interest_earned) }}</div>
     </div>
 </div>
 
@@ -75,7 +112,7 @@
 </div>
 {% endif %}
 
-<!-- Multi-horizon -->
+<!-- Multi-horizon table -->
 {% if multi_horizon %}
 <div class="section-label">Growth scenarios</div>
 <div class="glass-card" style="margin-bottom: 32px; overflow-x: auto;">
@@ -125,4 +162,83 @@
         ← Back to Simulator
     </a>
 </div>
+
+<script src="{{ url_for('static', filename='js/simulator.js') }}"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const target = {{ projection.target_amount }};
+        const current = {{ projection.current_amount }};
+        const contribution = {{ projection.monthly_contribution }};
+
+        // Initialise the chart
+        const chart = initProjectionChart('projection-chart', target, current, contribution);
+
+        // Store current path data so grey line stays fixed
+        const currentPathData = chart.data.datasets[0].data.slice();
+
+        // Slider interaction
+        const slider = document.getElementById('contribution-slider');
+        if (slider && chart) {
+            const elements = {
+                arrivalDate: document.getElementById('arrival-date'),
+                monthsDisplay: document.getElementById('months-display'),
+                interestDisplay: document.getElementById('interest-total'),
+                contributionDisplay: document.getElementById('contribution-total'),
+                sliderValue: document.getElementById('slider-amount')
+            };
+
+            // Update slider background gradient on input
+            function updateSliderBackground() {
+                const percent = ((slider.value - slider.min) / (slider.max - slider.min)) * 100;
+                slider.style.background = `linear-gradient(to right, var(--roman-gold) 0%, var(--roman-gold) ${percent}%, rgba(255,255,255,0.08) ${percent}%, rgba(255,255,255,0.08) 100%)`;
+            }
+
+            slider.addEventListener('input', function() {
+                const newContribution = parseFloat(this.value);
+
+                // Restore grey line to original
+                chart.data.datasets[0].data = currentPathData.slice();
+
+                // Update gold line
+                const result = updateProjection(chart, target, current, newContribution, elements);
+
+                // Update slider value display
+                if (elements.sliderValue) {
+                    elements.sliderValue.textContent = '£' + newContribution.toFixed(2) + '/month';
+                }
+
+                updateSliderBackground();
+            });
+
+            updateSliderBackground();
+        }
+    });
+</script>
+
+<style>
+    /* Slider thumb styling */
+    input[type="range"]::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        appearance: none;
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        background: var(--roman-gold);
+        cursor: pointer;
+        box-shadow: 0 0 12px rgba(197, 163, 93, 0.4);
+        transition: transform 0.2s ease;
+    }
+    input[type="range"]::-webkit-slider-thumb:hover {
+        transform: scale(1.2);
+    }
+    input[type="range"]::-moz-range-thumb {
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        background: var(--roman-gold);
+        cursor: pointer;
+        border: none;
+        box-shadow: 0 0 12px rgba(197, 163, 93, 0.4);
+    }
+</style>
 {% endblock %}
