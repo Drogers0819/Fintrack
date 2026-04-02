@@ -114,6 +114,16 @@ def dashboard():
         greeting = "afternoon"
     else:
         greeting = "evening"
+    
+    primary_goal = Goal.query.filter_by(
+        user_id=current_user.id,
+        status="active"
+    ).order_by(Goal.priority_rank.asc()).first()
+
+    active_goals_count = Goal.query.filter_by(
+        user_id=current_user.id,
+        status="active"
+    ).count()
 
     return render_template("dashboard.html",
         summary={
@@ -123,7 +133,9 @@ def dashboard():
             "transaction_count": transaction_count
         },
         recent_transactions=[t.to_dict() for t in recent],
-        greeting=greeting
+        greeting=greeting,
+        primary_goal=primary_goal.to_dict() if primary_goal else None,
+        active_goals_count=active_goals_count
     )
 
 

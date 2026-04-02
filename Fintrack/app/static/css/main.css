@@ -482,3 +482,21 @@ a:hover {
     50% { opacity: 1; transform: scale(1.2); }
     100% { opacity: 0.3; transform: scale(1); }
 }
+
+.sidebar-nav {
+    margin-top: 48px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    flex: 1;
+    overflow-y: auto;
+    min-height: 0;
+}
+
+.sidebar-nav::-webkit-scrollbar {
+    width: 0;
+}
+
+.sidebar-nav {
+    scrollbar-width: none;
+}

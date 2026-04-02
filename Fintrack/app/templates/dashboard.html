@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}Overview — FinTrack{% endblock %}
+{% block title %}Overview — Claro{% endblock %}
 
 {% block content %}
 <div class="page-header">
@@ -22,7 +22,9 @@
             <span class="metric-label" style="margin-bottom: 0; color: var(--roman-gold);">Intelligence</span>
         </div>
         <p style="font-size: 0.85rem; font-style: italic; color: var(--text-secondary); line-height: 1.7;">
-            {% if summary.transaction_count > 0 %}
+            {% if primary_goal and primary_goal.progress_percent %}
+                "{{ current_user.name }}, your {{ primary_goal.name }} is {{ primary_goal.progress_percent }}% funded. Keep building momentum."
+            {% elif summary.transaction_count > 0 %}
                 "{{ current_user.name }}, you've recorded £{{ "%.2f" | format(summary.total_expenses) }} in expenses so far. Keep tracking to unlock spending insights."
             {% else %}
                 "Welcome, {{ current_user.name }}. Start by adding your first transaction — even one entry begins to build your financial picture."
@@ -30,6 +32,44 @@
         </p>
     </div>
 </div>
+
+{% if primary_goal %}
+<div class="section-label">Primary objective</div>
+<div class="glass-card" style="margin-bottom: 32px;">
+    <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px;">
+        <div>
+            <div style="font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.15em; color: var(--roman-gold); font-weight: 600; margin-bottom: 4px;">
+                {% if primary_goal.type == "savings_target" %}Savings Target
+                {% elif primary_goal.type == "spending_allocation" %}Spending Allocation
+                {% else %}Accumulation{% endif %}
+            </div>
+            <div style="font-size: 1.1rem; color: var(--text-primary);">{{ primary_goal.name }}</div>
+        </div>
+        {% if active_goals_count > 1 %}
+        <a href="{{ url_for('pages.goals_page') }}" style="font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.1em;">
+            +{{ active_goals_count - 1 }} more →
+        </a>
+        {% endif %}
+    </div>
+
+    {% if primary_goal.target_amount %}
+    <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 8px;">
+        <span style="font-family: var(--font-serif); font-size: 1.5rem; color: var(--roman-gold);">
+            £{{ "%.2f" | format(primary_goal.current_amount) }}
+        </span>
+        <span style="font-size: 0.8rem; color: var(--text-tertiary);">
+            of £{{ "%.2f" | format(primary_goal.target_amount) }}
+        </span>
+    </div>
+    <div style="height: 6px; background: rgba(255,255,255,0.05); border-radius: 3px; overflow: hidden; margin-bottom: 8px;">
+        <div style="height: 100%; width: {{ primary_goal.progress_percent if primary_goal.progress_percent else 0 }}%; background: var(--roman-gold); border-radius: 3px;"></div>
+    </div>
+    <div style="font-size: 0.75rem; color: var(--text-tertiary);">
+        {{ primary_goal.progress_percent if primary_goal.progress_percent else 0 }}% complete
+    </div>
+    {% endif %}
+</div>
+{% endif %}
 
 <div class="grid-3" style="margin-bottom: 32px;">
     <div class="glass-card">
