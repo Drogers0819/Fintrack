@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% block title %}Add Goal — Claro{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="section-label">New Objective</div>
+    <h1 style="font-style: italic;">Add a goal</h1>
+</div>
+
+<div class="glass-card" style="max-width: 560px;">
+    <form method="POST" action="{{ url_for('pages.add_goal') }}">
+        <div class="form-group">
+            <label class="form-label">What are you working toward?</label>
+            <input type="text" name="name" class="form-input" placeholder="e.g. Manchester house deposit" required>
+        </div>
+
+        <div class="grid-2">
+            <div class="form-group">
+                <label class="form-label">Goal type</label>
+                <select name="type" class="form-select" required>
+                    <option value="savings_target">Savings target</option>
+                    <option value="spending_allocation">Monthly spending budget</option>
+                    <option value="accumulation">Open-ended saving</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Priority (1 = highest)</label>
+                <input type="number" name="priority_rank" class="form-input" min="1" value="1" required>
+            </div>
+        </div>
+
+        <div class="grid-2">
+            <div class="form-group">
+                <label class="form-label">Target amount (£)</label>
+                <input type="number" name="target_amount" class="form-input" step="0.01" min="0" placeholder="e.g. 10000">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Already saved (£)</label>
+                <input type="number" name="current_amount" class="form-input" step="0.01" min="0" value="0">
+            </div>
+        </div>
+
+        <div class="grid-2">
+            <div class="form-group">
+                <label class="form-label">Monthly contribution (£)</label>
+                <input type="number" name="monthly_allocation" class="form-input" step="0.01" min="0" placeholder="e.g. 412">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Target date (optional)</label>
+                <input type="date" name="deadline" class="form-input">
+            </div>
+        </div>
+
+        <button type="submit" class="btn-gold" style="margin-top: 8px;">Create Goal</button>
+    </form>
+</div>
+{% endblock %}

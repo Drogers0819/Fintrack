@@ -440,6 +440,163 @@ def analytics():
         month_name=month_name
     )
 
+@page_bp.route("/goals")
+@login_required
+def goals_page():
+    goals = Goal.query.filter_by(
+        user_id=current_user.id,
+        status="active"
+    ).order_by(Goal.priority_rank.asc()).all()
+
+    return render_template("goals.html",
+        goals=[g.to_dict() for g in goals]
+    )
+
+
+@page_bp.route("/add-goal", methods=["GET", "POST"])
+@login_required
+def add_goal():
+    if request.method == "POST":
+        name = request.form.get("name", "").strip()
+        goal_type = request.form.get("type", "savings_target")
+        priority_rank = request.form.get("priority_rank", 1, type=int)
+
+        if not name:
+            flash("Goal name is required", "error")
+            return redirect(url_for("pages.add_goal"))
+
+        target_amount = None
+        target_val = request.form.get("target_amount", "").strip()
+        if target_val:
+            try:
+                target_amount = round(float(target_val), 2)
+            except ValueError:
+                flash("Invalid target amount", "error")
+                return redirect(url_for("pages.add_goal"))
+
+        current_amount = 0
+        current_val = request.form.get("current_amount", "").strip()
+        if current_val:
+            try:
+                current_amount = round(float(current_val), 2)
+            except ValueError:
+                current_amount = 0
+
+        monthly_allocation = None
+        alloc_val = request.form.get("monthly_allocation", "").strip()
+        if alloc_val:
+            try:
+                monthly_allocation = round(float(alloc_val), 2)
+            except ValueError:
+                monthly_allocation = None
+
+        deadline = None
+        deadline_val = request.form.get("deadline", "").strip()
+        if deadline_val:
+            try:
+                deadline = date.fromisoformat(deadline_val)
+            except ValueError:
+                deadline = None
+
+        goal = Goal(
+            user_id=current_user.id,
+            name=name,
+            type=goal_type,
+            target_amount=target_amount,
+            current_amount=current_amount,
+            monthly_allocation=monthly_allocation,
+            deadline=deadline,
+            priority_rank=priority_rank
+        )
+
+        db.session.add(goal)
+        db.session.commit()
+
+        flash("Goal created successfully", "success")
+        return redirect(url_for("pages.goals_page"))
+
+    return render_template("add_goal.html")
+
+
+@page_bp.route("/delete-goal/<int:goal_id>", methods=["POST"])
+@login_required
+def delete_goal(goal_id):
+    goal = Goal.query.filter_by(
+        id=goal_id,
+        user_id=current_user.id
+    ).first()
+
+    if not goal:
+        flash("Goal not found", "error")
+        return redirect(url_for("pages.goals_page"))
+
+    db.session.delete(goal)
+    db.session.commit()
+
+    flash("Goal deleted", "success")
+    return redirect(url_for("pages.goals_page"))
+
+
+@page_bp.route("/waterfall")
+@login_required
+def waterfall_page():
+    if not current_user.factfind_completed:
+        flash("Complete your financial profile first", "error")
+        return redirect(url_for("pages.factfind"))
+
+    goals = Goal.query.filter_by(
+        user_id=current_user.id,
+        status="active"
+    ).order_by(Goal.priority_rank.asc()).all()
+
+    goals_data = []
+    for g in goals:
+        goals_data.append({
+            "id": g.id,
+            "name": g.name,
+            "type": g.type,
+            "target_amount": float(g.target_amount) if g.target_amount else None,
+            "current_amount": float(g.current_amount) if g.current_amount else 0,
+            "monthly_allocation": float(g.monthly_allocation) if g.monthly_allocation else 0,
+            "priority_rank": g.priority_rank
+        })
+
+    user_profile = {
+        "monthly_income": float(current_user.monthly_income),
+        "fixed_commitments": current_user.fixed_commitments
+    }
+
+    waterfall = generate_waterfall_summary(user_profile, goals_data)
+
+    return render_template("waterfall.html", waterfall=waterfall)
+
+
+@page_bp.route("/settings")
+@login_required
+def settings():
+    return render_template("settings.html")
+
+
+@page_bp.route("/update-theme", methods=["POST"])
+@login_required
+def update_theme():
+    theme = request.form.get("theme", "racing-green")
+
+    valid_themes = [
+        "racing-green", "midnight-navy", "oxford-saddle", "amethyst",
+        "rosso", "cobalt", "ivory", "pearl", "sandstone", "sage",
+        "lavender", "mist"
+    ]
+
+    if theme not in valid_themes:
+        theme = "racing-green"
+
+    current_user.theme = theme
+    db.session.commit()
+
+    flash(f"Theme updated", "success")
+    return redirect(url_for("pages.settings"))
+
 @page_bp.route("/delete-transaction/<int:transaction_id>", methods=["POST"])
 @login_required
 def delete_transaction(transaction_id):

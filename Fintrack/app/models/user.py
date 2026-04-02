@@ -16,12 +16,15 @@ class User(db.Model, UserMixin):
     name = db.Column(db.String(100), nullable=False)
     created_at = db.Column(db.DateTime, server_default=db.func.now())
 
-    # Financial profile — populated by fact-find
+    # Financial profile
     monthly_income = db.Column(db.Numeric(10, 2), nullable=True)
     rent_amount = db.Column(db.Numeric(10, 2), nullable=True)
     bills_amount = db.Column(db.Numeric(10, 2), nullable=True)
     income_day = db.Column(db.Integer, nullable=True)
     factfind_completed = db.Column(db.Boolean, default=False)
+
+    # Preferences
+    theme = db.Column(db.String(30), default="racing-green")
 
     # Relationships
     transactions = db.relationship("Transaction", backref="user", lazy=True)
@@ -52,7 +55,8 @@ class User(db.Model, UserMixin):
             "income_day": self.income_day,
             "fixed_commitments": self.fixed_commitments,
             "monthly_surplus": self.monthly_surplus,
-            "factfind_completed": self.factfind_completed
+            "factfind_completed": self.factfind_completed,
+            "theme": self.theme
         }
 
     def __repr__(self):
