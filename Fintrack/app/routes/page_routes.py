@@ -9,6 +9,7 @@ from app.models.transaction import Transaction
 from sqlalchemy import func
 from datetime import date, datetime
 from app.models.category import Category
+from sqlalchemy import extract
 
 
 page_bp = Blueprint("pages", __name__)
@@ -319,6 +320,125 @@ def factfind():
 
     return render_template("factfind.html", profile=current_user.profile_dict())
 
+@page_bp.route("/analytics")
+@login_required
+def analytics():
+    month = request.args.get("month", type=int)
+    year = request.args.get("year", type=int)
+
+    if not month or not year:
+        today = date.today()
+        month = today.month
+        year = today.year
+
+    results = db.session.query(
+        Category.name,
+        Category.icon,
+        Category.colour,
+        func.sum(Transaction.amount).label("total"),
+        func.count(Transaction.id).label("count")
+    ).join(
+        Category, Transaction.category_id == Category.id
+    ).filter(
+        Transaction.user_id == current_user.id,
+        Transaction.type == "expense",
+        extract("month", Transaction.date) == month,
+        extract("year", Transaction.date) == year
+    ).group_by(
+        Category.id, Category.name, Category.icon, Category.colour
+    ).order_by(
+        func.sum(Transaction.amount).desc()
+    ).all()
+
+    total_expenses = sum(float(r.total) for r in results)
+
+    categories = []
+    for r in results:
+        amount = float(r.total)
+        categories.append({
+            "name": r.name,
+            "icon": r.icon,
+            "colour": r.colour,
+            "total": amount,
+            "count": r.count,
+            "percentage": round((amount / total_expenses * 100), 1) if total_expenses > 0 else 0
+        })
+
+    current_month = month
+    current_year = year
+
+    if current_month == 1:
+        prev_month = 12
+        prev_year = current_year - 1
+    else:
+        prev_month = current_month - 1
+        prev_year = current_year
+
+    current_cat_expenses = db.session.query(
+        Category.name,
+        Category.icon,
+        func.sum(Transaction.amount).label("total")
+    ).join(
+        Category, Transaction.category_id == Category.id
+    ).filter(
+        Transaction.user_id == current_user.id,
+        Transaction.type == "expense",
+        extract("month", Transaction.date) == current_month,
+        extract("year", Transaction.date) == current_year
+    ).group_by(
+        Category.id, Category.name, Category.icon
+    ).all()
+
+    prev_cat_expenses = db.session.query(
+        Category.name,
+        func.sum(Transaction.amount).label("total")
+    ).join(
+        Category, Transaction.category_id == Category.id
+    ).filter(
+        Transaction.user_id == current_user.id,
+        Transaction.type == "expense",
+        extract("month", Transaction.date) == prev_month,
+        extract("year", Transaction.date) == prev_year
+    ).group_by(
+        Category.id, Category.name
+    ).all()
+
+    prev_dict = {r.name: float(r.total) for r in prev_cat_expenses}
+
+    trends = []
+    for r in current_cat_expenses:
+        current_total = float(r.total)
+        prev_total = prev_dict.get(r.name, 0)
+
+        if prev_total > 0:
+            change_amount = current_total - prev_total
+            change_percent = round(((current_total - prev_total) / prev_total) * 100, 1)
+        else:
+            change_amount = current_total
+            change_percent = 100.0
+
+        trends.append({
+            "category": r.name,
+            "icon": r.icon,
+            "current_month": current_total,
+            "previous_month": prev_total,
+            "change_amount": change_amount,
+            "change_percent": change_percent,
+            "direction": "up" if change_amount > 0 else "down" if change_amount < 0 else "flat"
+        })
+
+    trends.sort(key=lambda t: abs(t["change_amount"]), reverse=True)
+
+    month_name = date(year, month, 1).strftime("%B")
+
+    return render_template("analytics.html",
+        categories=categories,
+        total_expenses=total_expenses,
+        trends=trends,
+        month=month,
+        year=year,
+        month_name=month_name
+    )
 
 @page_bp.route("/delete-transaction/<int:transaction_id>", methods=["POST"])
 @login_required

@@ -6,3 +6,4 @@ from app.routes.category_routes import category_bp
 from app.routes.goal_routes import goal_bp
 from app.routes.upload_routes import upload_bp
 from app.routes.profile_routes import profile_bp
+from app.routes.analytics_routes import analytics_bp
