@@ -1,3 +1,4 @@
+from app.services.recurring_service import detect_recurring_transactions, identify_potential_savings
 from app.services.allocator_service import generate_waterfall_summary
 from app.models.goal import Goal
 from app.services.csv_parser import extract_transactions_from_csv, CSVParseError
@@ -785,6 +786,33 @@ def scenario_page():
         scenario_result=scenario_result
     )
 
+@page_bp.route("/recurring")
+@login_required
+def recurring_page():
+    transactions = Transaction.query.filter_by(
+        user_id=current_user.id
+    ).order_by(Transaction.date.asc()).all()
+
+    txn_list = []
+    for t in transactions:
+        txn_list.append({
+            "id": t.id,
+            "amount": float(t.amount),
+            "description": t.description,
+            "merchant": t.merchant or t.description,
+            "category": t.category_rel.name if t.category_rel else "Other",
+            "category_id": t.category_id,
+            "type": t.type,
+            "date": t.date
+        })
+
+    recurring = detect_recurring_transactions(txn_list)
+    savings = identify_potential_savings(recurring["recurring"])
+
+    return render_template("recurring.html",
+        recurring=recurring,
+        savings=savings
+    )
 
 @page_bp.route("/settings")
 @login_required

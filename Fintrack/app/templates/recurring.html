@@ -1,0 +1,105 @@
+{% extends "base.html" %}
+{% block title %}Recurring Payments — Claro{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="section-label">Pattern Intelligence</div>
+    <h1 style="font-style: italic;">Your recurring payments</h1>
+    <p>Detected from your transaction history.</p>
+</div>
+
+{% if recurring.count > 0 %}
+<div class="grid-3" style="margin-bottom: 32px;">
+    <div class="glass-card">
+        <div class="metric-label">Monthly Outgoing</div>
+        <div class="metric-value" style="font-size: 1.5rem;">£{{ "%.2f" | format(recurring.total_monthly_cost) }}</div>
+        <div style="font-size: 0.7rem; color: var(--text-tertiary);">{{ recurring.expense_count }} recurring expense{{ "s" if recurring.expense_count != 1 else "" }}</div>
+    </div>
+    {% if recurring.total_monthly_income > 0 %}
+    <div class="glass-card">
+        <div class="metric-label">Monthly Incoming</div>
+        <div class="metric-value" style="font-size: 1.5rem; color: var(--success);">£{{ "%.2f" | format(recurring.total_monthly_income) }}</div>
+        <div style="font-size: 0.7rem; color: var(--text-tertiary);">{{ recurring.income_count }} recurring income{{ "s" if recurring.income_count != 1 else "" }}</div>
+    </div>
+    {% endif %}
+    <div class="glass-card">
+        <div class="metric-label">Annual Cost</div>
+        <div class="metric-value" style="font-size: 1.5rem;">£{{ "%.2f" | format(recurring.total_monthly_cost * 12) }}</div>
+        <div style="font-size: 0.7rem; color: var(--text-tertiary);">at current rate</div>
+    </div>
+</div>
+
+{% if savings.count > 0 %}
+<div style="padding: 16px 20px; border-radius: 12px; background: var(--roman-gold-dim); border: 0.5px solid rgba(197, 163, 93, 0.2); margin-bottom: 32px;">
+    <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+        <span class="ai-pulse"></span>
+        <span class="metric-label" style="margin-bottom: 0; color: var(--roman-gold);">Savings spotted</span>
+    </div>
+    <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 12px;">
+        We found {{ savings.count }} potential saving{{ "s" if savings.count != 1 else "" }} worth up to
+        <span style="color: var(--roman-gold); font-weight: 600;">£{{ "%.2f" | format(savings.total_potential_annual_saving) }}/year</span>.
+    </p>
+    {% for s in savings.opportunities %}
+    <div style="font-size: 0.8rem; color: var(--text-secondary); padding: 8px 0;
+        {% if not loop.last %}border-bottom: 0.5px solid rgba(255,255,255,0.05);{% endif %}">
+        {{ s.message }}
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
+
+<div class="section-label">All recurring payments</div>
+<div style="display: flex; flex-direction: column; gap: 12px;">
+    {% for r in recurring.recurring %}
+    <div class="glass-card">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+            <div style="flex: 1;">
+                <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
+                    <span style="font-size: 1rem; color: var(--text-primary); text-transform: capitalize;">{{ r.merchant }}</span>
+                    <span style="font-size: 0.6rem; text-transform: uppercase; letter-spacing: 0.1em; padding: 2px 8px; border-radius: 4px;
+                        {% if r.transaction_type == 'income' %}background: rgba(45, 106, 79, 0.15); color: var(--success);
+                        {% else %}background: rgba(255,255,255,0.05); color: var(--text-tertiary);{% endif %}">
+                        {{ r.frequency_label }}
+                    </span>
+                </div>
+                <div style="font-size: 0.75rem; color: var(--text-tertiary);">
+                    {{ r.category }} · {{ r.occurrence_count }} occurrence{{ "s" if r.occurrence_count != 1 else "" }} · 
+                    {% if r.amount_consistent %}Consistent amount{% else %}Amount varies{% endif %}
+                </div>
+                <div style="font-size: 0.7rem; color: var(--text-tertiary); margin-top: 4px;">
+                    Last: {{ r.last_date }} · Next expected: {{ r.next_expected }}
+                </div>
+            </div>
+            <div style="text-align: right; min-width: 100px;">
+                <div style="font-family: var(--font-serif); font-size: 1.2rem;
+                    {% if r.transaction_type == 'income' %}color: var(--success);{% endif %}">
+                    {% if r.transaction_type == 'income' %}+{% else %}-{% endif %}£{{ "%.2f" | format(r.avg_amount) }}
+                </div>
+                <div style="font-size: 0.7rem; color: var(--text-tertiary);">
+                    £{{ "%.2f" | format(r.monthly_cost) }}/month
+                </div>
+            </div>
+        </div>
+
+        <div style="margin-top: 8px;">
+            <div style="height: 4px; background: rgba(255,255,255,0.05); border-radius: 2px; overflow: hidden;">
+                <div style="height: 100%; width: {{ (r.confidence * 100) | int }}%;
+                    background: {% if r.confidence > 0.7 %}var(--roman-gold){% elif r.confidence > 0.5 %}var(--text-secondary){% else %}var(--text-tertiary){% endif %};
+                    border-radius: 2px;"></div>
+            </div>
+            <div style="font-size: 0.6rem; color: var(--text-tertiary); margin-top: 2px;">
+                {{ (r.confidence * 100) | int }}% confidence
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+{% else %}
+<div class="glass-card">
+    <div class="empty-state">
+        {{ recurring.message if recurring.message else "No recurring patterns detected yet. Upload more transaction history for better detection." }}
+    </div>
+</div>
+{% endif %}
+{% endblock %}
