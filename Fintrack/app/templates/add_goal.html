@@ -3,14 +3,14 @@
 
 {% block content %}
 <div class="page-header">
-    <div class="section-label">New Objective</div>
     <h1 style="font-style: italic;">Add a goal</h1>
+    <p>What are you working toward?</p>
 </div>
 
 <div class="glass-card" style="max-width: 560px;">
     <form method="POST" action="{{ url_for('pages.add_goal') }}">
         <div class="form-group">
-            <label class="form-label">What are you working toward?</label>
+            <label class="form-label">What's this goal called?</label>
             <input type="text" name="name" class="form-input" placeholder="e.g. Manchester house deposit" required>
         </div>
 
@@ -18,13 +18,13 @@
             <div class="form-group">
                 <label class="form-label">Goal type</label>
                 <select name="type" class="form-select" required>
-                    <option value="savings_target">Savings target</option>
+                    <option value="savings_target">Saving toward a target</option>
                     <option value="spending_allocation">Monthly spending budget</option>
-                    <option value="accumulation">Open-ended saving</option>
+                    <option value="accumulation">Building over time</option>
                 </select>
             </div>
             <div class="form-group">
-                <label class="form-label">Priority (1 = highest)</label>
+                <label class="form-label">Priority (1 = most important)</label>
                 <input type="number" name="priority_rank" class="form-input" min="1" value="1" required>
             </div>
         </div>
@@ -53,5 +53,11 @@
 
         <button type="submit" class="btn-gold" style="margin-top: 8px;">Create Goal</button>
     </form>
+</div>
+
+<div style="text-align: center; margin-top: 16px;">
+    <a href="{{ url_for('pages.my_goals') }}" style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.1em;">
+        ← Back to My Goals
+    </a>
 </div>
 {% endblock %}

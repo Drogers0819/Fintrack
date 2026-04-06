@@ -1,9 +1,8 @@
 {% extends "base.html" %}
-{% block title %}Add Transaction — FinTrack{% endblock %}
+{% block title %}Add Transaction — Claro{% endblock %}
 
 {% block content %}
 <div class="page-header">
-    <div class="section-label">Record Transaction</div>
     <h1 style="font-style: italic;">Add a transaction</h1>
 </div>
 
@@ -52,5 +51,11 @@
 
         <button type="submit" class="btn-gold" style="margin-top: 8px;">Record Transaction</button>
     </form>
+</div>
+
+<div style="text-align: center; margin-top: 16px;">
+    <a href="{{ url_for('pages.my_money') }}" style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.1em;">
+        ← Back to My Money
+    </a>
 </div>
 {% endblock %}

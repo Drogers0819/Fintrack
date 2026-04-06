@@ -1,19 +1,18 @@
 {% extends "base.html" %}
-{% block title %}Your Financial Profile — FinTrack{% endblock %}
+{% block title %}Your Financial Profile — Claro{% endblock %}
 
 {% block content %}
 <div class="page-header">
-    <div class="section-label">Financial Profile</div>
-    <h1 style="font-style: italic;">Tell us about your finances</h1>
+    <h1 style="font-style: italic;">Your financial profile</h1>
     <p>This takes about 60 seconds. We use this to show you where your money goes and where it could take you.</p>
 </div>
 
 <div class="glass-card" style="max-width: 560px;">
     <form method="POST" action="{{ url_for('pages.factfind') }}">
 
-        <div class="section-label" style="margin-top: 0;">Income</div>
+        <span class="metric-label">Income</span>
 
-        <div class="grid-2">
+        <div class="grid-2" style="margin-top: 8px;">
             <div class="form-group">
                 <label class="form-label">Monthly take-home pay (£)</label>
                 <input type="number" name="monthly_income" class="form-input" step="0.01" min="0.01"
@@ -28,9 +27,9 @@
             </div>
         </div>
 
-        <div class="section-label">Commitments</div>
+        <span class="metric-label">Commitments</span>
 
-        <div class="grid-2">
+        <div class="grid-2" style="margin-top: 8px;">
             <div class="form-group">
                 <label class="form-label">Monthly rent or mortgage (£)</label>
                 <input type="number" name="rent_amount" class="form-input" step="0.01" min="0"
@@ -46,17 +45,17 @@
         </div>
 
         <p style="font-size: 0.75rem; color: var(--text-tertiary); margin-bottom: 24px; font-style: italic;">
-            Bills includes council tax, phone, utilities, internet — anything you pay every month regardless of lifestyle choices.
+            Bills includes council tax, phone, utilities, internet — anything you pay every month.
         </p>
 
         {% if profile.monthly_income %}
-        <div style="padding: 16px; border-radius: 12px; background: rgba(197, 163, 93, 0.05); border: 0.5px solid rgba(197, 163, 93, 0.15); margin-bottom: 24px;">
-            <div class="metric-label" style="color: var(--roman-gold);">Your current surplus</div>
+        <div style="padding: 16px; border-radius: 12px; background: var(--roman-gold-dim); margin-bottom: 24px;">
+            <div class="metric-label" style="color: var(--roman-gold);">Available for your goals</div>
             <div style="font-family: var(--font-serif); font-size: 1.5rem; color: var(--roman-gold);">
                 £{{ "%.2f" | format(profile.monthly_surplus) }}/month
             </div>
             <p style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 4px;">
-                This is the money available for your goals after rent and bills.
+                After rent and bills.
             </p>
         </div>
         {% endif %}
@@ -73,8 +72,8 @@
 
 {% if profile.factfind_completed %}
 <div style="text-align: center; margin-top: 16px;">
-    <a href="{{ url_for('pages.overview') }}" style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.1em;">
-        ← Back to Dashboard
+    <a href="{{ url_for('pages.settings') }}" style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.1em;">
+        ← Back to Settings
     </a>
 </div>
 {% endif %}

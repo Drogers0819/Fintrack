@@ -547,3 +547,486 @@ input[type="range"]::-moz-range-thumb {
 input[type="range"]::-moz-range-thumb:hover {
     transform: scale(1.15);
 }
+
+/* ===== GRID LAYOUTS ===== */
+.grid-2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+}
+
+.grid-3 {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 16px;
+}
+
+/* ===== BUTTONS ===== */
+.btn-danger {
+    background: none;
+    border: 1px solid var(--danger, #8B4513);
+    color: var(--danger, #8B4513);
+    padding: 6px 14px;
+    border-radius: 6px;
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn-danger:hover {
+    background: var(--danger, #8B4513);
+    color: #fff;
+}
+
+/* ===== EMPTY STATE ===== */
+.empty-state {
+    text-align: center;
+    padding: 24px;
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    font-style: italic;
+}
+
+.empty-state a {
+    color: var(--roman-gold);
+}
+
+/* ===== AI PULSE ===== */
+.ai-pulse {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--roman-gold);
+    animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 0.4; transform: scale(1); }
+    50% { opacity: 1; transform: scale(1.2); }
+}
+
+/* ===== GOLD CARD ===== */
+.gold-card {
+    padding: 20px 24px;
+    border-radius: 16px;
+    background: var(--roman-gold-dim, rgba(197, 163, 93, 0.05));
+    border: 0.5px solid rgba(197, 163, 93, 0.15);
+}
+
+/* ===== MOBILE — NATIVE APP FEEL ===== */
+
+@media (max-width: 768px) {
+
+    /* Layout: sidebar becomes bottom nav */
+    .app-layout {
+        flex-direction: column;
+        min-height: 100dvh;
+    }
+
+    .sidebar {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        top: auto;
+        width: 100%;
+        height: auto;
+        z-index: 1000;
+        padding: 0;
+        display: flex;
+        flex-direction: column;
+        border-top: 0.5px solid rgba(197, 163, 93, 0.12);
+        border-right: none;
+        background: var(--bg-primary, #020408);
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+    }
+
+    .sidebar-logo,
+    .sidebar-subtitle,
+    .sidebar-footer {
+        display: none;
+    }
+
+    .sidebar-nav {
+        display: flex;
+        flex-direction: row;
+        justify-content: space-around;
+        align-items: center;
+        padding: 6px 0 env(safe-area-inset-bottom, 6px);
+        gap: 0;
+        width: 100%;
+    }
+
+    .nav-link {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 2px;
+        padding: 8px 4px;
+        font-size: 0.6rem;
+        letter-spacing: 0.02em;
+        text-transform: none;
+        flex: 1;
+        text-align: center;
+        border-radius: 0;
+        min-height: 48px;
+        justify-content: center;
+        -webkit-tap-highlight-color: transparent;
+        transition: color 0.15s ease;
+    }
+
+    .nav-link:hover {
+        background: transparent;
+    }
+
+    .nav-link.active {
+        background: transparent;
+        color: var(--roman-gold);
+    }
+
+    .nav-link .nav-icon {
+        font-size: 1.2rem;
+        line-height: 1;
+        display: block;
+        margin: 0;
+    }
+
+    /* Main content: account for bottom nav */
+    .main-content {
+        padding: 16px 16px 100px;
+        margin-left: 0;
+        width: 100%;
+        overflow-x: hidden;
+    }
+
+    /* Page header */
+    .page-header {
+        margin-bottom: 16px;
+    }
+
+    .page-header h1 {
+        font-size: 1.6rem;
+        line-height: 1.2;
+    }
+
+    .page-header p {
+        font-size: 0.8rem;
+    }
+
+    /* Cards: full bleed with tighter padding */
+    .glass-card {
+        border-radius: 14px;
+        padding: 16px;
+        margin-left: -2px;
+        margin-right: -2px;
+    }
+
+    .gold-card {
+        border-radius: 14px;
+        padding: 16px;
+        margin-left: -2px;
+        margin-right: -2px;
+    }
+
+    /* Grids: stack on mobile */
+    .grid-2 {
+        grid-template-columns: 1fr;
+        gap: 12px;
+    }
+
+    .grid-3 {
+        grid-template-columns: 1fr 1fr 1fr;
+        gap: 8px;
+    }
+
+    .grid-3 .glass-card {
+        padding: 12px 8px;
+        text-align: center;
+    }
+
+    .grid-3 .metric-label {
+        font-size: 0.6rem;
+    }
+
+    .grid-3 .metric-value,
+    .grid-3 [style*="font-size: 1.5rem"],
+    .grid-3 [style*="font-size: 1.3rem"] {
+        font-size: 1.1rem !important;
+    }
+
+    /* Form elements: touch-friendly sizing */
+    .form-input,
+    .form-select {
+        font-size: 16px; /* prevents iOS zoom */
+        padding: 14px 16px;
+        border-radius: 10px;
+        min-height: 48px;
+        -webkit-appearance: none;
+    }
+
+    .form-label {
+        font-size: 0.7rem;
+        margin-bottom: 6px;
+    }
+
+    .form-group {
+        margin-bottom: 16px;
+    }
+
+    /* Buttons: full width, taller touch targets */
+    .btn-gold,
+    .btn-outline {
+        width: 100%;
+        padding: 14px 20px;
+        font-size: 0.8rem;
+        min-height: 48px;
+        border-radius: 10px;
+        -webkit-tap-highlight-color: transparent;
+    }
+
+    /* Transaction rows: taller touch targets */
+    .transaction-row {
+        padding: 14px 0;
+        min-height: 56px;
+    }
+
+    .transaction-description {
+        font-size: 0.9rem;
+    }
+
+    .transaction-meta {
+        font-size: 0.7rem;
+    }
+
+    .transaction-amount {
+        font-size: 0.95rem;
+        white-space: nowrap;
+    }
+
+    /* Metric values */
+    .metric-label {
+        font-size: 0.65rem;
+    }
+
+    .metric-value {
+        font-size: 1.3rem;
+    }
+
+    /* Section label */
+    .section-label {
+        font-size: 0.6rem;
+        margin-top: 20px;
+        margin-bottom: 8px;
+    }
+
+    /* Flash messages */
+    .flash-message {
+        margin: 8px 0;
+        border-radius: 10px;
+        font-size: 0.8rem;
+        padding: 12px 16px;
+    }
+
+    /* Action button rows */
+    [style*="display: flex"][style*="gap: 12px"] {
+        flex-direction: column;
+    }
+
+    /* Slider: bigger thumb for touch */
+    input[type="range"] {
+        height: 8px;
+    }
+
+    input[type="range"]::-webkit-slider-thumb {
+        width: 28px;
+        height: 28px;
+    }
+
+    input[type="range"]::-moz-range-thumb {
+        width: 28px;
+        height: 28px;
+    }
+
+    /* Chart container */
+    [style*="height: 320px"] {
+        height: 240px !important;
+    }
+
+    [style*="height: 280px"] {
+        height: 200px !important;
+    }
+
+    /* Theme grid: 3 columns on mobile instead of 4 */
+    [style*="grid-template-columns: repeat(4"] {
+        grid-template-columns: repeat(3, 1fr) !important;
+        gap: 8px !important;
+    }
+
+    /* Budget progress bars: taller for visibility */
+    [style*="height: 5px"],
+    [style*="height: 6px"] {
+        height: 7px !important;
+    }
+
+    /* Recurring payment rows */
+    [style*="text-transform: capitalize"] {
+        font-size: 0.8rem;
+    }
+
+    /* Money left: hero treatment on mobile */
+    [style*="font-size: 2.8rem"] {
+        font-size: 2.2rem !important;
+    }
+
+    [style*="font-size: 2.5rem"] {
+        font-size: 2rem !important;
+    }
+
+    /* Waterfall rows */
+    [style*="padding: 8px 0"] {
+        padding: 10px 0 !important;
+    }
+
+    /* Safe area for notched phones */
+    .sidebar-nav {
+        padding-bottom: max(6px, env(safe-area-inset-bottom));
+    }
+
+    /* Smooth scrolling */
+    .main-content {
+        -webkit-overflow-scrolling: touch;
+        scroll-behavior: smooth;
+    }
+
+    /* Prevent text selection on nav (native feel) */
+    .sidebar-nav {
+        -webkit-user-select: none;
+        user-select: none;
+    }
+
+    /* Hide scrollbar on main content (native feel) */
+    .main-content::-webkit-scrollbar {
+        display: none;
+    }
+    .main-content {
+        -ms-overflow-style: none;
+        scrollbar-width: none;
+    }
+}
+
+/* ===== SMALL PHONES (iPhone SE, etc) ===== */
+
+@media (max-width: 375px) {
+    .main-content {
+        padding: 12px 12px 100px;
+    }
+
+    .page-header h1 {
+        font-size: 1.4rem;
+    }
+
+    .glass-card,
+    .gold-card {
+        padding: 14px;
+    }
+
+    .grid-3 {
+        grid-template-columns: 1fr 1fr 1fr;
+        gap: 6px;
+    }
+
+    .grid-3 .glass-card {
+        padding: 10px 6px;
+    }
+
+    .nav-link {
+        font-size: 0.55rem;
+        padding: 6px 2px;
+    }
+
+    .nav-link .nav-icon {
+        font-size: 1rem;
+    }
+
+    [style*="font-size: 2.2rem"] {
+        font-size: 1.8rem !important;
+    }
+
+    [style*="grid-template-columns: repeat(3"] {
+        grid-template-columns: repeat(3, 1fr) !important;
+    }
+}
+
+/* ===== TABLET ===== */
+
+@media (min-width: 769px) and (max-width: 1024px) {
+    .sidebar {
+        width: 200px;
+    }
+
+    .main-content {
+        padding: 28px 24px;
+    }
+
+    .grid-3 {
+        gap: 12px;
+    }
+}
+
+/* ===== TOUCH INTERACTIONS ===== */
+
+@media (hover: none) and (pointer: coarse) {
+    /* Touch devices: no hover states, use active states */
+    .nav-link:hover {
+        background: transparent;
+    }
+
+    .nav-link:active {
+        opacity: 0.7;
+        transition: opacity 0.1s ease;
+    }
+
+    .glass-card:active {
+        transform: scale(0.99);
+        transition: transform 0.1s ease;
+    }
+
+    .btn-gold:active,
+    .btn-outline:active {
+        transform: scale(0.97);
+        opacity: 0.8;
+        transition: all 0.1s ease;
+    }
+
+    .transaction-row:active {
+        background: rgba(255, 255, 255, 0.02);
+        transition: background 0.1s ease;
+    }
+
+    /* Disable hover effects that feel wrong on touch */
+    .btn-gold:hover,
+    .btn-outline:hover {
+        transform: none;
+    }
+}
+
+/* ===== PULL-DOWN OVERSCROLL FIX ===== */
+
+html {
+    overscroll-behavior-y: none;
+}
+
+/* ===== SMOOTH TRANSITIONS ON ALL INTERACTIVE ELEMENTS ===== */
+
+.glass-card,
+.gold-card,
+.btn-gold,
+.btn-outline,
+.nav-link,
+.transaction-row {
+    transition: all 0.15s ease;
+}
