@@ -70,6 +70,8 @@ def create_app(config_class=None):
     from app.routes.budget_routes import budget_bp
     from app.routes.anomaly_routes import anomaly_bp
     from app.routes.insight_routes import insight_bp
+    from app.routes.narrative_routes import narrative_bp
+    app.register_blueprint(narrative_bp)
     app.register_blueprint(insight_bp)
     app.register_blueprint(anomaly_bp)
     app.register_blueprint(budget_bp)
