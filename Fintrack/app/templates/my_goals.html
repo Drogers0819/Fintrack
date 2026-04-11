@@ -83,8 +83,8 @@
             <span style="font-family: var(--font-serif); font-size: 1.2rem;">£{{ "%.2f" | format(g.current_amount) }}</span>
             <span style="font-size: 0.75rem; color: var(--text-tertiary);">of £{{ "%.2f" | format(g.target_amount) }}</span>
         </div>
-        <div style="height: 5px; background: rgba(255,255,255,0.05); border-radius: 3px; overflow: hidden; margin-bottom: 6px;">
-            <div style="height: 100%; width: {{ g.progress_percent if g.progress_percent else 0 }}%; background: var(--roman-gold); border-radius: 3px;"></div>
+        <div class="progress-track" style="margin-bottom: 6px;">
+            <div class="progress-fill{% if g.progress_percent >= 90 %} warning{% endif %}" style="width: {{ g.progress_percent if g.progress_percent else 0 }}%;"></div>
         </div>
         {% endif %}
 

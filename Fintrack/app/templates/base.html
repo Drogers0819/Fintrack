@@ -58,7 +58,15 @@
         <main class="main-content">
             {% with messages = get_flashed_messages(with_categories=true) %}
                 {% for category, message in messages %}
-                    <div class="flash-message flash-{{ category }}">{{ message }}</div>
+                    <div class="flash-message flash-{{ category }}" role="alert">
+                        {% if category == 'success' %}
+                        <svg class="flash-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                        {% else %}
+                        <svg class="flash-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                        {% endif %}
+                        <span class="flash-text">{{ message }}</span>
+                        <button class="flash-dismiss" aria-label="Dismiss" onclick="this.closest('.flash-message').remove()">×</button>
+                    </div>
                 {% endfor %}
             {% endwith %}
 
@@ -69,7 +77,15 @@
     <div>
         {% with messages = get_flashed_messages(with_categories=true) %}
             {% for category, message in messages %}
-                <div class="flash-message flash-{{ category }}" style="max-width: 420px; margin: 20px auto;">{{ message }}</div>
+                <div class="flash-message flash-{{ category }}" role="alert" style="max-width: 420px; margin: 20px auto;">
+                    {% if category == 'success' %}
+                    <svg class="flash-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                    {% else %}
+                    <svg class="flash-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                    {% endif %}
+                    <span class="flash-text">{{ message }}</span>
+                    <button class="flash-dismiss" aria-label="Dismiss" onclick="this.closest('.flash-message').remove()">×</button>
+                </div>
             {% endfor %}
         {% endwith %}
 

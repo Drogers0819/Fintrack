@@ -74,8 +74,8 @@
             of £{{ "%.2f" | format(primary_goal.target_amount) }}
         </span>
     </div>
-    <div style="height: 6px; background: rgba(255,255,255,0.05); border-radius: 3px; overflow: hidden;">
-        <div style="height: 100%; width: {{ primary_goal.progress_percent if primary_goal.progress_percent else 0 }}%; background: var(--roman-gold); border-radius: 3px;"></div>
+    <div class="progress-track">
+        <div class="progress-fill{% if primary_goal.progress_percent >= 90 %} warning{% endif %}" style="width: {{ primary_goal.progress_percent if primary_goal.progress_percent else 0 }}%;"></div>
     </div>
 </div>
 {% endif %}
