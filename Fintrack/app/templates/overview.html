@@ -22,7 +22,9 @@
 <div class="glass-card" style="margin-bottom: 24px; text-align: center; padding: 32px 24px;">
     <div class="metric-label">Left to spend this month</div>
     <div style="font-family: var(--font-serif); font-size: 2.8rem; margin: 8px 0;
-        {% if money_left >= 0 %}color: var(--roman-gold);{% else %}color: var(--danger);{% endif %}">
+        {% if money_left > 100 %}color: var(--text-primary);
+        {% elif money_left > 0 %}color: var(--warning);
+        {% else %}color: var(--danger);{% endif %}">
         £{{ "%.2f" | format(money_left) }}
     </div>
     <div style="font-size: 0.8rem; color: var(--text-tertiary);">
