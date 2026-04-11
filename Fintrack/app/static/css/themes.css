@@ -42,24 +42,24 @@ body.theme-rosso {
 
 /* ===== ELECTRIC COBALT — Bold Modern ===== */
 .theme-cobalt {
-    /* Backgrounds */
-    --bg-primary: #0C0F14;
-    --bg-secondary: rgba(255, 255, 255, 0.03);
-    --bg-tertiary: #0A0D11;
+    /* Backgrounds — warm navy */
+    --bg-primary: #0F1628;
+    --bg-secondary: rgba(99, 179, 237, 0.05);
+    --bg-tertiary: #0C1220;
 
-    /* Text */
-    --text-primary: #F0F2F5;
-    --text-secondary: rgba(240, 242, 245, 0.6);
-    --text-tertiary: rgba(240, 242, 245, 0.3);
+    /* Text — warm neutral, NOT blue */
+    --text-primary: #E6E8F0;
+    --text-secondary: rgba(230, 232, 240, 0.55);
+    --text-tertiary: rgba(230, 232, 240, 0.3);
 
-    /* Accent — Electric Blue */
+    /* Accent — blue for interactive elements only */
     --roman-gold: #63B3ED;
     --roman-gold-dim: rgba(99, 179, 237, 0.08);
 
-    /* Glass */
-    --glass-bg: rgba(255, 255, 255, 0.03);
+    /* Glass — subtle blue tint */
+    --glass-bg: rgba(99, 179, 237, 0.05);
     --glass-border: rgba(99, 179, 237, 0.12);
-    --glass-hover: rgba(255, 255, 255, 0.05);
+    --glass-hover: rgba(99, 179, 237, 0.08);
 
     /* Semantic */
     --success: #48BB78;
@@ -67,10 +67,10 @@ body.theme-rosso {
     --warning: #F6AD55;
 
     /* Sidebar */
-    --sidebar-bg: #080A0E;
-    --sidebar-border: rgba(99, 179, 237, 0.08);
+    --sidebar-bg: #0A0E1C;
+    --sidebar-border: rgba(99, 179, 237, 0.1);
 
-    /* Fonts — sans-serif throughout for modern feel */
+    /* Fonts — sans-serif for modern feel */
     --font-serif: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
 }
