@@ -382,7 +382,6 @@ def logout():
 @login_required
 def overview():
     data = _build_whisper_data()
-    whisper_result = generate_page_insights("overview", data)
 
     income = db.session.query(
         func.coalesce(func.sum(Transaction.amount), 0)
@@ -424,24 +423,6 @@ def overview():
     spending_direction = comparison.get("status", "")  # "spending_high" | "spending_low" | "on_track"
     spending_diff = comparison.get("difference", 0)
 
-    # Month-context framing
-    month_context = None
-    if day_of_month <= 7:
-        month_context = "start"  # "here's how last month went"
-    elif day_of_month >= days_in_month - 4:
-        month_context = "end"    # "X days left"
-
-    intel = {
-        "recurring_count": recurring_count,
-        "recurring_total": recurring_total,
-        "spending_direction": spending_direction,
-        "spending_diff": abs(spending_diff) if spending_diff else 0,
-        "month_context": month_context,
-        "days_remaining": data["days_remaining"],
-    } if recurring_count > 0 or spending_direction else None
-
-    memory_card = _build_memory_card(data)
-
     # Goal projection hero — pick the primary goal's projection if reachable
     projections = data.get("projections", [])
     primary_projection = None
@@ -467,14 +448,11 @@ def overview():
 
     return render_template("overview.html",
         greeting=greeting,
-        whisper=whisper_result["whisper"],
         money_left=data["money_left"],
         days_remaining=data["days_remaining"],
         budget_status=budget_status,
         primary_goal=data["primary_goal"] if data["primary_goal"] else None,
         active_goals_count=data["active_goals"],
-        intel=intel,
-        memory_card=memory_card,
         primary_projection=primary_projection,
         timeline_note=timeline_note,
         summary={

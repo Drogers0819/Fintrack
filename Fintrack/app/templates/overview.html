@@ -108,25 +108,7 @@
 </div>
 {% endif %}
 
-<!-- 3 · Single ambient insight — no card, just a line -->
-{% if memory_card %}
-<div style="margin-bottom: 20px; font-size: 0.82rem; color: var(--text-tertiary); padding: 0 2px;">
-{% if memory_card.anomaly_count > 0 %}
-    {{ memory_card.anomaly_count }} unusual transaction{{ "s" if memory_card.anomaly_count != 1 else "" }} spotted in your history.
-    <a href="{{ url_for('pages.my_money') }}" style="color: var(--roman-gold); text-decoration: none;">Take a look →</a>
-{% elif memory_card.top_category and memory_card.top_category_direction == "up" and memory_card.top_category_change > 15 %}
-    {{ memory_card.top_category }} is up £{{ "%.2f" | format(memory_card.top_category_change) }} on last month.
-    <a href="{{ url_for('pages.my_money') }}" style="color: var(--roman-gold); text-decoration: none;">See breakdown →</a>
-{% elif memory_card.recurring_count > 0 %}
-    {{ memory_card.recurring_count }} recurring payment{{ "s" if memory_card.recurring_count != 1 else "" }} · £{{ "%.2f" | format(memory_card.recurring_total) }}/month leaving automatically.
-    <a href="{{ url_for('pages.recurring') }}" style="color: var(--roman-gold); text-decoration: none;">Review →</a>
-{% elif memory_card.spending_status == "spending_high" and memory_card.spending_diff > 0 %}
-    Spending £{{ "%.2f" | format(memory_card.spending_diff) }} above your usual pace this month.
-{% endif %}
-</div>
-{% endif %}
-
-<!-- 4 · Recent activity -->
+<!-- 3 · Recent activity -->
 <div class="glass-card">
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
         <span class="metric-label" style="margin-bottom: 0;">Recent activity</span>
