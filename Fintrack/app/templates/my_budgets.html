@@ -1,7 +1,6 @@
 {% extends "base.html" %}
 {% block title %}My Budgets — Claro{% endblock %}
 
-{% from 'macros.html' import whisper_card %}
 {% block content %}
 <div class="page-header">
     <h1>My Budgets</h1>
@@ -15,9 +14,7 @@
 </a>
 {% endif %}
 
-{% if budget_statuses | length > 0 %}{{ whisper_card(whisper) }}{% endif %}
-
-<!-- Budget cards -->
+<!-- 1 · Your budgets — current status -->
 {% if budget_statuses | length > 0 %}
 <div style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 24px;">
     {% for b in budget_statuses %}
@@ -63,15 +60,30 @@
 </div>
 {% endif %}
 
-<!-- Add budget -->
+<!-- 2 · Potential savings — motivation before action -->
+{% if savings.count > 0 %}
+<div class="gold-card" style="margin-bottom: 24px;">
+    <span class="metric-label" style="color: var(--roman-gold);">Potential savings spotted</span>
+    <p style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 12px;">
+        Up to <span style="color: var(--roman-gold); font-weight: 600;">£{{ "%.2f" | format(savings.total_potential_annual_saving) }}/year</span>
+    </p>
+    {% for s in savings.opportunities[:3] %}
+    <div style="font-size: 0.8rem; color: var(--text-secondary); padding: 6px 0;
+        {% if not loop.last %}border-bottom: 0.5px solid rgba(255,255,255,0.05);{% endif %}">
+        {{ s.message }}
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
+
+<!-- 3 · Set a spending limit — primary action -->
 <div class="glass-card" style="margin-bottom: 24px;">
     {% if budget_statuses | length == 0 %}
-    <div class="metric-label" style="margin-bottom: 8px;">Your budgets</div>
-    <div class="empty-state" style="padding: 4px 0 12px; text-align: left;">
+    <div class="empty-state" style="padding: 0 0 16px; text-align: left; color: var(--text-secondary); font-size: 0.85rem;">
         No spending limits set yet. Pick a category and set a monthly cap to stay on track.
     </div>
     {% endif %}
-    <div class="metric-label" style="margin-bottom: 16px; {% if budget_statuses | length == 0 %}margin-top: 4px; padding-top: 16px; border-top: 0.5px solid rgba(255,255,255,0.06);{% endif %}">Set a spending limit</div>
+    <div class="metric-label" style="margin-bottom: 16px;">Set a spending limit</div>
     <form method="POST" action="{{ url_for('pages.create_budget_page') }}">
         <div class="grid-2">
             <div class="form-group" style="margin-bottom: 0;">
@@ -92,11 +104,11 @@
     </form>
 </div>
 
-<!-- Your regular payments -->
+<!-- 4 · Regular payments — context -->
 {% if recurring.count > 0 %}
-<div class="glass-card" style="margin-bottom: 24px;">
+<div class="glass-card">
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-        <span class="metric-label" style="margin-bottom: 0;">Your regular payments</span>
+        <span class="metric-label" style="margin-bottom: 0;">Regular payments</span>
         <span class="serif" style="font-size: 1rem;">£{{ "%.2f" | format(recurring.total_monthly_cost) }}/mo</span>
     </div>
 
@@ -108,22 +120,6 @@
             <span style="font-size: 0.65rem; color: var(--text-tertiary); margin-left: 6px;">{{ r.frequency_label }}</span>
         </div>
         <span style="font-size: 0.85rem;">£{{ "%.2f" | format(r.avg_amount) }}</span>
-    </div>
-    {% endfor %}
-</div>
-{% endif %}
-
-<!-- Savings opportunities -->
-{% if savings.count > 0 %}
-<div class="gold-card">
-    <span class="metric-label" style="color: var(--roman-gold);">Potential savings spotted</span>
-    <p style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 12px;">
-        Up to <span style="color: var(--roman-gold); font-weight: 600;">£{{ "%.2f" | format(savings.total_potential_annual_saving) }}/year</span>
-    </p>
-    {% for s in savings.opportunities[:3] %}
-    <div style="font-size: 0.8rem; color: var(--text-secondary); padding: 6px 0;
-        {% if not loop.last %}border-bottom: 0.5px solid rgba(255,255,255,0.05);{% endif %}">
-        {{ s.message }}
     </div>
     {% endfor %}
 </div>
