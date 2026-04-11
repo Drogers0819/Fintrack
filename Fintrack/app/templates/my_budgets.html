@@ -1,21 +1,21 @@
 {% extends "base.html" %}
 {% block title %}My Budgets — Claro{% endblock %}
 
+{% from 'macros.html' import whisper_card %}
 {% block content %}
 <div class="page-header">
-    <h1 style="font-style: italic;">My Budgets</h1>
+    <h1>My Budgets</h1>
 </div>
 
-<!-- Whisper -->
-<div class="gold-card" style="margin-bottom: 24px;">
-    <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
-        <span class="ai-pulse"></span>
-        <span class="metric-label" style="margin-bottom: 0; color: var(--roman-gold);">What you need to know</span>
-    </div>
-    <p style="font-size: 0.9rem; font-style: italic; color: var(--text-secondary); line-height: 1.7;">
-        "{{ whisper }}"
-    </p>
-</div>
+{% if not current_user.factfind_completed %}
+<a href="{{ url_for('pages.factfind') }}" style="display: flex; align-items: center; gap: 10px; padding: 11px 16px; border-radius: 10px; background: rgba(197, 163, 93, 0.07); border: 0.5px solid rgba(197, 163, 93, 0.2); margin-bottom: 24px; text-decoration: none; color: inherit;">
+    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--roman-gold)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0;"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+    <span style="flex: 1; font-size: 0.8rem; color: var(--text-secondary);">Finish setting up your profile to unlock all features</span>
+    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--text-tertiary)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0;"><path d="M9 18l6-6-6-6"/></svg>
+</a>
+{% endif %}
+
+{% if budget_statuses | length > 0 %}{{ whisper_card(whisper) }}{% endif %}
 
 <!-- Budget cards -->
 {% if budget_statuses | length > 0 %}
@@ -24,10 +24,7 @@
     <div class="glass-card">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
             <span style="font-size: 1rem;">{{ b.category_icon }} {{ b.category_name }}</span>
-            <span style="font-size: 0.6rem; text-transform: uppercase; letter-spacing: 0.1em; padding: 3px 8px; border-radius: 4px;
-                {% if b.status == 'exceeded' %}background: rgba(139, 69, 19, 0.15); color: var(--danger);
-                {% elif b.status == 'warning' %}background: var(--roman-gold-dim); color: var(--roman-gold);
-                {% else %}background: rgba(45, 106, 79, 0.15); color: var(--success);{% endif %}">
+            <span class="badge {% if b.status == 'exceeded' %}badge-danger{% elif b.status == 'warning' %}badge-warning{% else %}badge-success{% endif %}">
                 {% if b.status == 'exceeded' %}over budget
                 {% elif b.status == 'warning' %}close to limit
                 {% elif b.status == 'ahead_of_pace' %}slightly ahead
@@ -36,14 +33,14 @@
         </div>
 
         <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 6px;">
-            <span style="font-family: var(--font-serif); font-size: 1.3rem;">£{{ "%.2f" | format(b.spent) }}</span>
+            <span class="metric-value sm">£{{ "%.2f" | format(b.spent) }}</span>
             <span style="font-size: 0.8rem; color: var(--text-tertiary);">of £{{ "%.2f" | format(b.monthly_limit) }}</span>
         </div>
 
-        <div style="height: 5px; background: rgba(255,255,255,0.05); border-radius: 3px; overflow: hidden; position: relative; margin-bottom: 6px;">
+        <div class="progress-track" style="position: relative; margin-bottom: 6px;">
             <div style="position: absolute; left: {{ month_progress }}%; top: -1px; width: 1px; height: 7px; background: var(--text-tertiary); z-index: 2;"></div>
-            <div style="height: 100%; width: {{ [b.percent_used, 100] | min }}%; border-radius: 3px; background: {{ b.category_colour }};
-                {% if b.status == 'exceeded' %}opacity: 1;{% else %}opacity: 0.7;{% endif %}"></div>
+            <div class="progress-fill {% if b.status == 'exceeded' %}danger{% elif b.status == 'warning' %}warning{% endif %}"
+                 style="width: {{ [b.percent_used, 100] | min }}%; background: {{ b.category_colour }}; opacity: {% if b.status == 'exceeded' %}1{% else %}0.8{% endif %};"></div>
         </div>
 
         <div style="font-size: 0.75rem; color: var(--text-secondary); font-style: italic;">
@@ -55,9 +52,10 @@
         </div>
 
         <div style="margin-top: 8px;">
-            <form action="{{ url_for('pages.delete_budget', budget_id=b.budget_id) }}" method="POST"
-                  onsubmit="return confirm('Remove this budget?')" style="margin: 0;">
-                <button type="submit" style="background: none; border: none; color: var(--text-tertiary); cursor: pointer; font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.1em;">Remove</button>
+            <form action="{{ url_for('pages.delete_budget', budget_id=b.budget_id) }}" method="POST" style="margin: 0;">
+                <button type="submit" class="transaction-delete" aria-label="Remove budget">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+                </button>
             </form>
         </div>
     </div>
@@ -67,10 +65,16 @@
 
 <!-- Add budget -->
 <div class="glass-card" style="margin-bottom: 24px;">
-    <span class="metric-label">Set a spending limit</span>
-    <form method="POST" action="{{ url_for('pages.create_budget_page') }}" style="margin-top: 12px;">
+    {% if budget_statuses | length == 0 %}
+    <div class="metric-label" style="margin-bottom: 8px;">Your budgets</div>
+    <div class="empty-state" style="padding: 4px 0 12px; text-align: left;">
+        No spending limits set yet. Pick a category and set a monthly cap to stay on track.
+    </div>
+    {% endif %}
+    <div class="metric-label" style="margin-bottom: 16px; {% if budget_statuses | length == 0 %}margin-top: 4px; padding-top: 16px; border-top: 0.5px solid rgba(255,255,255,0.06);{% endif %}">Set a spending limit</div>
+    <form method="POST" action="{{ url_for('pages.create_budget_page') }}">
         <div class="grid-2">
-            <div class="form-group">
+            <div class="form-group" style="margin-bottom: 0;">
                 <select name="category_id" class="form-select" required>
                     <option value="">Choose category</option>
                     {% for cat in available_categories %}
@@ -78,11 +82,13 @@
                     {% endfor %}
                 </select>
             </div>
-            <div class="form-group">
+            <div class="form-group" style="margin-bottom: 0;">
                 <input type="number" name="monthly_limit" class="form-input" step="0.01" min="1" placeholder="Monthly limit (£)" required>
             </div>
         </div>
-        <button type="submit" class="btn-outline" style="padding: 8px 20px; font-size: 0.75rem;">Set budget</button>
+        <div style="margin-top: 16px;">
+            <button type="submit" class="btn-primary btn-sm">Set budget</button>
+        </div>
     </form>
 </div>
 
@@ -91,7 +97,7 @@
 <div class="glass-card" style="margin-bottom: 24px;">
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
         <span class="metric-label" style="margin-bottom: 0;">Your regular payments</span>
-        <span style="font-family: var(--font-serif); font-size: 1rem;">£{{ "%.2f" | format(recurring.total_monthly_cost) }}/mo</span>
+        <span class="serif" style="font-size: 1rem;">£{{ "%.2f" | format(recurring.total_monthly_cost) }}/mo</span>
     </div>
 
     {% for r in recurring.recurring[:8] %}

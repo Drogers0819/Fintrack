@@ -3,7 +3,7 @@
 
 {% block content %}
 <div class="page-header">
-    <h1 style="font-style: italic;">Upload bank statement</h1>
+    <h1>Upload bank statement</h1>
     <p>We'll detect your bank automatically and categorise your transactions.</p>
 </div>
 
@@ -16,59 +16,125 @@
         </div>
 
         <div style="margin-bottom: 24px; padding: 16px; border-radius: 12px; background: rgba(255,255,255,0.02); border: 0.5px solid rgba(255,255,255,0.05);">
-            <p class="metric-label" style="margin-bottom: 8px;">Supported banks</p>
-            <p style="font-size: 0.8rem; color: var(--text-secondary); line-height: 1.8;">
-                Monzo · Starling · Barclays · HSBC · Lloyds · Nationwide
-                <br>
-                <span style="color: var(--text-tertiary); font-style: italic;">Other banks may work automatically.</span>
+            <p class="metric-label" style="margin-bottom: 12px;">How to export your CSV</p>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                <div style="font-size: 0.75rem;">
+                    <div style="color: var(--text-primary); margin-bottom: 2px;">Monzo</div>
+                    <div style="color: var(--text-tertiary); line-height: 1.5;">Account tab → Statements → Download CSV</div>
+                </div>
+                <div style="font-size: 0.75rem;">
+                    <div style="color: var(--text-primary); margin-bottom: 2px;">Starling</div>
+                    <div style="color: var(--text-tertiary); line-height: 1.5;">Spending → top-right menu → Download CSV</div>
+                </div>
+                <div style="font-size: 0.75rem;">
+                    <div style="color: var(--text-primary); margin-bottom: 2px;">Barclays</div>
+                    <div style="color: var(--text-tertiary); line-height: 1.5;">My Finances → Download transactions → CSV</div>
+                </div>
+                <div style="font-size: 0.75rem;">
+                    <div style="color: var(--text-primary); margin-bottom: 2px;">HSBC</div>
+                    <div style="color: var(--text-tertiary); line-height: 1.5;">Accounts → Statement → Download (.csv)</div>
+                </div>
+                <div style="font-size: 0.75rem;">
+                    <div style="color: var(--text-primary); margin-bottom: 2px;">Lloyds</div>
+                    <div style="color: var(--text-tertiary); line-height: 1.5;">My Account → Export transactions → CSV</div>
+                </div>
+                <div style="font-size: 0.75rem;">
+                    <div style="color: var(--text-primary); margin-bottom: 2px;">Nationwide</div>
+                    <div style="color: var(--text-tertiary); line-height: 1.5;">My Accounts → Download → CSV format</div>
+                </div>
+            </div>
+            <p style="font-size: 0.7rem; color: var(--text-tertiary); font-style: italic; margin-top: 12px; margin-bottom: 0;">
+                Choose the largest date range available for the best picture.
             </p>
         </div>
 
-        <button type="submit" class="btn-gold">Upload & Import</button>
+        <button type="submit" class="btn-primary">Upload & Import</button>
     </form>
 </div>
 
 {% if result %}
-<div class="glass-card" style="max-width: 560px; margin-top: 24px;">
-    <span class="metric-label">Import results</span>
+<!-- ── WOW MOMENT ── -->
+<div class="glass-card" style="max-width: 560px; margin-top: 24px; border-left: 3px solid var(--roman-gold);">
 
-    {% if result.bank_detected and result.bank_detected != "unknown" %}
-    <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 16px;">
-        Bank detected: <span style="color: var(--roman-gold); text-transform: capitalize;">{{ result.bank_detected }}</span>
-    </p>
-    {% endif %}
-
-    <div class="grid-3" style="margin-bottom: 16px;">
-        <div style="padding: 12px; background: rgba(45, 106, 79, 0.1); border-radius: 12px; text-align: center;">
-            <div class="metric-label">Imported</div>
-            <div style="font-family: var(--font-serif); font-size: 1.5rem; color: var(--success);">{{ result.created }}</div>
+    <!-- Header -->
+    <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 20px;">
+        <div style="width: 32px; height: 32px; border-radius: 50%; background: var(--roman-gold-dim); border: 0.5px solid rgba(197,163,93,0.3); display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+            <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--roman-gold)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
         </div>
-        <div style="padding: 12px; background: var(--roman-gold-dim); border-radius: 12px; text-align: center;">
-            <div class="metric-label">Categorised</div>
-            <div style="font-family: var(--font-serif); font-size: 1.5rem; color: var(--roman-gold);">{{ result.auto_categorised }}</div>
-        </div>
-        <div style="padding: 12px; background: rgba(255,255,255,0.02); border-radius: 12px; text-align: center;">
-            <div class="metric-label">Skipped</div>
-            <div style="font-family: var(--font-serif); font-size: 1.5rem; color: var(--text-secondary);">{{ result.skipped }}</div>
+        <div>
+            <div style="font-size: 0.95rem; color: var(--text-primary); font-weight: 500;">
+                {% if result.bank_detected and result.bank_detected != "unknown" %}
+                    {{ result.created }} transactions from {{ result.bank_detected | capitalize }} — analysed.
+                {% else %}
+                    {{ result.created }} transactions imported — here's what Claro found.
+                {% endif %}
+            </div>
+            {% if result.date_range %}
+            <div style="font-size: 0.75rem; color: var(--text-tertiary); margin-top: 2px;">{{ result.date_range }}</div>
+            {% endif %}
         </div>
     </div>
 
+    <!-- Key findings -->
+    <div style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 20px;">
+
+        <!-- Auto-categorised -->
+        <div style="display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-radius: 10px; background: rgba(45, 106, 79, 0.06); border: 0.5px solid rgba(45,106,79,0.15);">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--success)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0;"><polyline points="20 6 9 17 4 12"/></svg>
+            <span style="font-size: 0.82rem; color: var(--text-secondary);">
+                <span style="color: var(--text-primary); font-weight: 500;">{{ result.auto_categorised }} transactions</span> auto-categorised
+                {% if result.auto_categorised > 0 %} — no manual sorting needed{% endif %}
+            </span>
+        </div>
+
+        <!-- Recurring payments -->
+        {% if result.recurring_count > 0 %}
+        <div style="display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-radius: 10px; background: var(--roman-gold-dim); border: 0.5px solid rgba(197,163,93,0.2);">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--roman-gold)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0;"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
+            <span style="font-size: 0.82rem; color: var(--text-secondary);">
+                <span style="color: var(--text-primary); font-weight: 500;">{{ result.recurring_count }} recurring payment{{ "s" if result.recurring_count != 1 else "" }}</span> detected — £{{ "%.2f" | format(result.recurring_total) }}/month
+            </span>
+        </div>
+        {% endif %}
+
+        <!-- Savings opportunities -->
+        {% if result.savings_count > 0 %}
+        <div style="display: flex; align-items: flex-start; gap: 12px; padding: 12px 14px; border-radius: 10px; background: rgba(255,255,255,0.02); border: 0.5px solid rgba(255,255,255,0.06);">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--text-secondary)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0; margin-top: 1px;"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            <div>
+                <div style="font-size: 0.82rem; color: var(--text-secondary);">
+                    <span style="color: var(--text-primary); font-weight: 500;">{{ result.savings_count }} potential saving{{ "s" if result.savings_count != 1 else "" }}</span> spotted
+                </div>
+                {% for s in result.top_savings %}
+                <div style="font-size: 0.76rem; color: var(--text-tertiary); margin-top: 4px;">{{ s.merchant }} · {{ s.reason }}</div>
+                {% endfor %}
+                {% if result.savings_count > 2 %}
+                <div style="font-size: 0.76rem; color: var(--text-tertiary); margin-top: 4px;">+{{ result.savings_count - 2 }} more in <a href="{{ url_for('pages.recurring') }}" style="color: var(--roman-gold);">Recurring</a></div>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+
+    </div>
+
+    <!-- CTAs -->
+    <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+        <a href="{{ url_for('pages.overview') }}" class="btn-primary btn-sm">See your overview</a>
+        <a href="{{ url_for('pages.my_money') }}" style="font-size: 0.8rem; color: var(--roman-gold); text-decoration: none;">View transactions</a>
+    </div>
+
     {% if result.errors %}
-    <details style="margin-top: 12px;">
-        <summary style="font-size: 0.75rem; color: var(--text-tertiary); cursor: pointer;">
-            {{ result.error_count }} row{{ "s" if result.error_count != 1 else "" }} had issues
+    <details style="margin-top: 16px;">
+        <summary style="font-size: 0.73rem; color: var(--text-tertiary); cursor: pointer;">
+            {{ result.error_count }} row{{ "s" if result.error_count != 1 else "" }} couldn't be read
         </summary>
         <ul style="margin-top: 8px; padding-left: 20px;">
             {% for error in result.errors %}
-            <li style="font-size: 0.75rem; color: var(--text-tertiary); margin-bottom: 4px;">{{ error }}</li>
+            <li style="font-size: 0.73rem; color: var(--text-tertiary); margin-bottom: 4px;">{{ error }}</li>
             {% endfor %}
         </ul>
     </details>
     {% endif %}
-
-    <a href="{{ url_for('pages.my_money') }}" style="display: inline-block; margin-top: 16px; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.1em;">
-        View transactions →
-    </a>
 </div>
 {% endif %}
 {% endblock %}

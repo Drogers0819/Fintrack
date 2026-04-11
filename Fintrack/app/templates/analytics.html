@@ -4,22 +4,22 @@
 {% block content %}
 <div class="page-header">
     <div class="section-label">Flow & Leakage</div>
-    <h1 style="font-style: italic;">Where your money goes</h1>
+    <h1>Where your money goes</h1>
     <p>{{ month_name }} {{ year }}</p>
 </div>
 
 <div class="grid-3" style="margin-bottom: 32px;">
     <div class="glass-card">
         <div class="metric-label">Total Spending</div>
-        <div class="metric-value" style="font-size: 1.5rem;">£{{ "%.2f" | format(total_expenses) }}</div>
+        <div class="metric-value md">£{{ "%.2f" | format(total_expenses) }}</div>
     </div>
     <div class="glass-card">
         <div class="metric-label">Categories Used</div>
-        <div class="metric-value" style="font-size: 1.5rem;">{{ categories | length }}</div>
+        <div class="metric-value md">{{ categories | length }}</div>
     </div>
     <div class="glass-card">
         <div class="metric-label">Biggest Category</div>
-        <div class="metric-value" style="font-size: 1.5rem;">
+        <div class="metric-value md">
             {% if categories | length > 0 %}
                 {{ categories[0].icon }} {{ categories[0].name }}
             {% else %}
@@ -33,19 +33,19 @@
 <div class="section-label">Spending by category</div>
 <div class="glass-card">
     {% for cat in categories %}
-    <div style="margin-bottom: 20px; {% if not loop.last %}padding-bottom: 20px; border-bottom: 0.5px solid rgba(255,255,255,0.05);{% endif %}">
+    <div style="margin-bottom: 16px; {% if not loop.last %}padding-bottom: 16px; border-bottom: 0.5px solid rgba(255,255,255,0.05);{% endif %}">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
             <div style="display: flex; align-items: center; gap: 10px;">
                 <span style="font-size: 1.1rem;">{{ cat.icon }}</span>
                 <span style="font-size: 0.9rem; color: var(--text-primary);">{{ cat.name }}</span>
             </div>
             <div style="text-align: right;">
-                <span style="font-family: var(--font-serif); font-size: 1.1rem;">£{{ "%.2f" | format(cat.total) }}</span>
+                <span class="metric-value xs">£{{ "%.2f" | format(cat.total) }}</span>
                 <span style="font-size: 0.7rem; color: var(--text-tertiary); margin-left: 8px;">{{ cat.percentage }}%</span>
             </div>
         </div>
-        <div style="height: 6px; background: rgba(255,255,255,0.05); border-radius: 3px; overflow: hidden;">
-            <div style="height: 100%; width: {{ cat.percentage }}%; background: {{ cat.colour }}; border-radius: 3px; transition: width 0.6s ease;"></div>
+        <div class="progress-track" style="height: 6px;">
+            <div class="progress-fill" style="width: {{ cat.percentage }}%; background: {{ cat.colour }};"></div>
         </div>
         <div style="font-size: 0.7rem; color: var(--text-tertiary); margin-top: 4px;">
             {{ cat.count }} transaction{{ "s" if cat.count != 1 else "" }}
@@ -73,7 +73,7 @@
             </div>
         </div>
         <div style="text-align: right;">
-            <div style="font-family: var(--font-serif); font-size: 1rem;">
+            <div class="serif" style="font-size: 1rem;">
                 £{{ "%.2f" | format(t.current_month) }}
             </div>
             <div style="font-size: 0.7rem; margin-top: 2px;

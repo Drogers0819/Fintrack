@@ -4,7 +4,7 @@
 {% block content %}
 <div class="page-header">
     <div class="section-label">Spending Limits</div>
-    <h1 style="font-style: italic;">Your budgets</h1>
+    <h1>Your budgets</h1>
     <p>{{ month_context.month_name }} {{ month_context.year }} · Day {{ month_context.day_of_month }} of {{ month_context.days_in_month }}</p>
 </div>
 
@@ -13,7 +13,7 @@
 <div style="margin-bottom: 24px;">
     {% for alert in alerts %}
     <div style="padding: 12px 16px; border-radius: 10px; margin-bottom: 8px;
-        {% if alert.severity == 'high' %}background: rgba(139, 69, 19, 0.1); border: 0.5px solid rgba(139, 69, 19, 0.25);
+        {% if alert.severity == 'high' %}background: rgba(252, 129, 129, 0.08); border: 0.5px solid rgba(252, 129, 129, 0.2);
         {% else %}background: var(--roman-gold-dim); border: 0.5px solid rgba(197, 163, 93, 0.2);{% endif %}">
         <div style="font-size: 0.8rem;
             {% if alert.severity == 'high' %}color: var(--danger);{% else %}color: var(--roman-gold);{% endif %}">
@@ -29,16 +29,15 @@
 <div class="grid-3" style="margin-bottom: 32px;">
     <div class="glass-card">
         <div class="metric-label">Total Budgeted</div>
-        <div class="metric-value" style="font-size: 1.5rem;">£{{ "%.2f" | format(summary.total_budgeted) }}</div>
+        <div class="metric-value md">£{{ "%.2f" | format(summary.total_budgeted) }}</div>
     </div>
     <div class="glass-card">
         <div class="metric-label">Total Spent</div>
-        <div class="metric-value" style="font-size: 1.5rem;">£{{ "%.2f" | format(summary.total_spent) }}</div>
+        <div class="metric-value md">£{{ "%.2f" | format(summary.total_spent) }}</div>
     </div>
     <div class="glass-card">
         <div class="metric-label">Remaining</div>
-        <div class="metric-value" style="font-size: 1.5rem;
-            {% if summary.total_remaining >= 0 %}color: var(--success);{% else %}color: var(--danger);{% endif %}">
+        <div class="metric-value md {% if summary.total_remaining >= 0 %}success{% else %}danger{% endif %}">
             £{{ "%.2f" | format(summary.total_remaining) }}
         </div>
     </div>
@@ -79,18 +78,14 @@
                     <div style="font-size: 0.7rem; color: var(--text-tertiary);">{{ b.transaction_count }} transaction{{ "s" if b.transaction_count != 1 else "" }}</div>
                 </div>
             </div>
-            <span style="font-size: 0.6rem; text-transform: uppercase; letter-spacing: 0.1em; padding: 3px 8px; border-radius: 4px;
-                {% if b.status == 'exceeded' %}background: rgba(139, 69, 19, 0.15); color: var(--danger);
-                {% elif b.status == 'warning' %}background: var(--roman-gold-dim); color: var(--roman-gold);
-                {% elif b.status == 'ahead_of_pace' %}background: rgba(255,255,255,0.05); color: var(--text-secondary);
-                {% else %}background: rgba(45, 106, 79, 0.15); color: var(--success);{% endif %}">
+            <span class="badge {% if b.status == 'exceeded' %}badge-danger{% elif b.status == 'warning' %}badge-warning{% elif b.status == 'ahead_of_pace' %}badge-default{% else %}badge-success{% endif %}">
                 {{ b.status | replace("_", " ") }}
             </span>
         </div>
 
         <!-- Amounts -->
         <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 8px;">
-            <span style="font-family: var(--font-serif); font-size: 1.3rem;">£{{ "%.2f" | format(b.spent) }}</span>
+            <span class="metric-value sm">£{{ "%.2f" | format(b.spent) }}</span>
             <span style="font-size: 0.8rem; color: var(--text-tertiary);">of £{{ "%.2f" | format(b.monthly_limit) }}</span>
         </div>
 
@@ -125,7 +120,7 @@
         <div style="display: flex; gap: 8px; margin-top: 12px; padding-top: 12px; border-top: 0.5px solid rgba(255,255,255,0.05);">
             <form action="{{ url_for('pages.delete_budget', budget_id=b.budget_id) }}" method="POST"
                   onsubmit="return confirm('Remove this budget?')">
-                <button type="submit" class="btn-danger">Remove</button>
+                <button type="submit" class="btn-destructive">Remove</button>
             </form>
         </div>
     </div>
@@ -159,7 +154,7 @@
                 <input type="number" name="monthly_limit" class="form-input" step="0.01" min="1" placeholder="e.g. 100" required>
             </div>
         </div>
-        <button type="submit" class="btn-gold">Set Budget</button>
+        <button type="submit" class="btn-primary">Set Budget</button>
     </form>
 </div>
 
@@ -180,7 +175,7 @@
             </div>
         </div>
         <div style="text-align: right;">
-            <div style="font-family: var(--font-serif); font-size: 1.1rem; color: var(--roman-gold);">£{{ "%.0f" | format(s.suggested_limit) }}</div>
+            <div class="metric-value xs gold">£{{ "%.0f" | format(s.suggested_limit) }}</div>
             <div style="font-size: 0.6rem; color: var(--text-tertiary);">suggested</div>
         </div>
     </div>

@@ -4,7 +4,7 @@
 {% block content %}
 <div class="page-header">
     <div class="section-label">Pattern Intelligence</div>
-    <h1 style="font-style: italic;">Your recurring payments</h1>
+    <h1>Your recurring payments</h1>
     <p>Detected from your transaction history.</p>
 </div>
 
@@ -12,19 +12,19 @@
 <div class="grid-3" style="margin-bottom: 32px;">
     <div class="glass-card">
         <div class="metric-label">Monthly Outgoing</div>
-        <div class="metric-value" style="font-size: 1.5rem;">£{{ "%.2f" | format(recurring.total_monthly_cost) }}</div>
+        <div class="metric-value md">£{{ "%.2f" | format(recurring.total_monthly_cost) }}</div>
         <div style="font-size: 0.7rem; color: var(--text-tertiary);">{{ recurring.expense_count }} recurring expense{{ "s" if recurring.expense_count != 1 else "" }}</div>
     </div>
     {% if recurring.total_monthly_income > 0 %}
     <div class="glass-card">
         <div class="metric-label">Monthly Incoming</div>
-        <div class="metric-value" style="font-size: 1.5rem; color: var(--success);">£{{ "%.2f" | format(recurring.total_monthly_income) }}</div>
+        <div class="metric-value md success">£{{ "%.2f" | format(recurring.total_monthly_income) }}</div>
         <div style="font-size: 0.7rem; color: var(--text-tertiary);">{{ recurring.income_count }} recurring income{{ "s" if recurring.income_count != 1 else "" }}</div>
     </div>
     {% endif %}
     <div class="glass-card">
         <div class="metric-label">Annual Cost</div>
-        <div class="metric-value" style="font-size: 1.5rem;">£{{ "%.2f" | format(recurring.total_monthly_cost * 12) }}</div>
+        <div class="metric-value md">£{{ "%.2f" | format(recurring.total_monthly_cost * 12) }}</div>
         <div style="font-size: 0.7rem; color: var(--text-tertiary);">at current rate</div>
     </div>
 </div>
@@ -56,9 +56,7 @@
             <div style="flex: 1;">
                 <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
                     <span style="font-size: 1rem; color: var(--text-primary); text-transform: capitalize;">{{ r.merchant }}</span>
-                    <span style="font-size: 0.6rem; text-transform: uppercase; letter-spacing: 0.1em; padding: 2px 8px; border-radius: 4px;
-                        {% if r.transaction_type == 'income' %}background: rgba(45, 106, 79, 0.15); color: var(--success);
-                        {% else %}background: rgba(255,255,255,0.05); color: var(--text-tertiary);{% endif %}">
+                    <span class="badge {% if r.transaction_type == 'income' %}badge-success{% else %}badge-default{% endif %}">
                         {{ r.frequency_label }}
                     </span>
                 </div>
@@ -71,8 +69,7 @@
                 </div>
             </div>
             <div style="text-align: right; min-width: 100px;">
-                <div style="font-family: var(--font-serif); font-size: 1.2rem;
-                    {% if r.transaction_type == 'income' %}color: var(--success);{% endif %}">
+                <div class="metric-value xs {% if r.transaction_type == 'income' %}success{% endif %}">
                     {% if r.transaction_type == 'income' %}+{% else %}-{% endif %}£{{ "%.2f" | format(r.avg_amount) }}
                 </div>
                 <div style="font-size: 0.7rem; color: var(--text-tertiary);">
@@ -82,10 +79,10 @@
         </div>
 
         <div style="margin-top: 8px;">
-            <div style="height: 4px; background: rgba(255,255,255,0.05); border-radius: 2px; overflow: hidden;">
-                <div style="height: 100%; width: {{ (r.confidence * 100) | int }}%;
-                    background: {% if r.confidence > 0.7 %}var(--roman-gold){% elif r.confidence > 0.5 %}var(--text-secondary){% else %}var(--text-tertiary){% endif %};
-                    border-radius: 2px;"></div>
+            <div class="progress-track" style="height: 4px;">
+                <div class="progress-fill{% if r.confidence < 0.5 %} warning{% endif %}"
+                     style="width: {{ (r.confidence * 100) | int }}%;
+                     {% if r.confidence > 0.7 %}background: var(--roman-gold);{% endif %}"></div>
             </div>
             <div style="font-size: 0.6rem; color: var(--text-tertiary); margin-top: 2px;">
                 {{ (r.confidence * 100) | int }}% confidence

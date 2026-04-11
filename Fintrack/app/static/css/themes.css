@@ -70,6 +70,10 @@ body.theme-rosso {
     --sidebar-bg: #0A0E1C;
     --sidebar-border: rgba(99, 179, 237, 0.1);
 
+      /* Transaction semantics */                    
+    --income: #48BB78;                             
+    --spending: #FC8181; 
+
     /* Fonts — sans-serif for modern feel */
     --font-serif: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
@@ -89,8 +93,8 @@ body.theme-ivory {
     --text-primary: #1A1A18;
     --text-secondary: rgba(26, 26, 24, 0.6);
     --text-tertiary: rgba(26, 26, 24, 0.4);
-    --danger: #8B4513;
-    --success: #2D6A4F;
+    --danger: #C53030;
+    --success: #276749;
     background: linear-gradient(135deg, #F0EBE2, #E4DDD0);
 }
 
@@ -133,8 +137,8 @@ body.theme-pearl {
     --text-primary: #1A1D24;
     --text-secondary: rgba(26, 29, 36, 0.6);
     --text-tertiary: rgba(26, 29, 36, 0.4);
-    --danger: #8B4513;
-    --success: #2D6A4F;
+    --danger: #C53030;
+    --success: #276749;
     background: linear-gradient(135deg, #E4E8F0, #D6DCE8);
 }
 
@@ -177,8 +181,8 @@ body.theme-sandstone {
     --text-primary: #2C2418;
     --text-secondary: rgba(44, 36, 24, 0.6);
     --text-tertiary: rgba(44, 36, 24, 0.4);
-    --danger: #8B4513;
-    --success: #2D6A4F;
+    --danger: #C53030;
+    --success: #276749;
     background: linear-gradient(135deg, #ECE4D6, #DED4C2);
 }
 
@@ -221,8 +225,8 @@ body.theme-sage {
     --text-primary: #1A241C;
     --text-secondary: rgba(26, 36, 28, 0.6);
     --text-tertiary: rgba(26, 36, 28, 0.4);
-    --danger: #8B4513;
-    --success: #2D6A4F;
+    --danger: #C53030;
+    --success: #276749;
     background: linear-gradient(135deg, #E0E8DC, #D0DCC8);
 }
 
@@ -265,8 +269,8 @@ body.theme-lavender {
     --text-primary: #201C28;
     --text-secondary: rgba(32, 28, 40, 0.6);
     --text-tertiary: rgba(32, 28, 40, 0.4);
-    --danger: #8B4513;
-    --success: #2D6A4F;
+    --danger: #C53030;
+    --success: #276749;
     background: linear-gradient(135deg, #E4DFF0, #D6CEE4);
 }
 
@@ -309,8 +313,8 @@ body.theme-mist {
     --text-primary: #1C1C1A;
     --text-secondary: rgba(28, 28, 26, 0.6);
     --text-tertiary: rgba(28, 28, 26, 0.4);
-    --danger: #8B4513;
-    --success: #2D6A4F;
+    --danger: #C53030;
+    --success: #276749;
     background: linear-gradient(135deg, #E2E2DE, #D4D4CE);
 }
 
@@ -343,33 +347,34 @@ body.theme-mist .form-select option {
 
 /* ===== LIGHT THEME BUTTON OVERRIDES ===== */
 
-body.theme-ivory .btn-gold,
-body.theme-pearl .btn-gold,
-body.theme-sandstone .btn-gold,
-body.theme-sage .btn-gold,
-body.theme-lavender .btn-gold,
-body.theme-mist .btn-gold {
+body.theme-ivory .btn-primary,
+body.theme-pearl .btn-primary,
+body.theme-sandstone .btn-primary,
+body.theme-sage .btn-primary,
+body.theme-lavender .btn-primary,
+body.theme-mist .btn-primary {
     color: #FFFFFF;
 }
 
-body.theme-ivory .btn-outline,
-body.theme-pearl .btn-outline,
-body.theme-sandstone .btn-outline,
-body.theme-sage .btn-outline,
-body.theme-lavender .btn-outline,
-body.theme-mist .btn-outline {
+body.theme-ivory .btn-secondary,
+body.theme-pearl .btn-secondary,
+body.theme-sandstone .btn-secondary,
+body.theme-sage .btn-secondary,
+body.theme-lavender .btn-secondary,
+body.theme-mist .btn-secondary {
     border-color: var(--roman-gold);
     color: var(--roman-gold);
 }
 
-body.theme-ivory .btn-outline:hover,
-body.theme-pearl .btn-outline:hover,
-body.theme-sandstone .btn-outline:hover,
-body.theme-sage .btn-outline:hover,
-body.theme-lavender .btn-outline:hover,
-body.theme-mist .btn-outline:hover {
-    background: var(--roman-gold);
-    color: #FFFFFF;
+body.theme-ivory .btn-secondary:hover,
+body.theme-pearl .btn-secondary:hover,
+body.theme-sandstone .btn-secondary:hover,
+body.theme-sage .btn-secondary:hover,
+body.theme-lavender .btn-secondary:hover,
+body.theme-mist .btn-secondary:hover {
+    background: var(--roman-gold-dim);
+    border-color: var(--roman-gold);
+    color: var(--roman-gold);
 }
 
 /* ===== LIGHT THEME FLASH MESSAGE OVERRIDES ===== */
@@ -380,7 +385,9 @@ body.theme-sandstone .flash-success,
 body.theme-sage .flash-success,
 body.theme-lavender .flash-success,
 body.theme-mist .flash-success {
-    color: #2D6A4F;
+    background: rgba(39, 103, 73, 0.10);
+    border-color: rgba(39, 103, 73, 0.30);
+    color: #276749;
 }
 
 body.theme-ivory .flash-error,
@@ -389,7 +396,9 @@ body.theme-sandstone .flash-error,
 body.theme-sage .flash-error,
 body.theme-lavender .flash-error,
 body.theme-mist .flash-error {
-    color: #8B4513;
+    background: rgba(197, 48, 48, 0.10);
+    border-color: rgba(197, 48, 48, 0.30);
+    color: #C53030;
 }
 
 /* Cobalt-specific component overrides */
@@ -410,13 +419,19 @@ body.theme-mist .flash-error {
     color: #FC8181;
 }
 
-.theme-cobalt .btn-gold {
+.theme-cobalt .btn-secondary:hover {
+    background: rgba(99, 179, 237, 0.08);
+    border-color: #63B3ED;
+    color: #63B3ED;
+}
+
+.theme-cobalt .btn-primary {
     background: #63B3ED;
     color: #0C0F14;
     border-color: #63B3ED;
 }
 
-.theme-cobalt .btn-gold:hover {
+.theme-cobalt .btn-primary:hover {
     background: #4299E1;
     border-color: #4299E1;
 }

@@ -4,34 +4,34 @@
 {% block content %}
 <div class="page-header">
     <div class="section-label">Budget Architecture</div>
-    <h1 style="font-style: italic;">Your money flow</h1>
+    <h1>Your money flow</h1>
     <p>How your £{{ "%.2f" | format(waterfall.total_income) }} is divided each month</p>
 </div>
 
 {% if waterfall.error %}
 <div class="glass-card">
     <p style="color: var(--text-secondary); font-style: italic;">{{ waterfall.error }}</p>
-    <a href="{{ url_for('pages.factfind') }}" style="display: inline-block; margin-top: 12px; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.1em;">Update your profile →</a>
+    <a href="{{ url_for('pages.factfind') }}" style="display: inline-block; margin-top: 12px; font-size: 0.75rem; color: var(--roman-gold); text-decoration: none;">Update your profile</a>
 </div>
 {% else %}
 
 <div class="grid-3" style="margin-bottom: 32px;">
     <div class="glass-card">
         <div class="metric-label">Monthly Income</div>
-        <div class="metric-value" style="font-size: 1.5rem;">£{{ "%.2f" | format(waterfall.total_income) }}</div>
+        <div class="metric-value md">£{{ "%.2f" | format(waterfall.total_income) }}</div>
     </div>
     <div class="glass-card">
         <div class="metric-label">Commitments</div>
-        <div class="metric-value" style="font-size: 1.5rem;">£{{ "%.2f" | format(waterfall.total_commitments) }}</div>
+        <div class="metric-value md">£{{ "%.2f" | format(waterfall.total_commitments) }}</div>
     </div>
     <div class="glass-card">
         <div class="metric-label">Available Surplus</div>
-        <div class="metric-value gold" style="font-size: 1.5rem;">£{{ "%.2f" | format(waterfall.surplus) }}</div>
+        <div class="metric-value md gold">£{{ "%.2f" | format(waterfall.surplus) }}</div>
     </div>
 </div>
 
 {% if waterfall.has_conflicts %}
-<div style="padding: 16px 20px; border-radius: 12px; background: rgba(139, 69, 19, 0.1); border: 0.5px solid rgba(139, 69, 19, 0.25); margin-bottom: 24px;">
+<div style="padding: 16px 20px; border-radius: 12px; background: rgba(252, 129, 129, 0.08); border: 0.5px solid rgba(252, 129, 129, 0.2); margin-bottom: 24px;">
     <div style="font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.15em; color: var(--danger); font-weight: 600; margin-bottom: 8px;">
         {{ waterfall.conflict_count }} conflict{{ "s" if waterfall.conflict_count != 1 else "" }} detected
     </div>
@@ -50,7 +50,7 @@
                 <div style="font-size: 0.85rem; color: var(--text-tertiary);">Rent & Bills</div>
                 <div style="font-size: 0.7rem; color: var(--text-tertiary);">Non-negotiable</div>
             </div>
-            <div style="font-family: var(--font-serif); font-size: 1.1rem;">£{{ "%.2f" | format(waterfall.total_commitments) }}</div>
+            <div class="metric-value xs">£{{ "%.2f" | format(waterfall.total_commitments) }}</div>
         </div>
     </div>
 
@@ -67,7 +67,7 @@
                 </div>
             </div>
             <div style="text-align: right;">
-                <div style="font-family: var(--font-serif); font-size: 1.1rem;">£{{ "%.2f" | format(a.allocated) }}</div>
+                <div class="metric-value xs">£{{ "%.2f" | format(a.allocated) }}</div>
                 {% if a.requested > 0 and a.allocated != a.requested %}
                 <div style="font-size: 0.65rem; color: var(--text-tertiary);">of £{{ "%.2f" | format(a.requested) }} planned</div>
                 {% endif %}
@@ -92,7 +92,7 @@
 {% if waterfall.unallocated > 0.01 %}
 <div class="gold-card">
     <div class="metric-label" style="color: var(--roman-gold);">Unallocated surplus</div>
-    <div style="font-family: var(--font-serif); font-size: 1.3rem; color: var(--roman-gold);">
+    <div class="metric-value sm gold">
         £{{ "%.2f" | format(waterfall.unallocated) }}/month
     </div>
     <p style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 8px; font-style: italic;">

@@ -17,3 +17,4 @@ class ProductionConfig:
     SECRET_KEY = os.environ.get("SECRET_KEY")
     DEBUG = False
     SQLALCHEMY_DATABASE_URI = os.environ.get("DATABASE_URL")
+    RESEND_API_KEY = os.environ.get("RESEND_API_KEY")  # Set in Render/Railway env vars

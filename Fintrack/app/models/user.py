@@ -47,6 +47,10 @@ class User(db.Model, UserMixin):
         income = float(self.monthly_income) if self.monthly_income else 0
         return income - self.fixed_commitments
 
+    @property
+    def tier(self):
+        return "Claro Core"
+
     def profile_dict(self):
         return {
             "monthly_income": float(self.monthly_income) if self.monthly_income else None,

@@ -72,6 +72,19 @@ def create_app(config_class=None):
     from app.routes.insight_routes import insight_bp
     from app.routes.narrative_routes import narrative_bp
     app.register_blueprint(narrative_bp)
+
+    # Scheduler — only in main process (not Flask reloader worker)
+    import os
+    if not app.debug or os.environ.get("WERKZEUG_RUN_MAIN") == "true":
+        try:
+            from app.scheduler import init_scheduler
+            init_scheduler(app)
+        except ImportError:
+            import logging
+            logging.getLogger(__name__).warning(
+                "APScheduler not installed — weekly digest scheduler disabled. "
+                "Run: pip install APScheduler==3.10.4 resend==2.10.0"
+            )
     app.register_blueprint(insight_bp)
     app.register_blueprint(anomaly_bp)
     app.register_blueprint(budget_bp)

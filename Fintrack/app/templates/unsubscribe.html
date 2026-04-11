@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block title %}Unsubscribe — Claro{% endblock %}
+
+{% block auth_content %}
+<div style="max-width: 400px; margin: 80px auto; padding: 0 20px; text-align: center;">
+    <div style="margin-bottom: 24px;">
+        <img src="{{ url_for('static', filename='images/logo.png') }}" alt="Claro"
+             style="width: 140px; height: auto;">
+    </div>
+    <div class="glass-card" style="padding: 36px 28px;">
+        <div style="font-size: 1rem; color: var(--text-primary); margin-bottom: 8px;">You're unsubscribed.</div>
+        <p style="font-size: 0.82rem; color: var(--text-tertiary); line-height: 1.7; margin-bottom: 24px;">
+            We've removed you from the weekly digest. You won't hear from us unless it's important.
+        </p>
+        {% if current_user.is_authenticated %}
+        <a href="{{ url_for('pages.overview') }}" class="btn-primary btn-sm">Back to Claro</a>
+        {% else %}
+        <a href="{{ url_for('pages.login') }}" style="font-size: 0.8rem; color: var(--roman-gold); text-decoration: none;">Sign in</a>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

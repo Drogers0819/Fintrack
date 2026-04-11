@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, request, redirect, url_for, flash
+from flask import Blueprint, render_template, request, redirect, url_for, flash, session
 from flask_login import login_user, logout_user, login_required, current_user
 from app import db, bcrypt
 from app.models.user import User
@@ -26,6 +26,64 @@ page_bp = Blueprint("pages", __name__)
 
 
 # ─── HELPERS ──────────────────────────────────────────────
+
+def _build_memory_card(data):
+    """
+    Builds the 'what Claro has learned' card for the overview.
+    Only shown when there's enough data to say something genuinely meaningful.
+    Threshold: 20+ transactions so patterns are real, not noise.
+    """
+    total_txns = data.get("total_transactions", 0)
+    if total_txns < 20:
+        return None
+
+    # How long the user has been active
+    joined = current_user.created_at
+    if joined:
+        weeks_active = max(1, (date.today() - joined.date()).days // 7)
+    else:
+        weeks_active = None
+
+    # Most significant category finding
+    trends = data.get("trends", [])
+    top_trend = None
+    if trends:
+        # Pick the category with the largest absolute spend movement
+        top_trend = trends[0]  # already sorted by abs change_amount desc
+
+    # Recurring intelligence
+    recurring = data.get("recurring", {})
+    recurring_count = recurring.get("expense_count", 0)
+    recurring_total = recurring.get("total_monthly_cost", 0)
+
+    # Spending direction overall
+    predictions = data.get("predictions", {})
+    comparison = predictions.get("comparison", {})
+    spending_status = comparison.get("status", "")
+    spending_diff = abs(comparison.get("difference", 0))
+
+    # Anomalies
+    anomalies = data.get("anomalies", [])
+    anomaly_count = len(anomalies) if anomalies else 0
+
+    # Only return if there's something genuinely worth surfacing
+    has_insight = recurring_count > 0 or top_trend or spending_status
+    if not has_insight:
+        return None
+
+    return {
+        "weeks_active": weeks_active,
+        "total_transactions": total_txns,
+        "recurring_count": recurring_count,
+        "recurring_total": recurring_total,
+        "top_category": top_trend["category"] if top_trend else None,
+        "top_category_direction": top_trend["direction"] if top_trend else None,
+        "top_category_change": abs(top_trend["change_amount"]) if top_trend else 0,
+        "spending_status": spending_status,
+        "spending_diff": spending_diff,
+        "anomaly_count": anomaly_count,
+    }
+
 
 def _get_txn_list():
     """Returns all user transactions as dicts."""
@@ -191,6 +249,61 @@ def _build_whisper_data():
     }
 
 
+def _build_whisper_data_for_user(user):
+    """
+    Same as _build_whisper_data() but takes an explicit user argument.
+    Used by the weekly digest scheduler which runs outside a request context.
+    """
+    from flask_login import current_user as _cu
+    # Temporarily swap current_user context for the scheduler
+    transactions = Transaction.query.filter_by(
+        user_id=user.id
+    ).order_by(Transaction.date.asc()).all()
+
+    txn_list = [{
+        "amount": float(t.amount),
+        "description": t.description,
+        "merchant": t.merchant or t.description,
+        "category": t.category_rel.name if t.category_rel else "Other",
+        "category_id": t.category_id,
+        "type": t.type,
+        "date": t.date,
+        "id": t.id
+    } for t in transactions]
+
+    predictions = predict_monthly_spending(txn_list)
+    recurring = detect_recurring_transactions(txn_list)
+    goals = Goal.query.filter_by(user_id=user.id, status="active").order_by(Goal.priority_rank.asc()).all()
+    goals_list = [g.to_dict() for g in goals]
+    primary_goal = goals_list[0] if goals_list else {}
+
+    from app.services.insight_service import generate_page_insights
+    comparison = predictions.get("comparison", {})
+    whisper_input = {
+        "user_name": user.name,
+        "money_left": None,
+        "days_remaining": 0,
+        "predictions": predictions,
+        "primary_goal": primary_goal,
+        "goals": goals_list,
+        "budget_statuses": [],
+        "recurring": recurring,
+    }
+    whisper_result = generate_page_insights("overview", whisper_input)
+
+    return {
+        "total_transactions": len(txn_list),
+        "predictions": predictions,
+        "recurring": recurring,
+        "goals": goals_list,
+        "primary_goal": primary_goal,
+        "whisper": whisper_result.get("whisper", ""),
+        "budget_statuses": [],
+        "trends": [],
+        "anomalies": [],
+    }
+
+
 # ─── AUTH ROUTES ──────────────────────────────────────────
 
 @page_bp.route("/")
@@ -229,7 +342,7 @@ def register():
 
         login_user(user)
         flash("Account created successfully", "success")
-        return redirect(url_for("pages.overview"))
+        return redirect(url_for("pages.welcome"))
 
     return render_template("register.html")
 
@@ -268,10 +381,6 @@ def logout():
 @page_bp.route("/overview")
 @login_required
 def overview():
-    if not current_user.factfind_completed:
-        flash("Complete your financial profile to get started", "success")
-        return redirect(url_for("pages.factfind"))
-
     data = _build_whisper_data()
     whisper_result = generate_page_insights("overview", data)
 
@@ -301,6 +410,61 @@ def overview():
              for g in data["goals"]]
         )
 
+    # Intelligence summary — ambient AI layer
+    today = date.today()
+    day_of_month = today.day
+    days_in_month = calendar.monthrange(today.year, today.month)[1]
+
+    recurring_data = data.get("recurring", {})
+    recurring_count = recurring_data.get("expense_count", 0)
+    recurring_total = recurring_data.get("total_monthly_cost", 0)
+
+    predictions = data.get("predictions", {})
+    comparison = predictions.get("comparison", {})
+    spending_direction = comparison.get("status", "")  # "spending_high" | "spending_low" | "on_track"
+    spending_diff = comparison.get("difference", 0)
+
+    # Month-context framing
+    month_context = None
+    if day_of_month <= 7:
+        month_context = "start"  # "here's how last month went"
+    elif day_of_month >= days_in_month - 4:
+        month_context = "end"    # "X days left"
+
+    intel = {
+        "recurring_count": recurring_count,
+        "recurring_total": recurring_total,
+        "spending_direction": spending_direction,
+        "spending_diff": abs(spending_diff) if spending_diff else 0,
+        "month_context": month_context,
+        "days_remaining": data["days_remaining"],
+    } if recurring_count > 0 or spending_direction else None
+
+    memory_card = _build_memory_card(data)
+
+    # Goal projection hero — pick the primary goal's projection if reachable
+    projections = data.get("projections", [])
+    primary_projection = None
+    if projections and data["primary_goal"]:
+        primary_goal_id = data["primary_goal"].get("id")
+        for p in projections:
+            if p.get("goal_id") == primary_goal_id and p.get("reachable"):
+                primary_projection = p
+                break
+
+    # One-sentence timeline driver — what's pushing or pulling the date
+    timeline_note = None
+    if primary_projection:
+        trends = data.get("trends", [])
+        if spending_direction == "spending_high" and spending_diff and spending_diff > 0:
+            timeline_note = f"Your current spending pace is pushing this date back."
+        elif spending_direction == "spending_low" and spending_diff and spending_diff > 0:
+            timeline_note = f"You're under your usual pace — this could arrive sooner."
+        elif trends:
+            top = trends[0]
+            if top["direction"] == "up" and top["change_amount"] > 20:
+                timeline_note = f"Your {top['category'].lower()} spend is up this month — worth keeping an eye on."
+
     return render_template("overview.html",
         greeting=greeting,
         whisper=whisper_result["whisper"],
@@ -309,6 +473,10 @@ def overview():
         budget_status=budget_status,
         primary_goal=data["primary_goal"] if data["primary_goal"] else None,
         active_goals_count=data["active_goals"],
+        intel=intel,
+        memory_card=memory_card,
+        primary_projection=primary_projection,
+        timeline_note=timeline_note,
         summary={
             "total_income": float(income),
             "total_expenses": float(expenses),
@@ -587,14 +755,39 @@ def upload_statement():
 
         db.session.commit()
 
+        # Run insight analysis on the full dataset (including just-imported transactions)
+        txn_list_post = _get_txn_list()
+        recurring_result = detect_recurring_transactions(txn_list_post)
+        savings_result = identify_potential_savings(recurring_result["recurring"])
+
+        # Build personalised "what we found" summary
+        recurring_count = recurring_result.get("expense_count", 0)
+        recurring_total = recurring_result.get("total_monthly_cost", 0)
+        savings_count = savings_result.get("count", 0)
+        top_savings = savings_result.get("opportunities", [])[:2]
+
+        # Date range of imported transactions
+        imported_dates = [t["date"] for t in categorised if t.get("date")]
+        date_range = None
+        if imported_dates:
+            earliest = min(imported_dates)
+            latest = max(imported_dates)
+            if earliest != latest:
+                date_range = f"{earliest.strftime('%b %Y')} – {latest.strftime('%b %Y')}"
+
         result = {
             "bank_detected": parse_result["bank_detected"],
             "created": created_count, "skipped": skipped_count,
             "auto_categorised": auto_categorised_count,
             "errors": parse_result["errors"],
-            "error_count": parse_result["error_count"]
+            "error_count": parse_result["error_count"],
+            # Personalised insight data
+            "recurring_count": recurring_count,
+            "recurring_total": recurring_total,
+            "savings_count": savings_count,
+            "top_savings": top_savings,
+            "date_range": date_range,
         }
-        flash(f"{created_count} transactions imported, {auto_categorised_count} auto-categorised.", "success")
 
     return render_template("upload.html", result=result)
 
@@ -876,3 +1069,201 @@ def delete_budget(budget_id):
     db.session.commit()
     flash("Budget removed", "success")
     return redirect(url_for("pages.my_budgets"))
+
+
+# ─── ANALYTICS ────────────────────────────────────────────
+
+@page_bp.route("/analytics")
+@login_required
+def analytics():
+    today = date.today()
+    month_name = today.strftime("%B")
+    year = today.year
+
+    current_month = today.month
+    current_year = today.year
+    prev_month = current_month - 1 if current_month > 1 else 12
+    prev_year = current_year if current_month > 1 else current_year - 1
+
+    results = db.session.query(
+        Category.name, Category.icon, Category.colour,
+        func.sum(Transaction.amount).label("total"),
+        func.count(Transaction.id).label("count")
+    ).join(Category, Transaction.category_id == Category.id).filter(
+        Transaction.user_id == current_user.id,
+        Transaction.type == "expense",
+        extract("month", Transaction.date) == current_month,
+        extract("year", Transaction.date) == current_year
+    ).group_by(
+        Category.id, Category.name, Category.icon, Category.colour
+    ).order_by(func.sum(Transaction.amount).desc()).all()
+
+    total_expenses = sum(float(r.total) for r in results)
+    categories = []
+    for r in results:
+        amount = float(r.total)
+        categories.append({
+            "name": r.name, "icon": r.icon, "colour": r.colour,
+            "total": amount, "count": r.count,
+            "percentage": round((amount / total_expenses * 100), 1) if total_expenses > 0 else 0
+        })
+
+    prev_cat = db.session.query(
+        Category.name, func.sum(Transaction.amount).label("total")
+    ).join(Category, Transaction.category_id == Category.id).filter(
+        Transaction.user_id == current_user.id,
+        Transaction.type == "expense",
+        extract("month", Transaction.date) == prev_month,
+        extract("year", Transaction.date) == prev_year
+    ).group_by(Category.id, Category.name).all()
+
+    prev_dict = {r.name: float(r.total) for r in prev_cat}
+
+    trends = []
+    for r in results:
+        current_total = float(r.total)
+        prev_total = prev_dict.get(r.name, 0)
+        if prev_total > 0:
+            change = current_total - prev_total
+            pct = round((change / prev_total) * 100, 1)
+        else:
+            change = current_total
+            pct = 100.0
+        trends.append({
+            "category": r.name, "icon": r.icon,
+            "current_month": round(current_total, 2),
+            "previous_month": round(prev_total, 2),
+            "change_amount": round(change, 2),
+            "change_percent": pct,
+            "direction": "up" if change > 0 else "down" if change < 0 else "flat"
+        })
+    trends.sort(key=lambda t: abs(t["change_amount"]), reverse=True)
+
+    return render_template("analytics.html",
+        month_name=month_name, year=year,
+        total_expenses=total_expenses,
+        categories=categories,
+        trends=trends
+    )
+
+
+# ─── INSIGHTS ─────────────────────────────────────────────
+
+@page_bp.route("/insights")
+@login_required
+def insights():
+    data = _build_whisper_data()
+
+    budget_status = None
+    if current_user.factfind_completed and current_user.monthly_income:
+        budget_status = calc_prediction_budget_status(
+            data["predictions"],
+            {"monthly_income": float(current_user.monthly_income),
+             "fixed_commitments": current_user.fixed_commitments},
+            [{"id": g["id"], "name": g["name"],
+              "monthly_allocation": g.get("monthly_allocation", 0)}
+             for g in data["goals"]]
+        )
+
+    return render_template("insights.html",
+        predictions=data["predictions"],
+        budget_status=budget_status
+    )
+
+
+# ─── RECURRING ────────────────────────────────────────────
+
+@page_bp.route("/recurring")
+@login_required
+def recurring():
+    data = _build_whisper_data()
+    return render_template("recurring.html",
+        recurring=data["recurring"],
+        savings=data["savings_opportunities"]
+    )
+
+
+# ─── ACCOUNT SETTINGS ─────────────────────────────────────
+
+@page_bp.route("/update-account", methods=["POST"])
+@login_required
+def update_account():
+    form_type = request.form.get("form_type")
+
+    if form_type == "change_email":
+        new_email = request.form.get("new_email", "").strip()
+        password = request.form.get("confirm_password_email", "")
+
+        if not new_email:
+            flash("Email address is required", "error")
+            return redirect(url_for("pages.settings"))
+
+        if not current_user.check_password(password):
+            flash("Incorrect password", "error")
+            return redirect(url_for("pages.settings"))
+
+        if User.query.filter(User.email == new_email, User.id != current_user.id).first():
+            flash("That email is already in use", "error")
+            return redirect(url_for("pages.settings"))
+
+        current_user.email = new_email
+        db.session.commit()
+        flash("Email updated", "success")
+
+    elif form_type == "change_password":
+        current_password = request.form.get("current_password", "")
+        new_password = request.form.get("new_password", "")
+        confirm_password = request.form.get("confirm_password", "")
+
+        if not current_user.check_password(current_password):
+            flash("Current password is incorrect", "error")
+            return redirect(url_for("pages.settings"))
+
+        if len(new_password) < 8:
+            flash("New password must be at least 8 characters", "error")
+            return redirect(url_for("pages.settings"))
+
+        if new_password != confirm_password:
+            flash("Passwords do not match", "error")
+            return redirect(url_for("pages.settings"))
+
+        current_user.set_password(new_password)
+        db.session.commit()
+        flash("Password updated", "success")
+
+    return redirect(url_for("pages.settings"))
+
+
+# ─── ONBOARDING ───────────────────────────────────────────
+
+@page_bp.route("/welcome")
+@login_required
+def welcome():
+    has_transactions = Transaction.query.filter_by(user_id=current_user.id).first() is not None
+    has_goals = Goal.query.filter_by(user_id=current_user.id).first() is not None
+
+    steps_done = sum([
+        current_user.factfind_completed,
+        has_transactions,
+        has_goals
+    ])
+
+    if steps_done == 3:
+        return redirect(url_for("pages.overview"))
+
+    hour = datetime.now().hour
+    greeting = "morning" if hour < 12 else "afternoon" if hour < 18 else "evening"
+
+    return render_template("welcome.html",
+        greeting=greeting,
+        profile_done=current_user.factfind_completed,
+        transactions_done=has_transactions,
+        goals_done=has_goals,
+        steps_done=steps_done
+    )
+
+@page_bp.route("/unsubscribe")
+def unsubscribe():
+    # TODO: when email preferences are built, mark current_user as opted out here.
+    # For now, a polite confirmation page so the link doesn't 404.
+    return render_template("unsubscribe.html")
