@@ -18,7 +18,7 @@
     {% if current_user.is_authenticated %}
     <div class="app-layout">
         <aside class="sidebar">
-            <div style="padding: 0 16px;">
+            <div class="sidebar-logo-wrap" style="padding: 0 16px;">
                 <img src="{{ url_for('static', filename='images/logo.png') }}" alt="Claro"
                      style="width: 100%; max-width: 160px; height: auto; margin-bottom: 4px;">
             </div>
@@ -78,5 +78,13 @@
     {% endif %}
 
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+    <script>
+        function togglePassword(inputId, btn) {
+            var input = document.getElementById(inputId);
+            var showing = btn.classList.toggle('is-visible');
+            input.type = showing ? 'text' : 'password';
+            btn.setAttribute('aria-label', showing ? 'Hide password' : 'Show password');
+        }
+    </script>
 </body>
 </html>

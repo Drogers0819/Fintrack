@@ -331,6 +331,46 @@ a:hover {
     font-style: italic;
 }
 
+.password-field {
+    position: relative;
+}
+
+.password-field .form-input {
+    padding-right: 48px;
+}
+
+.password-toggle {
+    position: absolute;
+    right: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--text-tertiary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 4px;
+    transition: color 0.2s ease;
+}
+
+.password-toggle:hover {
+    color: var(--text-secondary);
+}
+
+.password-toggle .eye-off {
+    display: none;
+}
+
+.password-toggle.is-visible .eye-on {
+    display: none;
+}
+
+.password-toggle.is-visible .eye-off {
+    display: block;
+}
+
 .form-select option {
     background: var(--obsidian);
     color: var(--text-primary);
@@ -640,6 +680,7 @@ input[type="range"]::-moz-range-thumb:hover {
         -webkit-backdrop-filter: blur(20px);
     }
 
+    .sidebar-logo-wrap,
     .sidebar-logo,
     .sidebar-subtitle,
     .sidebar-footer {
