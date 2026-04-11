@@ -43,10 +43,7 @@
         <div>
             <div style="font-size: 0.85rem; color: var(--text-secondary);">{{ budget_status.message }}</div>
         </div>
-        <span style="font-size: 0.6rem; text-transform: uppercase; letter-spacing: 0.1em; padding: 3px 8px; border-radius: 4px;
-            {% if budget_status.status == 'healthy' %}background: rgba(45, 106, 79, 0.15); color: var(--success);
-            {% elif budget_status.status == 'tight' %}background: var(--roman-gold-dim); color: var(--roman-gold);
-            {% else %}background: rgba(139, 69, 19, 0.15); color: var(--danger);{% endif %}">
+        <span class="badge {% if budget_status.status == 'healthy' %}badge-success{% elif budget_status.status == 'tight' %}badge-warning{% else %}badge-danger{% endif %}">
             {{ budget_status.status }}
         </span>
     </div>
