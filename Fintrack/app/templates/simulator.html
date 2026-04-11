@@ -66,7 +66,7 @@
 
         <div style="margin-top: 16px;">
             <a href="{{ url_for('pages.goal_detail', goal_id=p.goal_id) }}" class="btn-outline" style="display: inline-block; padding: 8px 20px; font-size: 0.7rem;">
-                Open projection →
+                Open projection <span aria-hidden="true">→</span>
             </a>
         </div>
     </div>
@@ -166,7 +166,7 @@
         See how changing your spending, income, or goals shifts your entire financial future.
     </p>
     <a href="{{ url_for('pages.scenario_page') }}" class="btn-outline" style="display: inline-block; padding: 10px 24px;">
-        Run a scenario →
+        Run a scenario <span aria-hidden="true">→</span>
     </a>
 </div>
 {% endblock %}

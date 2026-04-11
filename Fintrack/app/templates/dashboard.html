@@ -74,7 +74,7 @@
         </div>
         {% if active_goals_count > 1 %}
         <a href="{{ url_for('pages.my_goals') }}" style="font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.1em;">
-            +{{ active_goals_count - 1 }} more →
+            +{{ active_goals_count - 1 }} more <span aria-hidden="true">→</span>
         </a>
         {% endif %}
     </div>
@@ -104,7 +104,7 @@
     <div style="font-size: 0.75rem; color: var(--text-tertiary); font-style: italic;">
         If nothing changes:
         <a href="{{ url_for('pages.my_goals') }}" style="color: var(--roman-gold);">
-            open the simulator to explore what could change →
+            open the simulator to explore what could change <span aria-hidden="true">→</span>
         </a>
     </div>
 </div>
@@ -142,7 +142,7 @@
         </div>
         {% endfor %}
         <div style="text-align: center; margin-top: 16px;">
-            <a href="{{ url_for('pages.my_money') }}" style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.1em;">View All Transactions →</a>
+            <a href="{{ url_for('pages.my_money') }}" style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.1em;">View All Transactions <span aria-hidden="true">→</span></a>
         </div>
     {% else %}
         <div class="empty-state">

@@ -23,6 +23,25 @@
     box-sizing: border-box;
 }
 
+/* ===== FOCUS VISIBILITY — WCAG 2.1 AA ===== */
+
+:focus {
+    outline: none;
+}
+
+:focus-visible {
+    outline: 2px solid var(--roman-gold);
+    outline-offset: 2px;
+    border-radius: 4px;
+}
+
+.form-input:focus-visible,
+.form-select:focus-visible {
+    outline: none;
+    border-color: var(--roman-gold);
+    box-shadow: 0 0 0 3px var(--roman-gold-dim);
+}
+
 body {
     font-family: var(--font-sans);
     background: var(--bg-primary);
@@ -264,7 +283,16 @@ a:hover {
     letter-spacing: 0.1em;
     cursor: pointer;
     transition: filter 0.2s ease, box-shadow 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+}
+
+.btn-gold.btn-full,
+.btn-outline.btn-full {
     width: 100%;
+    display: flex;
 }
 
 .btn-gold:hover {
@@ -385,6 +413,13 @@ a:hover {
 
 .transaction-row:last-child {
     border-bottom: none;
+}
+
+.transaction-row:hover {
+    background: rgba(255, 255, 255, 0.025);
+    margin: 0 -16px;
+    padding: 16px 16px;
+    border-radius: 8px;
 }
 
 .transaction-delete {
@@ -661,6 +696,22 @@ body.theme-mist .badge-danger {
 
 .progress-fill.danger {
     background: var(--danger);
+}
+
+/* ===== THEME SWATCH ===== */
+
+.theme-swatch {
+    height: 48px;
+    border-radius: 10px;
+    border: 2px solid transparent;
+    margin-bottom: 4px;
+    transition: border-color 0.2s ease;
+    cursor: pointer;
+}
+
+.theme-swatch:hover,
+.theme-swatch--active {
+    border-color: var(--roman-gold);
 }
 
 /* ===== SLIDER ===== */

@@ -152,14 +152,14 @@
 <div class="glass-card" style="margin-bottom: 32px;">
     <p style="font-size: 0.9rem; color: var(--text-secondary); font-style: italic;">{{ projection.message }}</p>
     <a href="{{ url_for('pages.my_goals') }}" style="display: inline-block; margin-top: 12px; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.1em;">
-        Adjust this goal →
+        Adjust this goal <span aria-hidden="true">→</span>
     </a>
 </div>
 {% endif %}
 
 <div style="text-align: center; margin-top: 16px;">
     <a href="{{ url_for('pages.my_goals') }}" style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.1em;">
-        ← Back to My Goals
+        <span aria-hidden="true">←</span> Back to My Goals
     </a>
 </div>
 
@@ -215,30 +215,4 @@
     });
 </script>
 
-<style>
-    /* Slider thumb styling */
-    input[type="range"]::-webkit-slider-thumb {
-        -webkit-appearance: none;
-        appearance: none;
-        width: 20px;
-        height: 20px;
-        border-radius: 50%;
-        background: var(--roman-gold);
-        cursor: pointer;
-        box-shadow: 0 0 12px rgba(197, 163, 93, 0.4);
-        transition: transform 0.2s ease;
-    }
-    input[type="range"]::-webkit-slider-thumb:hover {
-        transform: scale(1.2);
-    }
-    input[type="range"]::-moz-range-thumb {
-        width: 20px;
-        height: 20px;
-        border-radius: 50%;
-        background: var(--roman-gold);
-        cursor: pointer;
-        border: none;
-        box-shadow: 0 0 12px rgba(197, 163, 93, 0.4);
-    }
-</style>
 {% endblock %}

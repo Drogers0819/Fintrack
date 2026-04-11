@@ -1,21 +1,13 @@
 {% extends "base.html" %}
 {% block title %}Overview — Claro{% endblock %}
 
+{% from 'macros.html' import whisper_card %}
 {% block content %}
 <div class="page-header">
     <h1 style="font-style: italic;">Good {{ greeting }}, {{ current_user.name }}.</h1>
 </div>
 
-<!-- Whisper — always the first thing -->
-<div class="gold-card" style="margin-bottom: 24px;">
-    <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
-        <span class="ai-pulse"></span>
-        <span class="metric-label" style="margin-bottom: 0; color: var(--roman-gold);">What you need to know</span>
-    </div>
-    <p style="font-size: 0.9rem; font-style: italic; color: var(--text-secondary); line-height: 1.7;">
-        "{{ whisper }}"
-    </p>
-</div>
+{{ whisper_card(whisper) }}
 
 <!-- Money left — the single most important number -->
 {% if money_left is not none %}
@@ -59,7 +51,7 @@
         </div>
         {% if active_goals_count > 1 %}
         <a href="{{ url_for('pages.my_goals') }}" style="font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.1em;">
-            +{{ active_goals_count - 1 }} more →
+            +{{ active_goals_count - 1 }} more <span aria-hidden="true">→</span>
         </a>
         {% endif %}
     </div>
@@ -97,7 +89,7 @@
 <div class="glass-card">
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
         <span class="metric-label" style="margin-bottom: 0;">Recent activity</span>
-        <a href="{{ url_for('pages.my_money') }}" style="font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.1em;">View all →</a>
+        <a href="{{ url_for('pages.my_money') }}" style="font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.1em;">View all <span aria-hidden="true">→</span></a>
     </div>
     {% if recent_transactions | length > 0 %}
         {% for t in recent_transactions %}

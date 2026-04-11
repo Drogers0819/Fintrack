@@ -10,7 +10,7 @@
 <div class="glass-card" style="margin-bottom: 24px;">
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
         <span class="metric-label" style="margin-bottom: 0;">Your financial profile</span>
-        <a href="{{ url_for('pages.factfind') }}" style="font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.1em;">Edit →</a>
+        <a href="{{ url_for('pages.factfind') }}" style="font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.1em;">Edit <span aria-hidden="true">→</span></a>
     </div>
 
     {% if current_user.factfind_completed %}
@@ -65,11 +65,8 @@
                        {% if current_user.theme == theme_id %}checked{% endif %}
                        style="display: none;"
                        onchange="this.form.submit()">
-                <div style="height: 48px; border-radius: 10px; background: {{ gradient }};
-                    border: 2px solid {% if current_user.theme == theme_id %}var(--roman-gold){% else %}transparent{% endif %};
-                    transition: border-color 0.3s ease; margin-bottom: 4px;"
-                    onmouseover="this.style.borderColor='var(--roman-gold)'"
-                    onmouseout="this.style.borderColor='{% if current_user.theme == theme_id %}var(--roman-gold){% else %}transparent{% endif %}'">
+                <div class="theme-swatch {% if current_user.theme == theme_id %}theme-swatch--active{% endif %}"
+                     style="background: {{ gradient }};">
                 </div>
                 <div style="font-size: 0.6rem; color: var(--text-secondary);">{{ theme_name }}</div>
             </label>

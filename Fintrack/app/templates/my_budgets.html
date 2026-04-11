@@ -1,21 +1,13 @@
 {% extends "base.html" %}
 {% block title %}My Budgets — Claro{% endblock %}
 
+{% from 'macros.html' import whisper_card %}
 {% block content %}
 <div class="page-header">
     <h1 style="font-style: italic;">My Budgets</h1>
 </div>
 
-<!-- Whisper -->
-<div class="gold-card" style="margin-bottom: 24px;">
-    <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
-        <span class="ai-pulse"></span>
-        <span class="metric-label" style="margin-bottom: 0; color: var(--roman-gold);">What you need to know</span>
-    </div>
-    <p style="font-size: 0.9rem; font-style: italic; color: var(--text-secondary); line-height: 1.7;">
-        "{{ whisper }}"
-    </p>
-</div>
+{{ whisper_card(whisper) }}
 
 <!-- Budget cards -->
 {% if budget_statuses | length > 0 %}
