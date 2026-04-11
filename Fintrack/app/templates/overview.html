@@ -1,112 +1,149 @@
 {% extends "base.html" %}
 {% block title %}Overview — Claro{% endblock %}
 
-{% from 'macros.html' import whisper_card %}
 {% block content %}
 <div class="page-header">
-    <h1 style="font-style: italic;">Good {{ greeting }}, {{ current_user.name }}.</h1>
+    <h1>Good {{ greeting }}, {{ current_user.name.split()[0] }}.</h1>
 </div>
 
-{{ whisper_card(whisper) }}
-
-<!-- Money left — the single most important number -->
-{% if money_left is not none %}
-<div class="glass-card" style="margin-bottom: 24px; text-align: center; padding: 32px 24px;">
-    <div class="metric-label">Left to spend this month</div>
-    <div style="font-family: var(--font-serif); font-size: 2.8rem; margin: 8px 0;
-        {% if money_left >= 0 %}color: var(--roman-gold);{% else %}color: var(--danger);{% endif %}">
-        £{{ "%.2f" | format(money_left) }}
-    </div>
-    <div style="font-size: 0.8rem; color: var(--text-tertiary);">
-        {% if money_left > 0 and days_remaining > 0 %}
-            That's £{{ "%.2f" | format(money_left / days_remaining) }}/day for {{ days_remaining }} days
-        {% elif money_left < 0 %}
-            You've gone over your spending allowance
-        {% endif %}
-    </div>
-</div>
+{% if not current_user.factfind_completed %}
+<a href="{{ url_for('pages.factfind') }}" style="display: flex; align-items: center; gap: 10px; padding: 11px 16px; border-radius: 10px; background: rgba(197, 163, 93, 0.07); border: 0.5px solid rgba(197, 163, 93, 0.2); margin-bottom: 24px; text-decoration: none; color: inherit;">
+    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--roman-gold)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0;"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+    <span style="flex: 1; font-size: 0.8rem; color: var(--text-secondary);">Finish setting up your profile to unlock all features</span>
+    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--text-tertiary)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0;"><path d="M9 18l6-6-6-6"/></svg>
+</a>
 {% endif %}
 
-<!-- Budget forecast -->
-{% if budget_status %}
-<div class="glass-card" style="margin-bottom: 24px; border-left: 3px solid
-    {% if budget_status.status == 'healthy' %}var(--success){% elif budget_status.status == 'tight' %}var(--roman-gold){% else %}var(--danger){% endif %};">
-    <div style="display: flex; justify-content: space-between; align-items: center;">
-        <div>
-            <div style="font-size: 0.85rem; color: var(--text-secondary);">{{ budget_status.message }}</div>
-        </div>
+{% if summary.total_income == 0 and summary.total_expenses == 0 %}
+<!-- ──── EMPTY STATE ──── -->
+<div class="glass-card" style="padding: 40px 32px; text-align: center;">
+    <div style="width: 48px; height: 48px; border-radius: 50%; background: var(--roman-gold-dim); border: 0.5px solid rgba(197,163,93,0.3); display: flex; align-items: center; justify-content: center; margin: 0 auto 20px;">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--roman-gold)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="14" x="2" y="5" rx="2"/><line x1="2" x2="22" y1="10" y2="10"/></svg>
+    </div>
+    <div style="font-size: 1rem; color: var(--text-primary); margin-bottom: 8px;">See where your money actually goes</div>
+    <p style="font-size: 0.85rem; color: var(--text-tertiary); line-height: 1.7; max-width: 340px; margin: 0 auto 24px;">
+        Upload a statement and Claro will categorise every transaction, spot recurring costs, predict your spending, and tell you exactly when you'll hit your goals.
+    </p>
+    <a href="{{ url_for('pages.upload_statement') }}" class="btn-primary">Upload a bank statement</a>
+    <div style="margin-top: 12px;">
+        <a href="{{ url_for('pages.add_transaction') }}" style="font-size: 0.8rem; color: var(--roman-gold); text-decoration: none;">or add a transaction manually</a>
+    </div>
+</div>
+
+{% else %}
+<!-- ──── REAL DATA ──── -->
+
+<!-- 1 · Status — money left this month + forecast in one card -->
+{% if money_left is not none %}
+<div class="glass-card" style="margin-bottom: 24px;">
+    <div class="metric-label">Left to spend this month</div>
+    <div class="metric-value hero {% if money_left >= 0 %}gold{% else %}danger{% endif %}" style="margin: 6px 0 4px;">
+        £{{ "%.2f" | format(money_left) }}
+    </div>
+
+    {% if money_left > 0 and days_remaining > 0 %}
+    <div style="font-size: 0.8rem; color: var(--text-tertiary);">
+        £{{ "%.2f" | format(money_left / days_remaining) }}/day for {{ days_remaining }} days left
+    </div>
+    {% elif money_left < 0 %}
+    <div style="font-size: 0.8rem; color: var(--danger);">
+        You've gone over your spending allowance this month.
+    </div>
+    {% endif %}
+
+    {% if budget_status %}
+    <div style="margin-top: 12px; padding-top: 12px; border-top: 0.5px solid rgba(255,255,255,0.06); display: flex; justify-content: space-between; align-items: center;">
+        <span style="font-size: 0.8rem; color: var(--text-secondary);">{{ budget_status.message }}</span>
         <span class="badge {% if budget_status.status == 'healthy' %}badge-success{% elif budget_status.status == 'tight' %}badge-warning{% else %}badge-danger{% endif %}">
             {{ budget_status.status }}
         </span>
     </div>
+    {% endif %}
 </div>
 {% endif %}
 
-<!-- Primary goal -->
+<!-- 2 · Primary goal -->
 {% if primary_goal and primary_goal.target_amount %}
-<div class="glass-card" style="margin-bottom: 24px;">
-    <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px;">
+<div class="glass-card" style="margin-bottom: 24px; border-left: 3px solid var(--roman-gold); padding-left: 20px;">
+    <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px;">
         <div>
-            <div class="metric-label">{{ primary_goal.name }}</div>
+            <div class="metric-label" style="font-size: 0.7rem; letter-spacing: 0.06em; text-transform: uppercase; margin-bottom: 2px;">Goal</div>
+            <div style="font-size: 0.95rem; color: var(--text-primary); font-weight: 500;">{{ primary_goal.name }}</div>
         </div>
         {% if active_goals_count > 1 %}
-        <a href="{{ url_for('pages.my_goals') }}" style="font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.1em;">
-            +{{ active_goals_count - 1 }} more <span aria-hidden="true">→</span>
+        <a href="{{ url_for('pages.my_goals') }}" style="font-size: 0.75rem; color: var(--roman-gold); text-decoration: none; white-space: nowrap; margin-top: 2px;">
+            +{{ active_goals_count - 1 }} more
         </a>
         {% endif %}
     </div>
-    <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 8px;">
-        <span style="font-family: var(--font-serif); font-size: 1.5rem; color: var(--roman-gold);">
+
+    <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 10px;">
+        <span class="metric-value gold" style="font-size: 1.8rem;">
             £{{ "%.2f" | format(primary_goal.current_amount) }}
         </span>
         <span style="font-size: 0.8rem; color: var(--text-tertiary);">
             of £{{ "%.2f" | format(primary_goal.target_amount) }}
         </span>
     </div>
-    <div class="progress-track">
+
+    <div class="progress-track" style="height: 5px;">
         <div class="progress-fill{% if primary_goal.progress_percent >= 90 %} warning{% endif %}" style="width: {{ primary_goal.progress_percent if primary_goal.progress_percent else 0 }}%;"></div>
     </div>
+
+    {% if primary_projection %}
+    <div style="margin-top: 14px; padding-top: 14px; border-top: 0.5px solid rgba(255,255,255,0.06);">
+        <div style="font-size: 1rem; color: var(--text-primary); font-weight: 500; margin-bottom: 4px;">
+            At your current rate — <span style="color: var(--roman-gold);">{{ primary_projection.completion_date_human }}</span>
+        </div>
+        {% if timeline_note %}
+        <div style="font-size: 0.8rem; color: var(--text-secondary); line-height: 1.5;">{{ timeline_note }}</div>
+        {% endif %}
+    </div>
+    {% else %}
+    <div style="font-size: 0.73rem; color: var(--text-tertiary); margin-top: 6px;">
+        {{ primary_goal.progress_percent if primary_goal.progress_percent else 0 }}% there
+        {% if primary_goal.progress_percent and primary_goal.progress_percent >= 90 %} — almost there{% elif primary_goal.progress_percent and primary_goal.progress_percent >= 50 %} — over halfway{% endif %}
+    </div>
+    {% endif %}
 </div>
 {% endif %}
 
-<!-- Quick stats -->
-<div class="grid-3" style="margin-bottom: 24px;">
-    <div class="glass-card">
-        <div class="metric-label">Money in</div>
-        <div style="font-family: var(--font-serif); font-size: 1.3rem;">£{{ "%.2f" | format(summary.total_income) }}</div>
-    </div>
-    <div class="glass-card">
-        <div class="metric-label">Money out</div>
-        <div style="font-family: var(--font-serif); font-size: 1.3rem;">£{{ "%.2f" | format(summary.total_expenses) }}</div>
-    </div>
-    <div class="glass-card">
-        <div class="metric-label">Balance</div>
-        <div style="font-family: var(--font-serif); font-size: 1.3rem;">£{{ "%.2f" | format(summary.balance) }}</div>
-    </div>
+<!-- 3 · Single ambient insight — no card, just a line -->
+{% if memory_card %}
+<div style="margin-bottom: 20px; font-size: 0.82rem; color: var(--text-tertiary); padding: 0 2px;">
+{% if memory_card.anomaly_count > 0 %}
+    {{ memory_card.anomaly_count }} unusual transaction{{ "s" if memory_card.anomaly_count != 1 else "" }} spotted in your history.
+    <a href="{{ url_for('pages.my_money') }}" style="color: var(--roman-gold); text-decoration: none;">Take a look →</a>
+{% elif memory_card.top_category and memory_card.top_category_direction == "up" and memory_card.top_category_change > 15 %}
+    {{ memory_card.top_category }} is up £{{ "%.2f" | format(memory_card.top_category_change) }} on last month.
+    <a href="{{ url_for('pages.my_money') }}" style="color: var(--roman-gold); text-decoration: none;">See breakdown →</a>
+{% elif memory_card.recurring_count > 0 %}
+    {{ memory_card.recurring_count }} recurring payment{{ "s" if memory_card.recurring_count != 1 else "" }} · £{{ "%.2f" | format(memory_card.recurring_total) }}/month leaving automatically.
+    <a href="{{ url_for('pages.recurring') }}" style="color: var(--roman-gold); text-decoration: none;">Review →</a>
+{% elif memory_card.spending_status == "spending_high" and memory_card.spending_diff > 0 %}
+    Spending £{{ "%.2f" | format(memory_card.spending_diff) }} above your usual pace this month.
+{% endif %}
 </div>
+{% endif %}
 
-<!-- Recent transactions -->
+<!-- 4 · Recent activity -->
 <div class="glass-card">
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
         <span class="metric-label" style="margin-bottom: 0;">Recent activity</span>
-        <a href="{{ url_for('pages.my_money') }}" style="font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.1em;">View all <span aria-hidden="true">→</span></a>
+        <a href="{{ url_for('pages.my_money') }}" style="font-size: 0.75rem; color: var(--roman-gold); text-decoration: none;">View all</a>
     </div>
-    {% if recent_transactions | length > 0 %}
-        {% for t in recent_transactions %}
-        <div class="transaction-row">
-            <div class="transaction-info">
-                <div class="transaction-description">{{ t.description }}</div>
-                <div class="transaction-meta">{{ t.date }} · {{ t.category }}</div>
-            </div>
-            <div class="transaction-amount {{ t.type }}">
-                {% if t.type == "income" %}+{% else %}-{% endif %}£{{ "%.2f" | format(t.amount) }}
-            </div>
+    {% for t in recent_transactions %}
+    <div class="transaction-row">
+        <div class="transaction-info">
+            <div class="transaction-description">{{ t.description }}</div>
+            <div class="transaction-meta">{{ t.date }} · {{ t.category }}</div>
         </div>
-        {% endfor %}
-    {% else %}
-        <div class="empty-state">
-            No transactions yet. <a href="{{ url_for('pages.upload_statement') }}">Upload a statement</a> to get started.
+        <div class="transaction-amount {{ t.type }}">
+            {% if t.type == "income" %}+{% else %}-{% endif %}£{{ "%.2f" | format(t.amount) }}
         </div>
-    {% endif %}
+    </div>
+    {% endfor %}
 </div>
+
+{% endif %}
 {% endblock %}

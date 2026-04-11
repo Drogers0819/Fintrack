@@ -177,11 +177,18 @@ def _predict_next_date(last_date, avg_interval_days):
     return next_date.isoformat()
 
 
+_EXCLUDED_SAVING_CATEGORIES = {"Bills", "Income", "Rent"}
+
+
 def identify_potential_savings(recurring_transactions):
     savings_opportunities = []
 
     for r in recurring_transactions:
         if r["transaction_type"] != "expense":
+            continue
+
+        # Skip non-discretionary categories — rent, energy, broadband are not savings opportunities
+        if r.get("category", "") in _EXCLUDED_SAVING_CATEGORIES:
             continue
 
         last = date.fromisoformat(r["last_date"])

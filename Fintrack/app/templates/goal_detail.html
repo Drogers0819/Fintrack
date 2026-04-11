@@ -4,7 +4,7 @@
 {% block content %}
 <div class="page-header">
     <div class="section-label">Goal Projection</div>
-    <h1 style="font-style: italic;">{{ goal.name }}</h1>
+    <h1>{{ goal.name }}</h1>
 </div>
 
 {% if projection.reachable %}
@@ -15,7 +15,7 @@
         <span class="ai-pulse"></span>
         <span class="metric-label" style="margin-bottom: 0; color: var(--roman-gold);">Projection</span>
     </div>
-    <div id="arrival-date" style="font-family: var(--font-serif); font-size: 2rem; color: var(--roman-gold); margin-bottom: 4px; transition: all 0.3s ease;">
+    <div id="arrival-date" class="metric-value gold" style="margin-bottom: 4px; transition: all 0.3s ease;">
         {{ projection.completion_date_human }}
     </div>
     <p style="font-size: 0.85rem; color: var(--text-secondary); font-style: italic;">
@@ -44,7 +44,7 @@
                   border-radius: 3px; outline: none; cursor: pointer;">
 
     <div style="text-align: center; margin-top: 12px;">
-        <span style="font-family: var(--font-serif); font-size: 1.5rem; color: var(--roman-gold);" id="slider-amount">
+        <span class="metric-value md gold" id="slider-amount">
             £{{ "%.2f" | format(projection.monthly_contribution) }}/month
         </span>
     </div>
@@ -62,15 +62,15 @@
 <div class="grid-3" style="margin-bottom: 32px;">
     <div class="glass-card">
         <div class="metric-label">Target</div>
-        <div style="font-family: var(--font-serif); font-size: 1.3rem;">£{{ "{:,.2f}".format(projection.target_amount) }}</div>
+        <div class="metric-value sm">£{{ "{:,.2f}".format(projection.target_amount) }}</div>
     </div>
     <div class="glass-card">
         <div class="metric-label">You'll contribute</div>
-        <div id="contribution-total" style="font-family: var(--font-serif); font-size: 1.3rem;">£{{ "{:,.2f}".format(projection.total_contributed) }}</div>
+        <div id="contribution-total" class="metric-value sm">£{{ "{:,.2f}".format(projection.total_contributed) }}</div>
     </div>
     <div class="glass-card">
         <div class="metric-label">Growth earns you</div>
-        <div id="interest-total" style="font-family: var(--font-serif); font-size: 1.3rem; color: var(--success);">+£{{ "{:,.2f}".format(projection.total_interest_earned) }}</div>
+        <div id="interest-total" class="metric-value sm success">+£{{ "{:,.2f}".format(projection.total_interest_earned) }}</div>
     </div>
 </div>
 
@@ -78,7 +78,7 @@
 {% set progress = ((projection.current_amount / projection.target_amount) * 100) %}
 <div class="glass-card" style="margin-bottom: 32px;">
     <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 8px;">
-        <span style="font-family: var(--font-serif); font-size: 1.3rem;">£{{ "{:,.2f}".format(projection.current_amount) }}</span>
+        <span class="metric-value sm">£{{ "{:,.2f}".format(projection.current_amount) }}</span>
         <span style="font-size: 0.8rem; color: var(--text-tertiary);">of £{{ "{:,.2f}".format(projection.target_amount) }}</span>
     </div>
     <div class="progress-track" style="height: 8px; border-radius: 4px; margin-bottom: 8px;">
@@ -132,13 +132,13 @@
                 <td style="padding: 12px; color: var(--text-secondary);">
                     {{ horizon_key | replace("_", " ") | title }}
                 </td>
-                <td style="padding: 12px; text-align: right; font-family: var(--font-serif);">
+                <td class="serif" style="padding: 12px; text-align: right;">
                     £{{ "{:,.2f}".format(horizon.conservative.final_balance) }}
                 </td>
-                <td style="padding: 12px; text-align: right; font-family: var(--font-serif); color: var(--roman-gold);">
+                <td class="serif" style="padding: 12px; text-align: right; color: var(--roman-gold);">
                     £{{ "{:,.2f}".format(horizon.moderate.final_balance) }}
                 </td>
-                <td style="padding: 12px; text-align: right; font-family: var(--font-serif);">
+                <td class="serif" style="padding: 12px; text-align: right;">
                     £{{ "{:,.2f}".format(horizon.optimistic.final_balance) }}
                 </td>
             </tr>
@@ -151,15 +151,15 @@
 {% elif projection.reachable is defined and not projection.reachable %}
 <div class="glass-card" style="margin-bottom: 32px;">
     <p style="font-size: 0.9rem; color: var(--text-secondary); font-style: italic;">{{ projection.message }}</p>
-    <a href="{{ url_for('pages.my_goals') }}" style="display: inline-block; margin-top: 12px; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.1em;">
-        Adjust this goal <span aria-hidden="true">→</span>
+    <a href="{{ url_for('pages.my_goals') }}" style="display: inline-block; margin-top: 12px; font-size: 0.75rem; color: var(--roman-gold); text-decoration: none;">
+        Adjust this goal
     </a>
 </div>
 {% endif %}
 
 <div style="text-align: center; margin-top: 16px;">
-    <a href="{{ url_for('pages.my_goals') }}" style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.1em;">
-        <span aria-hidden="true">←</span> Back to My Goals
+    <a href="{{ url_for('pages.my_goals') }}" style="font-size: 0.75rem; color: var(--text-tertiary); text-decoration: none;">
+        ← Back to My Goals
     </a>
 </div>
 

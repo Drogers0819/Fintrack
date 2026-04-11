@@ -3,92 +3,191 @@
 
 {% block content %}
 <div class="page-header">
-    <h1 style="font-style: italic;">Settings</h1>
+    <h1>Settings</h1>
 </div>
+
+{% if not current_user.factfind_completed %}
+<a href="{{ url_for('pages.factfind') }}" style="display: flex; align-items: center; gap: 10px; padding: 11px 16px; border-radius: 10px; background: rgba(197, 163, 93, 0.07); border: 0.5px solid rgba(197, 163, 93, 0.2); margin-bottom: 24px; text-decoration: none; color: inherit;">
+    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--roman-gold)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0;"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+    <span style="flex: 1; font-size: 0.8rem; color: var(--text-secondary);">Finish setting up your profile to unlock all features</span>
+    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--text-tertiary)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0;"><path d="M9 18l6-6-6-6"/></svg>
+</a>
+{% endif %}
 
 <!-- Financial profile -->
-<div class="glass-card" style="margin-bottom: 24px;">
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
-        <span class="metric-label" style="margin-bottom: 0;">Your financial profile</span>
-        <a href="{{ url_for('pages.factfind') }}" style="font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.1em;">Edit <span aria-hidden="true">→</span></a>
+<div class="glass-card" style="margin-bottom: 12px;">
+    <button class="settings-toggle" onclick="toggleSettings('profile')" aria-expanded="{% if current_user.factfind_completed %}true{% else %}false{% endif %}">
+        <div style="display: flex; align-items: center; gap: 10px;">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="opacity: 0.5;"><path d="M20 7H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="2"/><path d="M6 12h.01M18 12h.01"/></svg>
+            <span style="font-size: 0.9rem; color: var(--text-primary);">Financial profile</span>
+        </div>
+        <svg id="chevron-profile" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="opacity: 0.4; transition: transform 0.2s; {% if current_user.factfind_completed %}transform: rotate(90deg);{% endif %}"><path d="M9 18l6-6-6-6"/></svg>
+    </button>
+    <div id="panel-profile" {% if not current_user.factfind_completed %}hidden{% endif %} style="padding-top: 16px; border-top: 0.5px solid rgba(255,255,255,0.05); margin-top: 12px;">
+        {% if current_user.factfind_completed %}
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+            <span style="font-size: 0.75rem; color: var(--text-tertiary);">Your income and commitments</span>
+            <a href="{{ url_for('pages.factfind') }}" style="font-size: 0.75rem; color: var(--roman-gold); text-decoration: none;">Edit</a>
+        </div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+            <div>
+                <div style="font-size: 0.7rem; color: var(--text-tertiary);">Take-home pay</div>
+                <div style="font-size: 0.9rem;">£{{ "%.2f" | format(current_user.monthly_income | float) }}/month</div>
+            </div>
+            <div>
+                <div style="font-size: 0.7rem; color: var(--text-tertiary);">Rent/mortgage</div>
+                <div style="font-size: 0.9rem;">£{{ "%.2f" | format(current_user.rent_amount | float) }}/month</div>
+            </div>
+            <div>
+                <div style="font-size: 0.7rem; color: var(--text-tertiary);">Bills</div>
+                <div style="font-size: 0.9rem;">£{{ "%.2f" | format(current_user.bills_amount | float) }}/month</div>
+            </div>
+            <div>
+                <div style="font-size: 0.7rem; color: var(--text-tertiary);">Available for goals</div>
+                <div style="font-size: 0.9rem; color: var(--roman-gold);">£{{ "%.2f" | format(current_user.monthly_surplus) }}/month</div>
+            </div>
+        </div>
+        {% else %}
+        <p style="font-size: 0.8rem; color: var(--text-tertiary); margin-bottom: 12px;">Add your income and outgoings to unlock insights.</p>
+        <a href="{{ url_for('pages.factfind') }}" class="btn-primary btn-sm">Set up profile</a>
+        {% endif %}
     </div>
-
-    {% if current_user.factfind_completed %}
-    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
-        <div>
-            <div style="font-size: 0.7rem; color: var(--text-tertiary);">Take-home pay</div>
-            <div style="font-size: 0.9rem;">£{{ "%.2f" | format(current_user.monthly_income | float) }}/month</div>
-        </div>
-        <div>
-            <div style="font-size: 0.7rem; color: var(--text-tertiary);">Rent/mortgage</div>
-            <div style="font-size: 0.9rem;">£{{ "%.2f" | format(current_user.rent_amount | float) }}/month</div>
-        </div>
-        <div>
-            <div style="font-size: 0.7rem; color: var(--text-tertiary);">Bills</div>
-            <div style="font-size: 0.9rem;">£{{ "%.2f" | format(current_user.bills_amount | float) }}/month</div>
-        </div>
-        <div>
-            <div style="font-size: 0.7rem; color: var(--text-tertiary);">Available for goals</div>
-            <div style="font-size: 0.9rem; color: var(--roman-gold);">£{{ "%.2f" | format(current_user.monthly_surplus) }}/month</div>
-        </div>
-    </div>
-    {% else %}
-    <p style="font-size: 0.85rem; color: var(--text-secondary);">
-        <a href="{{ url_for('pages.factfind') }}">Complete your financial profile</a> to unlock budgets, goals, and predictions.
-    </p>
-    {% endif %}
 </div>
 
-<!-- Theme selector -->
-<div class="glass-card" style="margin-bottom: 24px;">
-    <span class="metric-label">Choose your look</span>
-    <form method="POST" action="{{ url_for('pages.update_theme') }}">
-        <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-top: 12px;">
-            {% set themes = [
-                ("racing-green", "Racing Green", "linear-gradient(135deg, #0A2A22, #020408)"),
-                ("midnight-navy", "Midnight Navy", "linear-gradient(135deg, #0A1628, #020408)"),
-                ("oxford-saddle", "Oxford Saddle", "linear-gradient(135deg, #2A1A10, #0A0604)"),
-                ("amethyst", "Amethyst", "linear-gradient(135deg, #1A0C28, #060210)"),
-                ("rosso", "Rosso Corsa", "linear-gradient(135deg, #3A1212, #0C0404)"),
-                ("cobalt", "Electric Cobalt", "linear-gradient(135deg, #0C1A3A, #0C0F14)"),
-                ("ivory", "Ivory Estate", "linear-gradient(135deg, #F0EBE2, #E4DDD0)"),
-                ("pearl", "Pearl Essence", "linear-gradient(135deg, #E4E8F0, #D6DCE8)"),
-                ("sandstone", "Sandstone", "linear-gradient(135deg, #ECE4D6, #DED4C2)"),
-                ("sage", "Morning Sage", "linear-gradient(135deg, #E0E8DC, #D0DCC8)"),
-                ("lavender", "Soft Lavender", "linear-gradient(135deg, #E4DFF0, #D6CEE4)"),
-                ("mist", "Silver Mist", "linear-gradient(135deg, #E2E2DE, #D4D4CE)")
-            ] %}
-
-            {% for theme_id, theme_name, gradient in themes %}
-            <label style="cursor: pointer; text-align: center;">
-                <input type="radio" name="theme" value="{{ theme_id }}"
-                       {% if current_user.theme == theme_id %}checked{% endif %}
-                       style="display: none;"
-                       onchange="this.form.submit()">
-                <div class="theme-swatch {% if current_user.theme == theme_id %}theme-swatch--active{% endif %}"
-                     style="background: {{ gradient }};">
-                </div>
-                <div style="font-size: 0.6rem; color: var(--text-secondary);">{{ theme_name }}</div>
-            </label>
-            {% endfor %}
+<!-- Appearance -->
+<div class="glass-card" style="margin-bottom: 12px;">
+    <button class="settings-toggle" onclick="toggleSettings('appearance')" aria-expanded="false">
+        <div style="display: flex; align-items: center; gap: 10px;">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="opacity: 0.5;"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="4"/><line x1="21.17" y1="8" x2="12" y2="8"/><line x1="3.95" y1="6.06" x2="8.54" y2="14"/><line x1="10.88" y1="21.94" x2="15.46" y2="14"/></svg>
+            <span style="font-size: 0.9rem; color: var(--text-primary);">Appearance</span>
         </div>
-    </form>
+        <svg id="chevron-appearance" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="opacity: 0.4; transition: transform 0.2s;"><path d="M9 18l6-6-6-6"/></svg>
+    </button>
+    <div id="panel-appearance" hidden style="padding-top: 16px; border-top: 0.5px solid rgba(255,255,255,0.05); margin-top: 12px;">
+        <p style="font-size: 0.75rem; color: var(--text-tertiary); margin-bottom: 16px;">Choose your look. Changes apply instantly.</p>
+        <form method="POST" action="{{ url_for('pages.update_theme') }}">
+            <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px;">
+                {% set themes = [
+                    ("racing-green", "Racing Green", "linear-gradient(135deg, #0A2A22, #020408)"),
+                    ("midnight-navy", "Midnight Navy", "linear-gradient(135deg, #0A1628, #020408)"),
+                    ("oxford-saddle", "Oxford Saddle", "linear-gradient(135deg, #2A1A10, #0A0604)"),
+                    ("amethyst", "Amethyst", "linear-gradient(135deg, #1A0C28, #060210)"),
+                    ("rosso", "Rosso Corsa", "linear-gradient(135deg, #3A1212, #0C0404)"),
+                    ("cobalt", "Electric Cobalt", "linear-gradient(135deg, #0C1A3A, #0C0F14)"),
+                    ("ivory", "Ivory Estate", "linear-gradient(135deg, #F0EBE2, #E4DDD0)"),
+                    ("pearl", "Pearl Essence", "linear-gradient(135deg, #E4E8F0, #D6DCE8)"),
+                    ("sandstone", "Sandstone", "linear-gradient(135deg, #ECE4D6, #DED4C2)"),
+                    ("sage", "Morning Sage", "linear-gradient(135deg, #E0E8DC, #D0DCC8)"),
+                    ("lavender", "Soft Lavender", "linear-gradient(135deg, #E4DFF0, #D6CEE4)"),
+                    ("mist", "Silver Mist", "linear-gradient(135deg, #E2E2DE, #D4D4CE)")
+                ] %}
+                {% for theme_id, theme_name, gradient in themes %}
+                <label style="cursor: pointer; text-align: center;">
+                    <input type="radio" name="theme" value="{{ theme_id }}"
+                           {% if current_user.theme == theme_id %}checked{% endif %}
+                           style="display: none;"
+                           onchange="this.form.submit()">
+                    <div class="theme-swatch {% if current_user.theme == theme_id %}theme-swatch--active{% endif %}"
+                         style="background: {{ gradient }};">
+                    </div>
+                    <div style="font-size: 0.6rem; color: var(--text-secondary);">{{ theme_name }}</div>
+                </label>
+                {% endfor %}
+            </div>
+        </form>
+    </div>
 </div>
 
 <!-- Account -->
-<div class="glass-card">
-    <span class="metric-label">Account</span>
-    <div style="padding: 8px 0; border-bottom: 0.5px solid rgba(255,255,255,0.05); display: flex; justify-content: space-between;">
-        <span style="font-size: 0.85rem; color: var(--text-tertiary);">Name</span>
-        <span style="font-size: 0.85rem;">{{ current_user.name }}</span>
-    </div>
-    <div style="padding: 8px 0; border-bottom: 0.5px solid rgba(255,255,255,0.05); display: flex; justify-content: space-between;">
-        <span style="font-size: 0.85rem; color: var(--text-tertiary);">Email</span>
-        <span style="font-size: 0.85rem;">{{ current_user.email }}</span>
-    </div>
-    <div style="padding: 8px 0; display: flex; justify-content: space-between;">
-        <span style="font-size: 0.85rem; color: var(--text-tertiary);">Member since</span>
-        <span style="font-size: 0.85rem;">{{ current_user.created_at.strftime("%B %Y") if current_user.created_at else "—" }}</span>
+<div class="glass-card" style="margin-bottom: 12px;">
+    <button class="settings-toggle" onclick="toggleSettings('account')" aria-expanded="false">
+        <div style="display: flex; align-items: center; gap: 10px;">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="opacity: 0.5;"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            <span style="font-size: 0.9rem; color: var(--text-primary);">Account</span>
+        </div>
+        <svg id="chevron-account" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="opacity: 0.4; transition: transform 0.2s;"><path d="M9 18l6-6-6-6"/></svg>
+    </button>
+    <div id="panel-account" hidden style="padding-top: 16px; border-top: 0.5px solid rgba(255,255,255,0.05); margin-top: 12px;">
+        <div style="padding: 8px 0; border-bottom: 0.5px solid rgba(255,255,255,0.05); display: flex; justify-content: space-between; margin-bottom: 4px;">
+            <span style="font-size: 0.85rem; color: var(--text-tertiary);">Name</span>
+            <span style="font-size: 0.85rem;">{{ current_user.name }}</span>
+        </div>
+        <div style="padding: 8px 0; border-bottom: 0.5px solid rgba(255,255,255,0.05); display: flex; justify-content: space-between; margin-bottom: 4px;">
+            <span style="font-size: 0.85rem; color: var(--text-tertiary);">Email</span>
+            <span style="font-size: 0.85rem;">{{ current_user.email }}</span>
+        </div>
+        <div style="padding: 8px 0; display: flex; justify-content: space-between; margin-bottom: 20px;">
+            <span style="font-size: 0.85rem; color: var(--text-tertiary);">Member since</span>
+            <span style="font-size: 0.85rem;">{{ current_user.created_at.strftime("%B %Y") if current_user.created_at else "—" }}</span>
+        </div>
+
+        <div class="metric-label" style="margin-bottom: 12px; font-size: 0.7rem;">Change email</div>
+        <form method="POST" action="{{ url_for('pages.update_account') }}" style="margin-bottom: 24px;">
+            <input type="hidden" name="form_type" value="change_email">
+            <div class="form-group" style="margin-bottom: 10px;">
+                <label class="form-label">New email address</label>
+                <input type="email" name="new_email" class="form-input" placeholder="{{ current_user.email }}" required>
+            </div>
+            <div class="form-group" style="margin-bottom: 14px;">
+                <label class="form-label">Confirm your password</label>
+                <div style="position: relative;">
+                    <input type="password" name="confirm_password_email" id="confirmPasswordEmail" class="form-input" placeholder="Your current password" required style="padding-right: 44px;">
+                    <button type="button" class="password-toggle" onclick="togglePassword('confirmPasswordEmail', this)" aria-label="Show password"></button>
+                </div>
+            </div>
+            <button type="submit" class="btn-primary btn-sm">Update email</button>
+        </form>
     </div>
 </div>
+
+<!-- Security -->
+<div class="glass-card">
+    <button class="settings-toggle" onclick="toggleSettings('security')" aria-expanded="false">
+        <div style="display: flex; align-items: center; gap: 10px;">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="opacity: 0.5;"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+            <span style="font-size: 0.9rem; color: var(--text-primary);">Security</span>
+        </div>
+        <svg id="chevron-security" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="opacity: 0.4; transition: transform 0.2s;"><path d="M9 18l6-6-6-6"/></svg>
+    </button>
+    <div id="panel-security" hidden style="padding-top: 16px; border-top: 0.5px solid rgba(255,255,255,0.05); margin-top: 12px;">
+        <div class="metric-label" style="margin-bottom: 12px; font-size: 0.7rem;">Change password</div>
+        <form method="POST" action="{{ url_for('pages.update_account') }}">
+            <input type="hidden" name="form_type" value="change_password">
+            <div class="form-group" style="margin-bottom: 10px;">
+                <label class="form-label">Current password</label>
+                <div style="position: relative;">
+                    <input type="password" name="current_password" id="currentPassword" class="form-input" placeholder="Your current password" required style="padding-right: 44px;">
+                    <button type="button" class="password-toggle" onclick="togglePassword('currentPassword', this)" aria-label="Show password"></button>
+                </div>
+            </div>
+            <div class="form-group" style="margin-bottom: 10px;">
+                <label class="form-label">New password</label>
+                <div style="position: relative;">
+                    <input type="password" name="new_password" id="newPassword" class="form-input" placeholder="At least 8 characters" required style="padding-right: 44px;">
+                    <button type="button" class="password-toggle" onclick="togglePassword('newPassword', this)" aria-label="Show password"></button>
+                </div>
+            </div>
+            <div class="form-group" style="margin-bottom: 16px;">
+                <label class="form-label">Confirm new password</label>
+                <div style="position: relative;">
+                    <input type="password" name="confirm_password" id="confirmPassword" class="form-input" placeholder="Repeat new password" required style="padding-right: 44px;">
+                    <button type="button" class="password-toggle" onclick="togglePassword('confirmPassword', this)" aria-label="Show password"></button>
+                </div>
+            </div>
+            <button type="submit" class="btn-primary btn-sm">Update password</button>
+        </form>
+    </div>
+</div>
+
+<script>
+function toggleSettings(key) {
+    var panel = document.getElementById('panel-' + key);
+    var chevron = document.getElementById('chevron-' + key);
+    var btn = panel.previousElementSibling;
+    var isOpen = !panel.hidden;
+    panel.hidden = isOpen;
+    chevron.style.transform = isOpen ? 'rotate(0deg)' : 'rotate(90deg)';
+    btn.setAttribute('aria-expanded', String(!isOpen));
+}
+</script>
 {% endblock %}

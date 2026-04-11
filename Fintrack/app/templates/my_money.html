@@ -4,27 +4,25 @@
 {% from 'macros.html' import whisper_card %}
 {% block content %}
 <div class="page-header">
-    <h1 style="font-style: italic;">My Money</h1>
+    <h1>My Money</h1>
 </div>
 
-{{ whisper_card(whisper) }}
+{% if not current_user.factfind_completed %}
+<a href="{{ url_for('pages.factfind') }}" style="display: flex; align-items: center; gap: 10px; padding: 11px 16px; border-radius: 10px; background: rgba(197, 163, 93, 0.07); border: 0.5px solid rgba(197, 163, 93, 0.2); margin-bottom: 24px; text-decoration: none; color: inherit;">
+    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--roman-gold)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0;"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+    <span style="flex: 1; font-size: 0.8rem; color: var(--text-secondary);">Finish setting up your profile to unlock all features</span>
+    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--text-tertiary)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0;"><path d="M9 18l6-6-6-6"/></svg>
+</a>
+{% endif %}
 
-<!-- Actions -->
-<div style="display: flex; gap: 12px; margin-bottom: 24px;">
-    <a href="{{ url_for('pages.upload_statement') }}" class="btn-gold" style="display: inline-block; padding: 10px 20px; font-size: 0.75rem;">
-        Upload statement
-    </a>
-    <a href="{{ url_for('pages.add_transaction') }}" class="btn-outline" style="display: inline-block; padding: 10px 20px; font-size: 0.75rem;">
-        Add transaction
-    </a>
-</div>
+{% if transactions | length > 0 %}{{ whisper_card(whisper) }}{% endif %}
 
 <!-- Spending breakdown — this month -->
 {% if categories | length > 0 %}
 <div class="glass-card" style="margin-bottom: 24px;">
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
         <span class="metric-label" style="margin-bottom: 0;">Where your money goes — {{ month_name }}</span>
-        <span style="font-family: var(--font-serif); font-size: 1.1rem;">£{{ "%.2f" | format(total_expenses) }}</span>
+        <span class="serif" style="font-size: 1.1rem;">£{{ "%.2f" | format(total_expenses) }}</span>
     </div>
 
     {% for cat in categories %}
@@ -44,7 +42,7 @@
 <!-- Month-over-month trends -->
 {% if trends | length > 0 %}
 <div class="glass-card" style="margin-bottom: 24px;">
-    <span class="metric-label">Compared to last month</span>
+    <div class="metric-label">Compared to last month</div>
     {% for t in trends[:5] %}
     <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 0;
         {% if not loop.last %}border-bottom: 0.5px solid rgba(255,255,255,0.05);{% endif %}">
@@ -63,8 +61,14 @@
 
 <!-- All transactions -->
 <div class="glass-card">
-    <span class="metric-label">All transactions</span>
     {% if transactions | length > 0 %}
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+        <span class="metric-label" style="margin-bottom: 0;">All transactions</span>
+        <div style="display: flex; align-items: center; gap: 12px;">
+            <a href="{{ url_for('pages.upload_statement') }}" style="font-size: 0.75rem; color: var(--roman-gold); text-decoration: none;">Upload</a>
+            <a href="{{ url_for('pages.add_transaction') }}" style="font-size: 0.75rem; color: var(--roman-gold); text-decoration: none;">Add manually</a>
+        </div>
+    </div>
         {% for t in transactions %}
         <div class="transaction-row">
             <div class="transaction-info">
@@ -84,9 +88,16 @@
         </div>
         {% endfor %}
     {% else %}
-        <div class="empty-state">
-            No transactions yet. Upload a bank statement to see your spending picture.
+    <div class="metric-label" style="margin-bottom: 8px;">All transactions</div>
+    <div class="empty-state" style="padding: 4px 0 12px; text-align: left;">
+        No transactions yet. Upload a bank statement to see your spending picture.
+    </div>
+    <div style="margin-top: 4px;">
+        <a href="{{ url_for('pages.upload_statement') }}" class="btn-primary btn-sm">Upload statement</a>
+        <div style="text-align: center; margin-top: 10px;">
+            <a href="{{ url_for('pages.add_transaction') }}" style="font-size: 0.8rem; color: var(--roman-gold); text-decoration: none;">or add manually</a>
         </div>
+    </div>
     {% endif %}
 </div>
 {% endblock %}

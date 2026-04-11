@@ -4,10 +4,18 @@
 {% from 'macros.html' import whisper_card %}
 {% block content %}
 <div class="page-header">
-    <h1 style="font-style: italic;">My Budgets</h1>
+    <h1>My Budgets</h1>
 </div>
 
-{{ whisper_card(whisper) }}
+{% if not current_user.factfind_completed %}
+<a href="{{ url_for('pages.factfind') }}" style="display: flex; align-items: center; gap: 10px; padding: 11px 16px; border-radius: 10px; background: rgba(197, 163, 93, 0.07); border: 0.5px solid rgba(197, 163, 93, 0.2); margin-bottom: 24px; text-decoration: none; color: inherit;">
+    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--roman-gold)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0;"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+    <span style="flex: 1; font-size: 0.8rem; color: var(--text-secondary);">Finish setting up your profile to unlock all features</span>
+    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--text-tertiary)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0;"><path d="M9 18l6-6-6-6"/></svg>
+</a>
+{% endif %}
+
+{% if budget_statuses | length > 0 %}{{ whisper_card(whisper) }}{% endif %}
 
 <!-- Budget cards -->
 {% if budget_statuses | length > 0 %}
@@ -25,7 +33,7 @@
         </div>
 
         <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 6px;">
-            <span style="font-family: var(--font-serif); font-size: 1.3rem;">£{{ "%.2f" | format(b.spent) }}</span>
+            <span class="metric-value sm">£{{ "%.2f" | format(b.spent) }}</span>
             <span style="font-size: 0.8rem; color: var(--text-tertiary);">of £{{ "%.2f" | format(b.monthly_limit) }}</span>
         </div>
 
@@ -57,10 +65,16 @@
 
 <!-- Add budget -->
 <div class="glass-card" style="margin-bottom: 24px;">
-    <span class="metric-label">Set a spending limit</span>
-    <form method="POST" action="{{ url_for('pages.create_budget_page') }}" style="margin-top: 12px;">
+    {% if budget_statuses | length == 0 %}
+    <div class="metric-label" style="margin-bottom: 8px;">Your budgets</div>
+    <div class="empty-state" style="padding: 4px 0 12px; text-align: left;">
+        No spending limits set yet. Pick a category and set a monthly cap to stay on track.
+    </div>
+    {% endif %}
+    <div class="metric-label" style="margin-bottom: 16px; {% if budget_statuses | length == 0 %}margin-top: 4px; padding-top: 16px; border-top: 0.5px solid rgba(255,255,255,0.06);{% endif %}">Set a spending limit</div>
+    <form method="POST" action="{{ url_for('pages.create_budget_page') }}">
         <div class="grid-2">
-            <div class="form-group">
+            <div class="form-group" style="margin-bottom: 0;">
                 <select name="category_id" class="form-select" required>
                     <option value="">Choose category</option>
                     {% for cat in available_categories %}
@@ -68,11 +82,13 @@
                     {% endfor %}
                 </select>
             </div>
-            <div class="form-group">
+            <div class="form-group" style="margin-bottom: 0;">
                 <input type="number" name="monthly_limit" class="form-input" step="0.01" min="1" placeholder="Monthly limit (£)" required>
             </div>
         </div>
-        <button type="submit" class="btn-outline" style="padding: 8px 20px; font-size: 0.75rem;">Set budget</button>
+        <div style="margin-top: 16px;">
+            <button type="submit" class="btn-primary btn-sm">Set budget</button>
+        </div>
     </form>
 </div>
 
@@ -81,7 +97,7 @@
 <div class="glass-card" style="margin-bottom: 24px;">
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
         <span class="metric-label" style="margin-bottom: 0;">Your regular payments</span>
-        <span style="font-family: var(--font-serif); font-size: 1rem;">£{{ "%.2f" | format(recurring.total_monthly_cost) }}/mo</span>
+        <span class="serif" style="font-size: 1rem;">£{{ "%.2f" | format(recurring.total_monthly_cost) }}/mo</span>
     </div>
 
     {% for r in recurring.recurring[:8] %}

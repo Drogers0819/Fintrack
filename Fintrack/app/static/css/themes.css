@@ -347,31 +347,31 @@ body.theme-mist .form-select option {
 
 /* ===== LIGHT THEME BUTTON OVERRIDES ===== */
 
-body.theme-ivory .btn-gold,
-body.theme-pearl .btn-gold,
-body.theme-sandstone .btn-gold,
-body.theme-sage .btn-gold,
-body.theme-lavender .btn-gold,
-body.theme-mist .btn-gold {
+body.theme-ivory .btn-primary,
+body.theme-pearl .btn-primary,
+body.theme-sandstone .btn-primary,
+body.theme-sage .btn-primary,
+body.theme-lavender .btn-primary,
+body.theme-mist .btn-primary {
     color: #FFFFFF;
 }
 
-body.theme-ivory .btn-outline,
-body.theme-pearl .btn-outline,
-body.theme-sandstone .btn-outline,
-body.theme-sage .btn-outline,
-body.theme-lavender .btn-outline,
-body.theme-mist .btn-outline {
+body.theme-ivory .btn-secondary,
+body.theme-pearl .btn-secondary,
+body.theme-sandstone .btn-secondary,
+body.theme-sage .btn-secondary,
+body.theme-lavender .btn-secondary,
+body.theme-mist .btn-secondary {
     border-color: var(--roman-gold);
     color: var(--roman-gold);
 }
 
-body.theme-ivory .btn-outline:hover,
-body.theme-pearl .btn-outline:hover,
-body.theme-sandstone .btn-outline:hover,
-body.theme-sage .btn-outline:hover,
-body.theme-lavender .btn-outline:hover,
-body.theme-mist .btn-outline:hover {
+body.theme-ivory .btn-secondary:hover,
+body.theme-pearl .btn-secondary:hover,
+body.theme-sandstone .btn-secondary:hover,
+body.theme-sage .btn-secondary:hover,
+body.theme-lavender .btn-secondary:hover,
+body.theme-mist .btn-secondary:hover {
     background: var(--roman-gold-dim);
     border-color: var(--roman-gold);
     color: var(--roman-gold);
@@ -419,19 +419,19 @@ body.theme-mist .flash-error {
     color: #FC8181;
 }
 
-.theme-cobalt .btn-outline:hover {
+.theme-cobalt .btn-secondary:hover {
     background: rgba(99, 179, 237, 0.08);
     border-color: #63B3ED;
     color: #63B3ED;
 }
 
-.theme-cobalt .btn-gold {
+.theme-cobalt .btn-primary {
     background: #63B3ED;
     color: #0C0F14;
     border-color: #63B3ED;
 }
 
-.theme-cobalt .btn-gold:hover {
+.theme-cobalt .btn-primary:hover {
     background: #4299E1;
     border-color: #4299E1;
 }

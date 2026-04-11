@@ -4,12 +4,12 @@
 {% block content %}
 <div class="page-header">
     <div class="section-label">Financial Objectives</div>
-    <h1 style="font-style: italic;">Your Goals</h1>
+    <h1>Your Goals</h1>
     <p>{{ goals | length }} active goal{{ "s" if goals | length != 1 else "" }}</p>
 </div>
 
 <div style="margin-bottom: 24px;">
-    <a href="{{ url_for('pages.add_goal') }}" class="btn-outline" style="display: inline-block; padding: 10px 24px;">
+    <a href="{{ url_for('pages.add_goal') }}" class="btn-secondary">
         + Add Goal
     </a>
 </div>
@@ -28,10 +28,7 @@
                 <div style="font-size: 1.1rem; color: var(--text-primary);">{{ g.name }}</div>
             </div>
             <div style="display: flex; align-items: center; gap: 8px;">
-                <span style="font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.1em; padding: 4px 10px; border-radius: 6px;
-                    {% if g.status == 'active' %}background: rgba(45, 106, 79, 0.15); color: var(--success);
-                    {% elif g.status == 'completed' %}background: var(--roman-gold-dim); color: var(--roman-gold);
-                    {% else %}background: rgba(255, 255, 255, 0.05); color: var(--text-tertiary);{% endif %}">
+                <span class="badge {% if g.status == 'active' %}badge-success{% elif g.status == 'completed' %}badge-warning{% else %}badge-default{% endif %}">
                     {{ g.status }}
                 </span>
                 <span style="font-size: 0.7rem; color: var(--text-tertiary);">Priority {{ g.priority_rank }}</span>
@@ -40,15 +37,15 @@
 
         {% if g.target_amount %}
         <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 8px;">
-            <span style="font-family: var(--font-serif); font-size: 1.3rem;">
+            <span class="metric-value sm">
                 £{{ "%.2f" | format(g.current_amount) }}
             </span>
             <span style="font-size: 0.8rem; color: var(--text-tertiary);">
                 of £{{ "%.2f" | format(g.target_amount) }}
             </span>
         </div>
-        <div style="height: 6px; background: rgba(255,255,255,0.05); border-radius: 3px; overflow: hidden; margin-bottom: 8px;">
-            <div style="height: 100%; width: {{ g.progress_percent if g.progress_percent else 0 }}%; background: var(--roman-gold); border-radius: 3px; transition: width 0.6s ease;"></div>
+        <div class="progress-track" style="height: 6px; margin-bottom: 8px;">
+            <div class="progress-fill" style="width: {{ g.progress_percent if g.progress_percent else 0 }}%; background: var(--roman-gold);"></div>
         </div>
         <div style="font-size: 0.7rem; color: var(--text-tertiary);">
             {{ g.progress_percent if g.progress_percent else 0 }}% complete
@@ -59,7 +56,7 @@
             {% if g.monthly_allocation %}
             <div>
                 <div class="metric-label">Monthly</div>
-                <div style="font-family: var(--font-serif); font-size: 1rem;">£{{ "%.2f" | format(g.monthly_allocation) }}</div>
+                <div class="serif" style="font-size: 1rem;">£{{ "%.2f" | format(g.monthly_allocation) }}</div>
             </div>
             {% endif %}
             {% if g.deadline %}
@@ -72,7 +69,7 @@
 
         <div style="display: flex; gap: 8px; margin-top: 16px;">
             <form action="{{ url_for('pages.delete_goal', goal_id=g.id) }}" method="POST" onsubmit="return confirm('Delete this goal?')">
-                <button type="submit" class="btn-danger">Delete</button>
+                <button type="submit" class="btn-destructive">Delete</button>
             </form>
         </div>
     </div>

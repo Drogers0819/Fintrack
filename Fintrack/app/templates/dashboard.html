@@ -4,14 +4,14 @@
 {% block content %}
 <div class="page-header">
     <div class="section-label">Private Overview</div>
-    <h1 style="font-style: italic;">Good {{ greeting }}, {{ current_user.name }}.</h1>
+    <h1>Good {{ greeting }}, {{ current_user.name }}.</h1>
 </div>
 
 <!-- Money Left — the most important number -->
 {% if money_left is not none %}
 <div class="gold-card" style="margin-bottom: 32px;">
     <div class="metric-label" style="color: var(--roman-gold);">Money left to spend this month</div>
-    <div style="font-family: var(--font-serif); font-size: 2.5rem; color: var(--roman-gold); margin: 8px 0;">
+    <div class="metric-value gold" style="font-size: 2.5rem; margin: 8px 0;">
         £{{ "%.2f" | format(money_left) }}
     </div>
     <p style="font-size: 0.8rem; color: var(--text-secondary); font-style: italic;">
@@ -25,7 +25,7 @@
 
 <!-- AI Whisper -->
 <div class="glass-card" style="margin-bottom: 32px;">
-    <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 12px;">
+    <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
         <span class="ai-pulse"></span>
         <span class="metric-label" style="margin-bottom: 0; color: var(--roman-gold);">Intelligence</span>
     </div>
@@ -48,10 +48,7 @@
     {% if budget_status.status == 'healthy' %}var(--success){% elif budget_status.status == 'tight' %}var(--roman-gold){% else %}var(--danger){% endif %};">
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
         <span class="metric-label" style="margin-bottom: 0;">Monthly forecast</span>
-        <span style="font-size: 0.6rem; text-transform: uppercase; letter-spacing: 0.1em; padding: 3px 8px; border-radius: 4px;
-            {% if budget_status.status == 'healthy' %}background: rgba(45, 106, 79, 0.15); color: var(--success);
-            {% elif budget_status.status == 'tight' %}background: var(--roman-gold-dim); color: var(--roman-gold);
-            {% else %}background: rgba(139, 69, 19, 0.15); color: var(--danger);{% endif %}">
+        <span class="badge {% if budget_status.status == 'healthy' %}badge-success{% elif budget_status.status == 'tight' %}badge-warning{% else %}badge-danger{% endif %}">
             {{ budget_status.status }}
         </span>
     </div>
@@ -73,23 +70,23 @@
             <div style="font-size: 1.1rem; color: var(--text-primary);">{{ primary_goal.name }}</div>
         </div>
         {% if active_goals_count > 1 %}
-        <a href="{{ url_for('pages.my_goals') }}" style="font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.1em;">
-            +{{ active_goals_count - 1 }} more <span aria-hidden="true">→</span>
+        <a href="{{ url_for('pages.my_goals') }}" style="font-size: 0.75rem; color: var(--roman-gold); text-decoration: none;">
+            +{{ active_goals_count - 1 }} more
         </a>
         {% endif %}
     </div>
 
     {% if primary_goal.target_amount %}
     <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 8px;">
-        <span style="font-family: var(--font-serif); font-size: 1.5rem; color: var(--roman-gold);">
+        <span class="metric-value md gold">
             £{{ "%.2f" | format(primary_goal.current_amount) }}
         </span>
         <span style="font-size: 0.8rem; color: var(--text-tertiary);">
             of £{{ "%.2f" | format(primary_goal.target_amount) }}
         </span>
     </div>
-    <div style="height: 6px; background: rgba(255,255,255,0.05); border-radius: 3px; overflow: hidden; margin-bottom: 8px;">
-        <div style="height: 100%; width: {{ primary_goal.progress_percent if primary_goal.progress_percent else 0 }}%; background: var(--roman-gold); border-radius: 3px;"></div>
+    <div class="progress-track" style="height: 6px; margin-bottom: 8px;">
+        <div class="progress-fill" style="width: {{ primary_goal.progress_percent if primary_goal.progress_percent else 0 }}%; background: var(--roman-gold);"></div>
     </div>
     <div style="font-size: 0.75rem; color: var(--text-tertiary);">
         {{ primary_goal.progress_percent if primary_goal.progress_percent else 0 }}% complete
@@ -114,15 +111,15 @@
 <div class="grid-3" style="margin-bottom: 32px;">
     <div class="glass-card">
         <div class="metric-label">Money In</div>
-        <div class="metric-value" style="font-size: 1.5rem;">£{{ "%.2f" | format(summary.total_income) }}</div>
+        <div class="metric-value md">£{{ "%.2f" | format(summary.total_income) }}</div>
     </div>
     <div class="glass-card">
         <div class="metric-label">Money Out</div>
-        <div class="metric-value" style="font-size: 1.5rem;">£{{ "%.2f" | format(summary.total_expenses) }}</div>
+        <div class="metric-value md">£{{ "%.2f" | format(summary.total_expenses) }}</div>
     </div>
     <div class="glass-card">
         <div class="metric-label">Transactions</div>
-        <div class="metric-value" style="font-size: 1.5rem;">{{ summary.transaction_count }}</div>
+        <div class="metric-value md">{{ summary.transaction_count }}</div>
     </div>
 </div>
 
@@ -142,7 +139,7 @@
         </div>
         {% endfor %}
         <div style="text-align: center; margin-top: 16px;">
-            <a href="{{ url_for('pages.my_money') }}" style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.1em;">View All Transactions <span aria-hidden="true">→</span></a>
+            <a href="{{ url_for('pages.my_money') }}" style="font-size: 0.75rem; color: var(--roman-gold); text-decoration: none;">View all transactions</a>
         </div>
     {% else %}
         <div class="empty-state">
