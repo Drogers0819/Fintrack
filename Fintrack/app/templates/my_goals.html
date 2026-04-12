@@ -2,8 +2,13 @@
 {% block title %}My Goals — Claro{% endblock %}
 
 {% block content %}
-<div class="page-header" style="display: flex; justify-content: space-between; align-items: center; gap: 16px;">
-    <h1 style="flex-shrink: 0;">My Goals</h1>
+<div class="page-header">
+    <h1>My Goals</h1>
+</div>
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+    <span style="font-size: 0.8rem; color: var(--text-secondary);">
+        {% if goals | length == 1 %}1 active goal{% elif goals | length > 1 %}{{ goals | length }} active goals{% endif %}
+    </span>
     <a href="{{ url_for('pages.add_goal') }}" class="btn-secondary btn-sm">+ Add goal</a>
 </div>
 

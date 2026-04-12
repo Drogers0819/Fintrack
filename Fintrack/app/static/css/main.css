@@ -210,17 +210,20 @@ a:hover {
     display: none;
 }
 
-/* Overview avatar — shown only on mobile (sidebar already shows profile on desktop) */
-.overview-avatar {
+/* Mobile settings avatar — fixed top-right on all pages. Sidebar footer is hidden on mobile. */
+.mobile-settings-btn {
     display: none;
 }
 
 @media (max-width: 768px) {
-    .overview-avatar {
+    .mobile-settings-btn {
         display: flex;
+        position: fixed;
+        top: 14px;
+        right: 16px;
+        z-index: 500;
         align-items: center;
         justify-content: center;
-        flex-shrink: 0;
         width: 36px;
         height: 36px;
         border-radius: 50%;
@@ -235,8 +238,8 @@ a:hover {
         transition: background 0.2s ease, border-color 0.2s ease;
     }
 
-    .overview-avatar:hover,
-    .overview-avatar.active {
+    .mobile-settings-btn:hover,
+    .mobile-settings-btn.active {
         background: rgba(197, 163, 93, 0.18);
         border-color: rgba(197, 163, 93, 0.45);
     }
@@ -1589,12 +1592,6 @@ body.theme-mist .budget-row-danger {
         line-height: 1;
         display: block;
         margin: 0;
-    }
-
-    /* Stack page-header CTAs below title on mobile — only when a CTA button is present */
-    .page-header:has(.btn-primary, .btn-secondary) {
-        flex-direction: column !important;
-        align-items: flex-start !important;
     }
 
     /* Main content: account for bottom nav */
