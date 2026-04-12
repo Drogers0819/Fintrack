@@ -22,7 +22,7 @@
         <span class="metric-label" style="margin-bottom: 0; color: var(--roman-gold);">Worth a look</span>
     </div>
     <div style="display: flex; align-items: baseline; gap: 6px; margin-bottom: 4px;">
-        <div class="metric-value sm gold">£{{ "%.0f" | format(savings.total_potential_annual_saving) }}</div>
+        <div class="metric-value sm gold">£{{ "{:,.0f}".format(savings.total_potential_annual_saving) }}</div>
         <span style="font-size: 0.75rem; color: var(--text-tertiary);">/ year</span>
     </div>
     <div style="font-size: 0.75rem; color: var(--text-tertiary); margin-bottom: 16px;">potential saving on your subscriptions each year</div>
@@ -30,7 +30,7 @@
     <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 0;
         {% if not loop.last %}border-bottom: 0.5px solid rgba(255,255,255,0.06);{% endif %}">
         <span style="font-size: 0.85rem; color: var(--text-primary); text-transform: capitalize;">{{ s.merchant }}</span>
-        <span style="font-size: 0.8rem; color: var(--text-secondary);">£{{ "%.0f" | format(s.monthly_cost) }}/mo</span>
+        <span style="font-size: 0.8rem; color: var(--text-secondary);">£{{ "{:,.0f}".format(s.monthly_cost) }}/mo</span>
     </div>
     {% endfor %}
 </div>
@@ -96,9 +96,9 @@
         {% if b.status == 'exceeded' %}
         <div style="font-size: 0.72rem; color: var(--danger);">£{{ "{:,.0f}".format(b.remaining | abs) }} over budget</div>
         {% elif b.status == 'warning' %}
-        <div style="font-size: 0.72rem; color: var(--warning);">Close to limit · £{{ "%.2f" | format(b.daily_remaining) }}/day left</div>
+        <div style="font-size: 0.72rem; color: var(--warning);">Close to limit · £{{ "{:,.2f}".format(b.daily_remaining) }}/day left</div>
         {% elif b.daily_remaining > 0 %}
-        <div style="font-size: 0.72rem; color: var(--text-tertiary);">£{{ "%.2f" | format(b.daily_remaining) }}/day for {{ days_remaining }} days</div>
+        <div style="font-size: 0.72rem; color: var(--text-tertiary);">£{{ "{:,.2f}".format(b.daily_remaining) }}/day for {{ days_remaining }} days</div>
         {% endif %}
 
     </div>

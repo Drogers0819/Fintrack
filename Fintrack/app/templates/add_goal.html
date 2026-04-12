@@ -14,7 +14,7 @@
 <div style="max-width: 560px;">
     <form method="POST" action="{{ url_for('pages.add_goal') }}">
         <div class="form-group">
-            <label class="form-label">What's this goal called?</label>
+            <label class="form-label">Goal name</label>
             <input type="text" name="name" class="form-input" placeholder="e.g. Manchester house deposit" required>
         </div>
 
@@ -28,7 +28,7 @@
                 </select>
             </div>
             <div class="form-group">
-                <label class="form-label">Priority (1 = most important)</label>
+                <label class="form-label">Priority <span style="font-weight: 400; color: var(--text-tertiary);">(1 = highest)</span></label>
                 <input type="number" name="priority_rank" class="form-input" min="1" value="1" required>
             </div>
         </div>

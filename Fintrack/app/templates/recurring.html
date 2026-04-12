@@ -15,19 +15,19 @@
 <div class="grid-3" style="margin-bottom: 32px;">
     <div class="glass-card">
         <div class="metric-label">Monthly Outgoing</div>
-        <div class="metric-value md">£{{ "%.2f" | format(recurring.total_monthly_cost) }}</div>
+        <div class="metric-value md">£{{ "{:,.2f}".format(recurring.total_monthly_cost) }}</div>
         <div style="font-size: 0.7rem; color: var(--text-tertiary);">{{ recurring.expense_count }} recurring expense{{ "s" if recurring.expense_count != 1 else "" }}</div>
     </div>
     {% if recurring.total_monthly_income > 0 %}
     <div class="glass-card">
         <div class="metric-label">Monthly Incoming</div>
-        <div class="metric-value md success">£{{ "%.2f" | format(recurring.total_monthly_income) }}</div>
+        <div class="metric-value md success">£{{ "{:,.2f}".format(recurring.total_monthly_income) }}</div>
         <div style="font-size: 0.7rem; color: var(--text-tertiary);">{{ recurring.income_count }} recurring income{{ "s" if recurring.income_count != 1 else "" }}</div>
     </div>
     {% endif %}
     <div class="glass-card">
         <div class="metric-label">Annual Cost</div>
-        <div class="metric-value md">£{{ "%.2f" | format(recurring.total_monthly_cost * 12) }}</div>
+        <div class="metric-value md">£{{ "{:,.2f}".format(recurring.total_monthly_cost * 12) }}</div>
         <div style="font-size: 0.7rem; color: var(--text-tertiary);">at current rate</div>
     </div>
 </div>
@@ -40,7 +40,7 @@
     </div>
     <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 12px;">
         We found {{ savings.count }} potential saving{{ "s" if savings.count != 1 else "" }} worth up to
-        <span style="color: var(--roman-gold); font-weight: 600;">£{{ "%.2f" | format(savings.total_potential_annual_saving) }}/year</span>.
+        <span style="color: var(--roman-gold); font-weight: 600;">£{{ "{:,.2f}".format(savings.total_potential_annual_saving) }}/year</span>.
     </p>
     {% for s in savings.opportunities %}
     <div style="font-size: 0.8rem; color: var(--text-secondary); padding: 8px 0;
@@ -73,24 +73,14 @@
             </div>
             <div style="text-align: right; min-width: 100px;">
                 <div class="metric-value xs {% if r.transaction_type == 'income' %}success{% endif %}">
-                    {% if r.transaction_type == 'income' %}+£{{ "%.2f" | format(r.avg_amount) }}{% else %}−£{{ "%.2f" | format(r.avg_amount) }}{% endif %}
+                    {% if r.transaction_type == 'income' %}+£{{ "{:,.2f}".format(r.avg_amount) }}{% else %}−£{{ "{:,.2f}".format(r.avg_amount) }}{% endif %}
                 </div>
                 <div style="font-size: 0.7rem; color: var(--text-tertiary);">
-                    £{{ "%.2f" | format(r.monthly_cost) }}/month
+                    £{{ "{:,.2f}".format(r.monthly_cost) }}/month
                 </div>
             </div>
         </div>
 
-        <div style="margin-top: 8px;">
-            <div class="progress-track" style="height: 4px;">
-                <div class="progress-fill{% if r.confidence < 0.5 %} warning{% endif %}"
-                     style="width: {{ (r.confidence * 100) | int }}%;
-                     {% if r.confidence > 0.7 %}background: var(--roman-gold);{% endif %}"></div>
-            </div>
-            <div style="font-size: 0.6rem; color: var(--text-tertiary); margin-top: 2px;">
-                {{ (r.confidence * 100) | int }}% confidence
-            </div>
-        </div>
     </div>
     {% endfor %}
 </div>

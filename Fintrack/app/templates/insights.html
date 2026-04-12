@@ -52,7 +52,7 @@
         </div>
         <div class="glass-card">
             <div class="metric-label">Daily average</div>
-            <div class="metric-value md" style="margin: 4px 0;">£{{ "%.2f" | format(predictions.spending_so_far.daily_average) }}</div>
+            <div class="metric-value md" style="margin: 4px 0;">£{{ "{:,.2f}".format(predictions.spending_so_far.daily_average) }}</div>
             <div style="font-size: 0.7rem; color: var(--text-tertiary);">/day</div>
         </div>
     </div>
@@ -80,7 +80,7 @@
         <div style="font-size: 0.75rem; color: var(--text-tertiary);">
             Expected £{{ "{:,.2f}".format(predictions.comparison.expected_at_this_point) }} · Actual £{{ "{:,.2f}".format(predictions.comparison.current_spent) }}
         </div>
-        <span class="badge {% if predictions.comparison.status == 'spending_high' %}badge-danger{% elif predictions.comparison.status == 'spending_low' %}badge-success{% else %}badge-warning{% endif %}">
+        <span class="badge {% if predictions.comparison.status == 'spending_high' %}badge-danger{% elif predictions.comparison.status == 'spending_low' %}badge-success{% else %}badge-default{% endif %}">
             {% if predictions.comparison.status == 'spending_high' %}above average
             {% elif predictions.comparison.status == 'spending_low' %}below average
             {% else %}on track{% endif %}
@@ -140,14 +140,14 @@
                 </span>
             </div>
             <div style="text-align: right;">
-                <div style="font-size: 1rem; font-variant-numeric: tabular-nums;">£{{ "%.2f" | format(cat.predicted_total) }}</div>
+                <div style="font-size: 1rem; font-variant-numeric: tabular-nums;">£{{ "{:,.2f}".format(cat.predicted_total) }}</div>
                 <div style="font-size: 0.65rem; color: var(--text-tertiary);">predicted</div>
             </div>
         </div>
         <div style="display: flex; justify-content: space-between; font-size: 0.7rem; color: var(--text-tertiary);">
-            <span>Spent so far: £{{ "%.2f" | format(cat.spent_so_far) }}</span>
+            <span>Spent so far: £{{ "{:,.2f}".format(cat.spent_so_far) }}</span>
             {% if cat.historical_average > 0 %}
-            <span>Average: £{{ "%.2f" | format(cat.historical_average) }}</span>
+            <span>Average: £{{ "{:,.2f}".format(cat.historical_average) }}</span>
             {% endif %}
         </div>
     </div>
