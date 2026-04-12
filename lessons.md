@@ -15,6 +15,31 @@
 
 <!-- Entries go below this line, newest first -->
 
+## 2026-04-12 — Fixed avatar alignment: use margin-bottom, not padding-top or padding-right
+**Mistake**: To clear the fixed avatar (top:14px, h:36px, bottom edge at 50px) from a sub-row CTA on My Goals, tried padding-top on the page-header (pushed h1 below avatar, breaking alignment) and padding-right on the sub-row (indented CTA inward, misaligning with card right edges below).
+**Fix**: Keep page-header with no padding-top so h1 at ~16px naturally aligns with avatar at top:14px — the same baseline seen on every other page. Increase page-header margin-bottom (8px → 24px) to push the sub-row down below the avatar's bottom edge.
+**Rule**: When a fixed element and page content are too close, push content DOWN with margin-bottom — never push it away horizontally (causes right-edge misalignment) and never add padding-top to the page-header (breaks avatar-h1 alignment).
+
+## 2026-04-12 — CSS `[style*="..."]` attribute substring selector breaks unrelated elements
+**Mistake**: Added `[style*="display: flex"][style*="gap: 12px"] { flex-direction: column }` to make certain mobile layouts stack. This matched every inline `style="display: flex; gap: 12px"` in the entire codebase — including the My Money sub-nav links and upload result rows — forcing them all to column.
+**Fix**: Removed the rule entirely. Templates that need column layout specify it with an inline `flex-direction: column` directly.
+**Rule**: Never use `[style*="..."]` attribute substring selectors as a styling mechanism — they silently match unintended elements. Use CSS classes or explicit inline styles.
+
+## 2026-04-12 — Gold color on neutral informational figures
+**Mistake**: "Available for goals" in settings.html used `color: var(--roman-gold)` — a neutral calculated figure, not a goal achieved or a positive outcome. Gold carried false emotional weight, implying success or a CTA.
+**Fix**: Plain `var(--text-primary)` for informational figures.
+**Rule**: Gold (`--roman-gold`) = goals achieved, projections on track, primary CTAs, AI insight headers. Never gold for neutral informational display values.
+
+## 2026-04-12 — badge-warning on neutral "on track" state
+**Mistake**: Used `badge-warning` (gold/amber) for "on track" spending status in insights.html. badge-warning communicates caution — the opposite intent. "On track" is neutral, not a warning.
+**Fix**: Changed to `badge-default` (grey/tertiary) for neutral states.
+**Rule**: badge-danger = bad, badge-warning = caution/risk, badge-success = positive, badge-default = neutral/informational. "On track" and "no action needed" states are always badge-default.
+
+## 2026-04-12 — Confidence scores exposed to end users
+**Mistake**: Each recurring payment card showed a confidence progress bar (e.g. "75% confidence") — an ML internal metric with no meaning to users.
+**Fix**: Removed the bars. The occurrence count ("6 occurrences") already signals how reliable the detection is.
+**Rule**: Never surface model confidence scores, probability values, or algorithm internals in the UI. Translate them into user-meaningful signals (occurrence count, frequency label) or omit entirely.
+
 ## 2026-04-12 — `--text-tertiary` at 0.3 opacity fails WCAG contrast (systematic)
 **Mistake**: `--text-tertiary: rgba(255,255,255,0.3)` renders at ~2.5:1 contrast on the dark racing-green background. Used everywhere for whisper/supporting text across all templates. WCAG AA minimum is 4.5:1.
 **Fix**: Raised `--text-tertiary` to 0.5 and `--text-secondary` to 0.65 in main.css (root defaults) and in all dark/light theme overrides in themes.css. Token-level fix propagates to all ~40 inline uses automatically without touching templates.
