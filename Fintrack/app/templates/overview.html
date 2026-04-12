@@ -2,8 +2,11 @@
 {% block title %}Overview — Claro{% endblock %}
 
 {% block content %}
-<div class="page-header">
+<div class="page-header" style="display: flex; justify-content: space-between; align-items: center;">
     <h1>Good {{ greeting }}, {{ current_user.name.split()[0] }}.</h1>
+    <a href="{{ url_for('pages.settings') }}" class="overview-avatar {% if request.endpoint == 'pages.settings' %}active{% endif %}" aria-label="Profile &amp; settings">
+        {{ current_user.name[0] | upper }}
+    </a>
 </div>
 
 {% if not current_user.factfind_completed %}
