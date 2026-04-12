@@ -1563,16 +1563,16 @@ body.theme-mist .budget-row-danger {
         display: flex;
         flex-direction: column;
         align-items: center;
-        gap: 0;
-        padding: 4px 4px;
-        font-size: 0;
-        letter-spacing: 0;
+        gap: 3px;
+        padding: 6px 4px;
+        font-size: 0.6rem;
+        letter-spacing: 0.02em;
         text-transform: none;
         line-height: 1;
         flex: 1;
         text-align: center;
         border-radius: 0;
-        min-height: 44px;
+        min-height: 52px;
         justify-content: center;
         -webkit-tap-highlight-color: transparent;
         transition: color 0.15s ease;
@@ -1594,9 +1594,9 @@ body.theme-mist .budget-row-danger {
         margin: 0;
     }
 
-    /* Main content: account for bottom nav */
+    /* Main content: account for taller bottom nav (labels added) */
     .main-content {
-        padding: 16px 16px 100px;
+        padding: 16px 16px 110px;
         margin-left: 0;
         width: 100%;
         overflow-x: hidden;
@@ -1835,7 +1835,7 @@ body.theme-mist .budget-row-danger {
 
 @media (max-width: 375px) {
     .main-content {
-        padding: 12px 12px 100px;
+        padding: 12px 12px 110px;
     }
 
     .page-header h1 {
