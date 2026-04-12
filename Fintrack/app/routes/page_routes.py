@@ -21,6 +21,7 @@ from app.services.simulator_service import (
     simulate_scenario, generate_multi_horizon_projection
 )
 import calendar
+from app.services.planner_service import generate_financial_plan, get_plan_summary, can_i_afford
 
 page_bp = Blueprint("pages", __name__)
 
@@ -104,7 +105,11 @@ def _get_txn_list():
 
 
 def _get_money_left():
-    """Calculates money left to spend this month."""
+    """Calculates money left to spend this month.
+    
+    Income minus all expenses, excluding Transfers (money moved
+    between accounts is not spending).
+    """
     if not current_user.factfind_completed or not current_user.monthly_income:
         return None, 0
 
@@ -112,23 +117,28 @@ def _get_money_left():
     days_in_month = calendar.monthrange(today.year, today.month)[1]
     days_remaining = days_in_month - today.day
 
-    current_month_expenses = db.session.query(
+    income = float(current_user.monthly_income)
+
+    # Exclude transfers — moving money between accounts is not spending
+    transfer_category = db.session.query(Category.id).filter(
+        Category.name == "Transfer"
+    ).scalar()
+
+    query = db.session.query(
         func.coalesce(func.sum(Transaction.amount), 0)
     ).filter(
         Transaction.user_id == current_user.id,
         Transaction.type == "expense",
         extract("month", Transaction.date) == today.month,
         extract("year", Transaction.date) == today.year
-    ).scalar()
-
-    goals = Goal.query.filter_by(user_id=current_user.id, status="active").all()
-    total_goal_allocation = sum(
-        float(g.monthly_allocation) if g.monthly_allocation else 0
-        for g in goals
     )
 
-    disposable = current_user.monthly_surplus - total_goal_allocation
-    money_left = round(disposable - float(current_month_expenses), 2)
+    if transfer_category:
+        query = query.filter(Transaction.category_id != transfer_category)
+
+    current_month_expenses = query.scalar()
+
+    money_left = round(income - float(current_month_expenses), 2)
 
     return money_left, days_remaining
 
@@ -383,84 +393,70 @@ def logout():
 def overview():
     data = _build_whisper_data()
 
-    income = db.session.query(
-        func.coalesce(func.sum(Transaction.amount), 0)
-    ).filter_by(user_id=current_user.id, type="income").scalar()
-
-    expenses = db.session.query(
-        func.coalesce(func.sum(Transaction.amount), 0)
-    ).filter_by(user_id=current_user.id, type="expense").scalar()
-
-    recent = Transaction.query.filter_by(
-        user_id=current_user.id
-    ).order_by(Transaction.date.desc()).limit(5).all()
-
     hour = datetime.now().hour
     greeting = "morning" if hour < 12 else "afternoon" if hour < 18 else "evening"
 
-    budget_status = None
-    if current_user.monthly_income:
-        budget_status = calc_prediction_budget_status(
-            data["predictions"],
-            {"monthly_income": float(current_user.monthly_income),
-             "fixed_commitments": current_user.fixed_commitments},
-            [{"id": g["id"], "name": g["name"],
-              "monthly_allocation": g.get("monthly_allocation", 0)}
-             for g in data["goals"]]
-        )
+    # Generate smart plan
+    smart_plan = None
+    plan_summary = None
+    if current_user.factfind_completed and current_user.monthly_income:
+        user_profile = current_user.profile_dict()
+        goals_data = data["goals"]
+        smart_plan = generate_financial_plan(user_profile, goals_data)
+        if "error" not in smart_plan:
+            plan_summary = get_plan_summary(smart_plan)
 
-    # Intelligence summary — ambient AI layer
+    # Money left (secondary stat)
+    money_left, days_remaining = _get_money_left()
+
+    # Spending summary this month
     today = date.today()
-    day_of_month = today.day
-    days_in_month = calendar.monthrange(today.year, today.month)[1]
+    income = db.session.query(
+        func.coalesce(func.sum(Transaction.amount), 0)
+    ).filter_by(user_id=current_user.id, type="income").filter(
+        extract("month", Transaction.date) == today.month,
+        extract("year", Transaction.date) == today.year
+    ).scalar()
 
-    recurring_data = data.get("recurring", {})
-    recurring_count = recurring_data.get("expense_count", 0)
-    recurring_total = recurring_data.get("total_monthly_cost", 0)
+    expenses = db.session.query(
+        func.coalesce(func.sum(Transaction.amount), 0)
+    ).filter_by(user_id=current_user.id, type="expense").filter(
+        extract("month", Transaction.date) == today.month,
+        extract("year", Transaction.date) == today.year
+    ).scalar()
 
-    predictions = data.get("predictions", {})
-    comparison = predictions.get("comparison", {})
-    spending_direction = comparison.get("status", "")  # "spending_high" | "spending_low" | "on_track"
-    spending_diff = comparison.get("difference", 0)
+    # Top 3 spending categories this month
+    top_categories = db.session.query(
+        Category.name, Category.icon,
+        func.sum(Transaction.amount).label("total")
+    ).join(Category, Transaction.category_id == Category.id).filter(
+        Transaction.user_id == current_user.id,
+        Transaction.type == "expense",
+        extract("month", Transaction.date) == today.month,
+        extract("year", Transaction.date) == today.year
+    ).group_by(Category.id, Category.name, Category.icon
+    ).order_by(func.sum(Transaction.amount).desc()).limit(3).all()
 
-    # Goal projection hero — pick the primary goal's projection if reachable
-    projections = data.get("projections", [])
-    primary_projection = None
-    if projections and data["primary_goal"]:
-        primary_goal_id = data["primary_goal"].get("id")
-        for p in projections:
-            if p.get("goal_id") == primary_goal_id and p.get("reachable"):
-                primary_projection = p
-                break
+    categories = [{"name": c.name, "icon": c.icon, "total": float(c.total)} for c in top_categories]
 
-    # One-sentence timeline driver — what's pushing or pulling the date
-    timeline_note = None
-    if primary_projection:
-        trends = data.get("trends", [])
-        if spending_direction == "spending_high" and spending_diff and spending_diff > 0:
-            timeline_note = f"You're spending a little more than usual. Ease off and you could pull this date forward."
-        elif spending_direction == "spending_low" and spending_diff and spending_diff > 0:
-            timeline_note = f"You're spending less than usual. At this rate you could hit this goal ahead of schedule."
-        elif trends:
-            top = trends[0]
-            if top["direction"] == "up" and top["change_amount"] > 20:
-                timeline_note = f"Your {top['category'].lower()} spend is up this month. Worth a look."
+    # Last upload date
+    last_transaction = Transaction.query.filter_by(
+        user_id=current_user.id
+    ).order_by(Transaction.date.desc()).first()
+
+    has_data = last_transaction is not None
 
     return render_template("overview.html",
         greeting=greeting,
-        money_left=data["money_left"],
-        days_remaining=data["days_remaining"],
-        budget_status=budget_status,
+        smart_plan=smart_plan,
+        plan_summary=plan_summary,
+        money_left=money_left,
+        days_remaining=days_remaining,
+        has_data=has_data,
+        monthly_spending=float(expenses),
+        top_categories=categories,
         primary_goal=data["primary_goal"] if data["primary_goal"] else None,
         active_goals_count=data["active_goals"],
-        primary_projection=primary_projection,
-        timeline_note=timeline_note,
-        summary={
-            "total_income": float(income),
-            "total_expenses": float(expenses),
-            "balance": float(income) - float(expenses)
-        },
-        recent_transactions=[t.to_dict() for t in recent]
     )
 
 
@@ -537,23 +533,53 @@ def my_goals():
 def plan():
     data = _build_whisper_data()
 
+    # Generate the smart plan
+    smart_plan = None
+    plan_summary = None
+    if current_user.factfind_completed and current_user.monthly_income:
+        user_profile = current_user.profile_dict()
+        goals_data = data["goals"]
+        smart_plan = generate_financial_plan(user_profile, goals_data)
+        if "error" not in smart_plan:
+            plan_summary = get_plan_summary(smart_plan)
+
+    # Habit cost calculator
     habit_result = None
     habit_amount = None
     habit_description = None
 
-    if request.method == "POST" and request.form.get("form_type") == "habit_cost":
-        try:
-            habit_amount = round(float(request.form.get("habit_amount", 0)), 2)
-            habit_description = request.form.get("habit_description", "").strip() or "This habit"
-            if habit_amount > 0:
-                habit_result = calculate_cost_of_habit(habit_amount)
-                habit_result["description"] = habit_description
-        except (ValueError, TypeError):
-            flash("Invalid amount", "error")
+    # Affordability check
+    afford_result = None
+
+    if request.method == "POST":
+        form_type = request.form.get("form_type")
+
+        if form_type == "habit_cost":
+            try:
+                habit_amount = round(float(request.form.get("habit_amount", 0)), 2)
+                habit_description = request.form.get("habit_description", "").strip() or "This habit"
+                if habit_amount > 0:
+                    habit_result = calculate_cost_of_habit(habit_amount)
+                    habit_result["description"] = habit_description
+            except (ValueError, TypeError):
+                flash("Invalid amount", "error")
+
+        elif form_type == "afford_check" and smart_plan and "error" not in smart_plan:
+            try:
+                expense_name = request.form.get("expense_name", "").strip() or "This expense"
+                expense_amount = round(float(request.form.get("expense_amount", 0)), 2)
+                target_month = request.form.get("target_month", type=int) or 1
+                if expense_amount > 0:
+                    afford_result = can_i_afford(smart_plan, expense_name, expense_amount, target_month)
+            except (ValueError, TypeError):
+                flash("Invalid amount", "error")
 
     return render_template("plan.html",
         waterfall=data["waterfall"],
         projections=data["projections"],
+        smart_plan=smart_plan,
+        plan_summary=plan_summary,
+        afford_result=afford_result,
         habit_result=habit_result,
         habit_amount=habit_amount,
         habit_description=habit_description
@@ -643,9 +669,21 @@ def factfind():
 
         income_day = request.form.get("income_day", type=int)
 
+        try:
+            groceries_estimate = round(float(request.form.get("groceries_estimate", 0)), 2)
+        except (ValueError, TypeError):
+            groceries_estimate = 0
+
+        try:
+            transport_estimate = round(float(request.form.get("transport_estimate", 0)), 2)
+        except (ValueError, TypeError):
+            transport_estimate = 0
+
         current_user.monthly_income = monthly_income
         current_user.rent_amount = rent_amount
         current_user.bills_amount = bills_amount
+        current_user.groceries_estimate = groceries_estimate
+        current_user.transport_estimate = transport_estimate
         current_user.income_day = income_day
         current_user.factfind_completed = True
 

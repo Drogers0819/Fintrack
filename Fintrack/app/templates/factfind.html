@@ -53,6 +53,27 @@
             Council tax, phone, utilities, internet and similar fixed costs.
         </p>
 
+        <div class="section-label" style="margin-top: 28px; margin-bottom: 16px;">Living costs</div>
+
+        <div class="grid-2">
+            <div class="form-group" style="margin-bottom: 0;">
+                <label class="form-label">Monthly groceries (£)</label>
+                <input type="number" name="groceries_estimate" class="form-input" step="0.01" min="0"
+                       placeholder="e.g. 250"
+                       value="{{ '%g' | format(profile.groceries_estimate) if profile.groceries_estimate else '' }}">
+            </div>
+            <div class="form-group" style="margin-bottom: 0;">
+                <label class="form-label">Monthly transport (£)</label>
+                <input type="number" name="transport_estimate" class="form-input" step="0.01" min="0"
+                       placeholder="e.g. 80"
+                       value="{{ '%g' | format(profile.transport_estimate) if profile.transport_estimate else '' }}">
+            </div>
+        </div>
+
+        <p style="font-size: 0.75rem; color: var(--text-tertiary); margin-top: 12px; margin-bottom: 24px; font-style: italic;">
+            Rough estimates are fine — we'll refine these from your bank statements.
+        </p>
+
         {% if profile.monthly_income %}
         <div style="padding: 16px; border-radius: 12px; background: var(--roman-gold-dim); margin-bottom: 24px;">
             <div class="metric-label" style="color: var(--roman-gold);">Available for your goals</div>

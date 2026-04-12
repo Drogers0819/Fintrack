@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}Overview — Claro{% endblock %}
+{% block title %}Overview – Claro{% endblock %}
 
 {% block content %}
 <div class="page-header">
@@ -7,125 +7,142 @@
 </div>
 
 {% if not current_user.factfind_completed %}
+<!-- Onboarding prompt -->
 <a href="{{ url_for('pages.factfind') }}" style="display: flex; align-items: center; gap: 10px; padding: 11px 16px; border-radius: 10px; background: rgba(197, 163, 93, 0.07); border: 0.5px solid rgba(197, 163, 93, 0.2); margin-bottom: 24px; text-decoration: none; color: inherit;">
     <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--roman-gold)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0;"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-    <span style="flex: 1; font-size: 0.8rem; color: var(--text-secondary);">Finish setting up your profile to unlock all features</span>
+    <span style="flex: 1; font-size: 0.8rem; color: var(--text-secondary);">Complete your profile to generate your financial plan</span>
     <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--text-tertiary)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0;"><path d="M9 18l6-6-6-6"/></svg>
 </a>
-{% endif %}
 
-{% if summary.total_income == 0 and summary.total_expenses == 0 %}
-<!-- ──── EMPTY STATE ──── -->
-<div style="padding: 40px 0; text-align: center;">
-    <div style="width: 48px; height: 48px; border-radius: 50%; background: var(--roman-gold-dim); border: 0.5px solid rgba(197,163,93,0.3); display: flex; align-items: center; justify-content: center; margin: 0 auto 20px;">
-        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--roman-gold)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="14" x="2" y="5" rx="2"/><line x1="2" x2="22" y1="10" y2="10"/></svg>
+{% elif smart_plan and not smart_plan.error %}
+<!-- ════ PLAN STATUS — the hero ════ -->
+<div class="gold-card" style="margin-bottom: 24px;">
+    <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 12px;">
+        <span class="ai-pulse"></span>
+        <span class="metric-label" style="margin-bottom: 0; color: var(--roman-gold);">Your plan</span>
     </div>
-    <div style="font-size: 1rem; color: var(--text-primary); margin-bottom: 8px;">See where your money actually goes</div>
-    <p style="font-size: 0.85rem; color: var(--text-tertiary); line-height: 1.7; max-width: 340px; margin: 0 auto 24px;">
-        Upload a statement and Claro will categorise every transaction, spot recurring costs, predict your spending, and tell you exactly when you'll hit your goals.
-    </p>
-    <a href="{{ url_for('pages.upload_statement') }}" class="btn-primary">Upload a bank statement</a>
-    <div style="margin-top: 12px;">
-        <a href="{{ url_for('pages.add_transaction') }}" style="font-size: 0.8rem; color: var(--roman-gold); text-decoration: none;">or add a transaction manually</a>
+    <p style="font-size: 0.95rem; color: var(--text-primary); line-height: 1.7; margin-bottom: 12px;">{{ plan_summary }}</p>
+
+    {% if smart_plan.current_phase %}
+    <div style="display: flex; gap: 12px; margin-top: 12px; padding-top: 12px; border-top: 0.5px solid rgba(255,255,255,0.06);">
+        <div style="flex: 1;">
+            <div style="font-size: 0.65rem; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 2px;">Phase</div>
+            <div style="font-size: 1rem; color: var(--roman-gold); font-weight: 500;">{{ smart_plan.current_phase.phase }} of {{ smart_plan.phase_count }}</div>
+        </div>
+        <div style="flex: 1;">
+            <div style="font-size: 0.65rem; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 2px;">Surplus</div>
+            <div style="font-size: 1rem; color: var(--text-primary); font-weight: 500;">£{{ "{:,.0f}".format(smart_plan.surplus) }}/mo</div>
+        </div>
+        <div style="flex: 1;">
+            <div style="font-size: 0.65rem; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 2px;">Lifestyle</div>
+            <div style="font-size: 1rem; color: var(--text-primary); font-weight: 500;">£{{ "{:,.0f}".format(smart_plan.lifestyle_monthly) }}/mo</div>
+        </div>
     </div>
+    {% endif %}
+
+    <a href="{{ url_for('pages.plan') }}" style="display: inline-block; margin-top: 14px; font-size: 0.75rem; color: var(--roman-gold); text-decoration: none;">
+        View full plan <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle;"><path d="M9 18l6-6-6-6"/></svg>
+    </a>
 </div>
 
-{% else %}
-<!-- ──── REAL DATA ──── -->
-
-<!-- 1 · Status — money left this month + forecast in one card -->
-{% if money_left is not none %}
+<!-- ════ ACTIVE POTS — compact progress ════ -->
+{% set goal_pots = smart_plan.pots | selectattr("type", "ne", "lifestyle") | selectattr("type", "ne", "buffer") | list %}
+{% if goal_pots %}
 <div class="glass-card" style="margin-bottom: 24px;">
-    <div class="metric-label">Left to spend this month</div>
-    <div class="metric-value hero {% if money_left >= 0 %}gold{% else %}danger{% endif %}" style="margin: 6px 0 4px;">
-        {% if money_left < 0 %}−£{{ "{:,.2f}".format(money_left | abs) }}{% else %}£{{ "{:,.2f}".format(money_left) }}{% endif %}
-    </div>
-
-    {% if money_left > 0 and days_remaining > 0 %}
-    <div style="font-size: 0.8rem; color: var(--text-tertiary);">
-        £{{ "%.2f" | format(money_left / days_remaining) }}/day for {{ days_remaining }} days left
-    </div>
-    {% elif money_left < 0 %}
-    <div style="font-size: 0.8rem; color: var(--danger);">
-        You're over budget this month. Pause non-essentials where you can.
-    </div>
-    {% endif %}
-
-    {% if budget_status %}
-    <div style="margin-top: 12px; padding-top: 12px; border-top: 0.5px solid rgba(255,255,255,0.06); display: flex; justify-content: space-between; align-items: center;">
-        <span style="font-size: 0.8rem; color: var(--text-secondary);">{{ budget_status.message }}</span>
-        <span class="badge {% if budget_status.status == 'healthy' %}badge-success{% elif budget_status.status == 'tight' %}badge-warning{% else %}badge-danger{% endif %}">
-            {{ budget_status.status }}
-        </span>
-    </div>
-    {% endif %}
-</div>
-{% endif %}
-
-<!-- 2 · Primary goal -->
-{% if primary_goal and primary_goal.target_amount %}
-<div class="glass-card" style="margin-bottom: 24px; border-left: 3px solid var(--roman-gold); padding-left: 20px;">
-    <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px;">
-        <div>
-            <div class="metric-label" style="font-size: 0.7rem; margin-bottom: 2px;">Goal</div>
-            <div style="font-size: 0.95rem; color: var(--text-primary); font-weight: 500;">{{ primary_goal.name }}</div>
-        </div>
-        {% if active_goals_count > 1 %}
-        <a href="{{ url_for('pages.my_goals') }}" style="font-size: 0.75rem; color: var(--roman-gold); text-decoration: none; white-space: nowrap; margin-top: 2px;">
-            +{{ active_goals_count - 1 }} more
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
+        <span class="metric-label" style="margin-bottom: 0;">Your pots</span>
+        <a href="{{ url_for('pages.my_goals') }}" style="font-size: 0.75rem; color: var(--roman-gold); text-decoration: none;">
+            {% if active_goals_count > 0 %}{{ active_goals_count }} goal{{ 's' if active_goals_count != 1 else '' }}{% endif %}
         </a>
-        {% endif %}
     </div>
 
-    <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 10px;">
-        <span class="metric-value md gold">
-            £{{ "{:,.2f}".format(primary_goal.current_amount) }}
-        </span>
-        <span style="font-size: 0.8rem; color: var(--text-tertiary);">
-            of £{{ "{:,.2f}".format(primary_goal.target_amount) }}
-        </span>
-    </div>
-
-    <div class="progress-track" style="height: 5px;">
-        <div class="progress-fill{% if primary_goal.progress_percent >= 90 %} warning{% endif %}" style="width: {{ primary_goal.progress_percent if primary_goal.progress_percent else 0 }}%;"></div>
-    </div>
-
-    {% if primary_projection %}
-    <div style="margin-top: 14px; padding-top: 14px; border-top: 0.5px solid rgba(255,255,255,0.06);">
-        <div style="font-size: 1rem; color: var(--text-primary); font-weight: 500; margin-bottom: 4px;">
-            On track for <span style="color: var(--roman-gold);">{{ primary_projection.completion_date_human }}</span>
+    {% for pot in goal_pots %}
+    {% if pot.monthly_amount > 0 %}
+    <div style="padding: 8px 0; {% if not loop.last %}border-bottom: 0.5px solid rgba(255,255,255,0.04);{% endif %}">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+            <div style="display: flex; align-items: center; gap: 6px;">
+                <span style="font-size: 0.85rem; color: var(--text-primary);">{{ pot.name }}</span>
+                {% if pot.completed %}
+                <span style="font-size: 0.6rem; padding: 1px 6px; border-radius: 4px; background: rgba(72,187,120,0.1); color: rgba(72,187,120,0.8);">done</span>
+                {% endif %}
+            </div>
+            <span style="font-size: 0.8rem; color: var(--roman-gold);">£{{ "{:,.0f}".format(pot.monthly_amount) }}/mo</span>
         </div>
-        {% if timeline_note %}
-        <div style="font-size: 0.8rem; color: var(--text-secondary); line-height: 1.5;">{{ timeline_note }}</div>
+        {% if pot.target and not pot.completed %}
+        <div style="height: 3px; background: rgba(255,255,255,0.04); border-radius: 2px; overflow: hidden;">
+            <div style="height: 100%; border-radius: 2px; background: var(--roman-gold); width: {{ ((pot.current / pot.target) * 100) | round(1) }}%;"></div>
+        </div>
+        <div style="display: flex; justify-content: space-between; margin-top: 3px;">
+            <span style="font-size: 0.65rem; color: var(--text-tertiary);">£{{ "{:,.0f}".format(pot.current) }} of £{{ "{:,.0f}".format(pot.target) }}</span>
+            {% if pot.months_to_target is defined %}
+            <span style="font-size: 0.65rem; color: var(--text-tertiary);">{{ pot.months_to_target }} months</span>
+            {% endif %}
+        </div>
         {% endif %}
-    </div>
-    {% else %}
-    <div style="font-size: 0.73rem; color: var(--text-tertiary); margin-top: 6px;">
-        {{ primary_goal.progress_percent if primary_goal.progress_percent else 0 }}% there
-        {% if primary_goal.progress_percent and primary_goal.progress_percent >= 90 %} · almost there{% elif primary_goal.progress_percent and primary_goal.progress_percent >= 50 %} · over halfway{% endif %}
     </div>
     {% endif %}
+    {% endfor %}
 </div>
 {% endif %}
 
-<!-- 3 · Recent activity -->
-<div class="glass-card">
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
-        <span class="metric-label" style="margin-bottom: 0;">Recent activity</span>
-        <a href="{{ url_for('pages.my_money') }}" style="font-size: 0.75rem; color: var(--roman-gold); text-decoration: none;">View all</a>
-    </div>
-    {% for t in recent_transactions %}
-    <div class="transaction-row">
-        <div class="transaction-info">
-            <div class="transaction-description">{{ t.description }}</div>
-            <div class="transaction-meta">{{ t.date_display }} · {{ t.category }}</div>
-        </div>
-        <div class="transaction-amount {{ t.type }}">
-            {% if t.type == "income" %}+£{{ "%.2f" | format(t.amount) }}{% else %}−£{{ "%.2f" | format(t.amount) }}{% endif %}
-        </div>
+<!-- ════ ALERTS — only if plan has warnings ════ -->
+{% if smart_plan.alerts %}
+<div style="margin-bottom: 24px;">
+    {% for alert in smart_plan.alerts %}
+    <div style="padding: 10px 14px; margin-bottom: 6px; border-radius: 10px; background: {% if alert.severity == 'warning' %}rgba(246,173,85,0.06){% else %}var(--glass-bg){% endif %}; border: 0.5px solid {% if alert.severity == 'warning' %}rgba(246,173,85,0.12){% else %}var(--glass-border){% endif %};">
+        <p style="font-size: 0.8rem; color: {% if alert.severity == 'warning' %}rgba(246,173,85,0.9){% else %}var(--text-secondary){% endif %}; line-height: 1.5; margin: 0;">{{ alert.message }}</p>
     </div>
     {% endfor %}
 </div>
+{% endif %}
 
 {% endif %}
+
+<!-- ════ SPENDING SNAPSHOT — secondary ════ -->
+{% if has_data %}
+<div class="glass-card" style="margin-bottom: 24px;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
+        <span class="metric-label" style="margin-bottom: 0;">This month</span>
+        <a href="{{ url_for('pages.my_money') }}" style="font-size: 0.75rem; color: var(--roman-gold); text-decoration: none;">Details</a>
+    </div>
+
+    <div style="display: flex; gap: 12px; margin-bottom: 14px;">
+        {% if money_left is not none %}
+        <div style="flex: 1;">
+            <div style="font-size: 0.65rem; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 2px;">Left to spend</div>
+            <div style="font-size: 1.1rem; font-weight: 500; color: {% if money_left >= 0 %}var(--text-primary){% else %}var(--danger){% endif %};">
+                {% if money_left < 0 %}-{% endif %}£{{ "{:,.0f}".format(money_left | abs) }}
+            </div>
+            {% if money_left > 0 and days_remaining > 0 %}
+            <div style="font-size: 0.65rem; color: var(--text-tertiary);">£{{ "%.0f" | format(money_left / days_remaining) }}/day · {{ days_remaining }} days</div>
+            {% endif %}
+        </div>
+        {% endif %}
+        <div style="flex: 1;">
+            <div style="font-size: 0.65rem; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 2px;">Spent so far</div>
+            <div style="font-size: 1.1rem; font-weight: 500; color: var(--text-primary);">£{{ "{:,.0f}".format(monthly_spending) }}</div>
+        </div>
+    </div>
+
+    {% if top_categories %}
+    <div style="padding-top: 10px; border-top: 0.5px solid rgba(255,255,255,0.04);">
+        {% for cat in top_categories %}
+        <div style="display: flex; justify-content: space-between; padding: 4px 0;">
+            <span style="font-size: 0.8rem; color: var(--text-secondary);">{{ cat.icon }} {{ cat.name }}</span>
+            <span style="font-size: 0.8rem; color: var(--text-tertiary);">£{{ "{:,.0f}".format(cat.total) }}</span>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+</div>
+
+{% else %}
+<!-- No data yet -->
+<div class="glass-card" style="text-align: center; padding: 32px 20px;">
+    <div style="font-size: 0.95rem; color: var(--text-primary); margin-bottom: 8px;">Make your plan smarter</div>
+    <p style="font-size: 0.8rem; color: var(--text-tertiary); line-height: 1.6; max-width: 320px; margin: 0 auto 16px;">Upload a bank statement and Claro will learn your real spending patterns to refine your plan.</p>
+    <a href="{{ url_for('pages.upload_statement') }}" class="btn-primary btn-sm">Upload a statement</a>
+</div>
+{% endif %}
+
 {% endblock %}

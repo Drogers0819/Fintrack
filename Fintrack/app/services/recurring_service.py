@@ -21,7 +21,12 @@ def detect_recurring_transactions(transactions):
     recurring = []
 
     for merchant, txns in groups.items():
-        if len(txns) < 2:
+        if len(txns) < 3:
+            continue
+
+        # Must span at least 2 different months to be recurring
+        months_seen = set((t["date"].year, t["date"].month) for t in txns)
+        if len(months_seen) < 2:
             continue
 
         txns.sort(key=lambda t: t["date"])

@@ -1,17 +1,153 @@
 {% extends "base.html" %}
-{% block title %}Plan — Claro{% endblock %}
+{% block title %}Plan – Claro{% endblock %}
 
 {% block content %}
 <div class="page-header">
-    <h1>Plan</h1>
+    <h1>Your plan</h1>
 </div>
 
-<!-- 1 · Spend cost calculator — primary action -->
-<div style="margin-bottom: 36px;">
-    <div style="margin-bottom: 16px;">
-        <div class="section-label" style="margin-bottom: 6px;">Habit cost</div>
-        <div style="font-size: 0.85rem; color: var(--text-secondary);">Coffee, takeaways, subscriptions — enter the monthly cost and see what it grows into if invested instead.</div>
+{% if smart_plan and not smart_plan.error %}
+
+<!-- Plan summary whisper -->
+{% if plan_summary %}
+<div class="gold-card" style="margin-bottom: 28px;">
+    <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 10px;">
+        <span class="ai-pulse"></span>
+        <span class="metric-label" style="margin-bottom: 0; color: var(--roman-gold);">What you need to know</span>
     </div>
+    <p style="font-size: 0.9rem; color: var(--text-secondary); line-height: 1.7; font-style: italic;">{{ plan_summary }}</p>
+</div>
+{% endif %}
+
+<!-- Monthly breakdown -->
+<div style="margin-bottom: 32px;">
+    <div style="font-size: 0.72rem; color: var(--text-tertiary); margin-bottom: 14px; text-transform: uppercase; letter-spacing: 0.06em;">How your £{{ "{:,.0f}".format(smart_plan.income) }}/month is divided</div>
+
+    <div style="padding: 8px 0; border-bottom: 0.5px solid var(--glass-border);">
+        <div style="display: flex; justify-content: space-between;">
+            <span style="font-size: 0.85rem; color: var(--text-tertiary);">Essentials</span>
+            <span style="font-size: 0.85rem; color: var(--text-secondary);">£{{ "{:,.0f}".format(smart_plan.essentials) }}</span>
+        </div>
+        <div style="font-size: 0.7rem; color: var(--text-tertiary); margin-top: 2px;">
+            Rent £{{ "{:,.0f}".format(smart_plan.essentials_breakdown.rent) }} · Bills £{{ "{:,.0f}".format(smart_plan.essentials_breakdown.bills) }}{% if smart_plan.essentials_breakdown.groceries > 0 %} · Groceries £{{ "{:,.0f}".format(smart_plan.essentials_breakdown.groceries) }}{% endif %}{% if smart_plan.essentials_breakdown.transport > 0 %} · Transport £{{ "{:,.0f}".format(smart_plan.essentials_breakdown.transport) }}{% endif %}
+        </div>
+    </div>
+
+    {% for pot in smart_plan.pots %}
+    {% if pot.monthly_amount > 0 %}
+    <div style="padding: 8px 0; {% if not loop.last %}border-bottom: 0.5px solid var(--glass-border);{% endif %}">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+            <div>
+                <span style="font-size: 0.85rem; color: var(--text-primary);">{{ pot.name }}</span>
+                {% if pot.completed %}
+                <span style="font-size: 0.65rem; padding: 2px 8px; border-radius: 4px; background: rgba(72,187,120,0.1); color: rgba(72,187,120,0.8); margin-left: 6px;">done</span>
+                {% elif pot.target and pot.months_to_target is defined %}
+                <span style="font-size: 0.7rem; color: var(--text-tertiary); margin-left: 6px;">{{ pot.months_to_target }} months to go</span>
+                {% endif %}
+            </div>
+            <span style="font-size: 0.85rem; color: var(--roman-gold); font-weight: 500;">£{{ "{:,.0f}".format(pot.monthly_amount) }}/mo</span>
+        </div>
+        {% if pot.target %}
+        <div style="margin-top: 6px;">
+            <div style="height: 3px; background: rgba(255,255,255,0.04); border-radius: 2px; overflow: hidden;">
+                <div style="height: 100%; border-radius: 2px; background: var(--roman-gold); width: {{ ((pot.current / pot.target) * 100) | round(1) }}%;"></div>
+            </div>
+            <div style="display: flex; justify-content: space-between; margin-top: 3px;">
+                <span style="font-size: 0.65rem; color: var(--text-tertiary);">£{{ "{:,.0f}".format(pot.current) }}</span>
+                <span style="font-size: 0.65rem; color: var(--text-tertiary);">£{{ "{:,.0f}".format(pot.target) }}</span>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+    {% endif %}
+    {% endfor %}
+
+    <div style="padding: 10px 0; margin-top: 4px;">
+        <div style="display: flex; justify-content: space-between;">
+            <span style="font-size: 0.8rem; color: var(--text-tertiary); font-weight: 500;">Surplus</span>
+            <span style="font-size: 0.8rem; color: var(--roman-gold); font-weight: 500;">£{{ "{:,.0f}".format(smart_plan.surplus) }}/mo</span>
+        </div>
+    </div>
+</div>
+
+<!-- Phases -->
+{% if smart_plan.phases | length > 1 %}
+<div style="margin-bottom: 32px;">
+    <div style="font-size: 0.72rem; color: var(--text-tertiary); margin-bottom: 14px; text-transform: uppercase; letter-spacing: 0.06em;">Your plan phases</div>
+
+    {% for phase in smart_plan.phases %}
+    <div style="padding: 14px 16px; margin-bottom: 8px; border-radius: 12px; background: {% if loop.first %}var(--roman-gold-dim){% else %}var(--glass-bg){% endif %}; border: 0.5px solid {% if loop.first %}var(--glass-border){% else %}rgba(255,255,255,0.04){% endif %};">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+            <span style="font-size: 0.8rem; font-weight: 500; color: {% if loop.first %}var(--roman-gold){% else %}var(--text-secondary){% endif %};">Phase {{ phase.phase }}</span>
+            <span style="font-size: 0.7rem; color: var(--text-tertiary);">{{ phase.duration_months }} month{{ 's' if phase.duration_months != 1 else '' }}</span>
+        </div>
+        <p style="font-size: 0.8rem; color: var(--text-secondary); line-height: 1.5;">{{ phase.description }}</p>
+        {% if phase.completed_pots %}
+        <div style="margin-top: 6px;">
+            {% for name in phase.completed_pots %}
+            <span style="font-size: 0.65rem; padding: 2px 8px; border-radius: 4px; background: rgba(72,187,120,0.08); color: rgba(72,187,120,0.7); margin-right: 4px;">{{ name }} ✓</span>
+            {% endfor %}
+        </div>
+        {% endif %}
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
+
+<!-- Alerts -->
+{% if smart_plan.alerts %}
+<div style="margin-bottom: 32px;">
+    {% for alert in smart_plan.alerts %}
+    <div style="padding: 12px 16px; margin-bottom: 8px; border-radius: 10px; background: {% if alert.severity == 'warning' %}rgba(246,173,85,0.06){% else %}var(--glass-bg){% endif %}; border: 0.5px solid {% if alert.severity == 'warning' %}rgba(246,173,85,0.15){% else %}var(--glass-border){% endif %};">
+        <p style="font-size: 0.8rem; color: {% if alert.severity == 'warning' %}rgba(246,173,85,0.9){% else %}var(--text-secondary){% endif %}; line-height: 1.5;">{{ alert.message }}</p>
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
+
+<!-- Can I afford this? -->
+<div style="margin-bottom: 32px; padding-top: 16px; border-top: 0.5px solid rgba(255,255,255,0.06);">
+    <div class="section-label" style="margin-bottom: 6px;">Can I afford this?</div>
+    <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 12px;">Check a one-off expense against your plan.</p>
+    <form method="POST" action="{{ url_for('pages.plan') }}">
+        <input type="hidden" name="form_type" value="afford_check">
+        <div class="grid-2">
+            <div class="form-group" style="margin-bottom: 0;">
+                <label class="form-label">What is it?</label>
+                <input type="text" name="expense_name" class="form-input" placeholder="e.g. Lake District trip">
+            </div>
+            <div class="form-group" style="margin-bottom: 0;">
+                <label class="form-label">How much? (£)</label>
+                <input type="number" name="expense_amount" class="form-input" step="0.01" min="0.01" placeholder="e.g. 450" required>
+            </div>
+        </div>
+        <button type="submit" class="btn-primary btn-sm" style="margin-top: 12px;">Check</button>
+    </form>
+</div>
+
+{% if afford_result %}
+<div class="gold-card" style="margin-bottom: 28px;">
+    <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 10px;">
+        <span class="ai-pulse"></span>
+        <span class="metric-label" style="margin-bottom: 0; color: var(--roman-gold);">Claro</span>
+    </div>
+    <p style="font-size: 0.9rem; color: var(--text-secondary); line-height: 1.7; font-style: italic;">{{ afford_result.message }}</p>
+</div>
+{% endif %}
+
+{% else %}
+<!-- No plan yet -->
+<div style="text-align: center; padding: 40px 20px;">
+    <p style="font-size: 1.1rem; color: var(--text-secondary); margin-bottom: 8px;">Complete your financial profile to generate your plan.</p>
+    <p style="font-size: 0.85rem; color: var(--text-tertiary); margin-bottom: 24px;">It takes about 60 seconds. We'll calculate everything from there.</p>
+    <a href="{{ url_for('pages.factfind') }}" class="btn-primary">Set up your profile</a>
+</div>
+{% endif %}
+
+<!-- Habit cost calculator -->
+<div style="padding-top: 32px; margin-top: 8px; border-top: 0.5px solid rgba(255,255,255,0.06);">
+    <div class="section-label" style="margin-bottom: 6px;">Habit cost</div>
+    <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 12px;">See what a daily or monthly habit really costs over time.</p>
     <form method="POST" action="{{ url_for('pages.plan') }}">
         <input type="hidden" name="form_type" value="habit_cost">
         <div class="grid-2">
@@ -26,12 +162,12 @@
                        placeholder="e.g. Netflix, takeaways..." value="{{ habit_description if habit_description else '' }}">
             </div>
         </div>
-        <button type="submit" class="btn-primary btn-sm" style="margin-top: 16px;">Show me</button>
+        <button type="submit" class="btn-primary btn-sm" style="margin-top: 12px;">Show me</button>
     </form>
 </div>
 
 {% if habit_result %}
-<div class="gold-card" style="margin-bottom: 24px;">
+<div class="gold-card" style="margin-top: 16px; margin-bottom: 28px;">
     <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 12px;">
         <span class="ai-pulse"></span>
         <span class="metric-label" style="margin-bottom: 0; color: var(--roman-gold);">Claro</span>
@@ -41,10 +177,8 @@
     </div>
     <p style="font-size: 0.8rem; color: var(--text-secondary); line-height: 1.7;">{{ habit_result.insight.detail }}</p>
     <p style="font-size: 0.8rem; color: var(--roman-gold); font-style: italic; margin-top: 8px; padding-top: 8px; border-top: 0.5px solid rgba(255,255,255,0.06);">{{ habit_result.insight.reframe }}</p>
-
-    <!-- Cost breakdown — inline, same card as the insight -->
     <div style="margin-top: 20px; padding-top: 16px; border-top: 0.5px solid rgba(255,255,255,0.06);">
-        <div style="font-size: 0.7rem; color: var(--text-tertiary); margin-bottom: 16px; letter-spacing: 0.01em;">What it adds up to</div>
+        <div style="font-size: 0.7rem; color: var(--text-tertiary); margin-bottom: 16px;">What it adds up to</div>
         <div style="display: flex;">
             {% for key in ["5_year", "10_year", "20_year"] %}
             {% set h = habit_result.horizons[key] %}
@@ -60,46 +194,12 @@
 </div>
 {% endif %}
 
-<!-- 2 · How your income is divided — only shown when there are goal allocations -->
-{% if waterfall and not waterfall.error and waterfall.allocations | length > 0 %}
-<div style="margin-bottom: 28px; padding-top: 4px;">
-    <div style="font-size: 0.72rem; color: var(--text-tertiary); margin-bottom: 12px;">How your £{{ "{:,.0f}".format(waterfall.total_income) }}/month is divided</div>
-
-    <div style="padding: 6px 0; border-bottom: 0.5px solid var(--glass-border);">
-        <div style="display: flex; justify-content: space-between;">
-            <span style="font-size: 0.8rem; color: var(--text-tertiary);">Rent & bills</span>
-            <span style="font-size: 0.8rem; color: var(--text-secondary);">£{{ "{:,.0f}".format(waterfall.total_commitments) }}</span>
-        </div>
-    </div>
-
-    {% for a in waterfall.allocations %}
-    <div style="padding: 6px 0; {% if not loop.last %}border-bottom: 0.5px solid var(--glass-border);{% endif %}">
-        <div style="display: flex; justify-content: space-between;">
-            <span style="font-size: 0.8rem; color: var(--text-tertiary);">{{ a.goal_name }}</span>
-            <span style="font-size: 0.8rem;
-                {% if a.status == 'funded' %}color: var(--text-secondary);
-                {% elif a.status == 'partially_funded' %}color: var(--roman-gold);
-                {% else %}color: var(--text-tertiary);{% endif %}">
-                £{{ "{:,.0f}".format(a.allocated) }}/mo
-            </span>
-        </div>
-    </div>
-    {% endfor %}
-
-    {% if waterfall.unallocated > 0.01 %}
-    <div style="padding: 6px 0; font-size: 0.8rem; color: var(--roman-gold);">
-        £{{ "{:,.0f}".format(waterfall.unallocated) }}/month unassigned
-    </div>
-    {% endif %}
-</div>
-{% endif %}
-
-<!-- 3 · What if? — secondary tool -->
+<!-- Scenario link -->
 <div style="padding-top: 32px; margin-top: 8px; border-top: 0.5px solid rgba(255,255,255,0.06);">
-    <div class="section-label" style="margin-bottom: 6px;">Scenario</div>
-    <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 12px;">Change your income, rent, or goal contributions and see the exact impact on your goal timelines.</p>
+    <div class="section-label" style="margin-bottom: 6px;">What if?</div>
+    <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 12px;">Change your income, rent, or goal contributions and see the exact impact.</p>
     <a href="{{ url_for('pages.scenario_page') }}" class="btn-secondary btn-sm">
-        Run the numbers <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 18l6-6-6-6"/></svg>
+        Run a scenario <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>
     </a>
 </div>
 {% endblock %}

@@ -18,6 +18,8 @@ DEFAULT_CATEGORIES = [
     {"name": "Education", "icon": "📚", "colour": "#B8B8D1"},
     {"name": "Subscriptions", "icon": "🔄", "colour": "#9B8EC0"},
     {"name": "Income", "icon": "💰", "colour": "#C5A35D"},
+    {"name": "Rent", "icon": "🏠", "colour": "#7BA68C"},
+    {"name": "Transfer", "icon": "🔄", "colour": "#6B7280"},
     {"name": "Other", "icon": "📌", "colour": "#888780"},
 ]
 

@@ -384,7 +384,9 @@ def calculate_budget_status(predictions, user_profile, goals_data):
     income = float(user_profile.get("monthly_income", 0))
     commitments = float(user_profile.get("fixed_commitments", 0))
 
-    predicted_surplus = round(income - commitments - predicted_expenses, 2)
+    # predicted_expenses already includes rent/bills from bank statement
+    # so don't subtract commitments again
+    predicted_surplus = round(income - predicted_expenses, 2)
     planned_surplus = round(income - commitments, 2)
 
     total_goal_allocation = sum(

@@ -20,6 +20,8 @@ class User(db.Model, UserMixin):
     monthly_income = db.Column(db.Numeric(10, 2), nullable=True)
     rent_amount = db.Column(db.Numeric(10, 2), nullable=True)
     bills_amount = db.Column(db.Numeric(10, 2), nullable=True)
+    groceries_estimate = db.Column(db.Numeric(10, 2), nullable=True)
+    transport_estimate = db.Column(db.Numeric(10, 2), nullable=True)
     income_day = db.Column(db.Integer, nullable=True)
     factfind_completed = db.Column(db.Boolean, default=False)
 
@@ -43,10 +45,17 @@ class User(db.Model, UserMixin):
         return rent + bills
 
     @property
+    def total_essentials(self):
+        rent = float(self.rent_amount) if self.rent_amount else 0
+        bills = float(self.bills_amount) if self.bills_amount else 0
+        groceries = float(self.groceries_estimate) if self.groceries_estimate else 0
+        transport = float(self.transport_estimate) if self.transport_estimate else 0
+        return rent + bills + groceries + transport
+
+    @property
     def monthly_surplus(self):
         income = float(self.monthly_income) if self.monthly_income else 0
         return income - self.fixed_commitments
-
     @property
     def tier(self):
         return "Claro Core"
@@ -56,8 +65,11 @@ class User(db.Model, UserMixin):
             "monthly_income": float(self.monthly_income) if self.monthly_income else None,
             "rent_amount": float(self.rent_amount) if self.rent_amount else None,
             "bills_amount": float(self.bills_amount) if self.bills_amount else None,
+            "groceries_estimate": float(self.groceries_estimate) if self.groceries_estimate else None,
+            "transport_estimate": float(self.transport_estimate) if self.transport_estimate else None,
             "income_day": self.income_day,
             "fixed_commitments": self.fixed_commitments,
+            "total_essentials": self.total_essentials,
             "monthly_surplus": self.monthly_surplus,
             "factfind_completed": self.factfind_completed,
             "theme": self.theme
