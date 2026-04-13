@@ -142,6 +142,40 @@ def _get_money_left():
 
     return money_left, days_remaining
 
+def _ensure_emergency_goal():
+    """Auto-create an emergency fund goal if the user doesn't have one."""
+    if not current_user.factfind_completed or not current_user.monthly_income:
+        return
+
+    emergency_exists = Goal.query.filter_by(
+        user_id=current_user.id, status="active"
+    ).filter(
+        db.or_(
+            Goal.name.ilike("%emergency%"),
+            Goal.name.ilike("%rainy day%"),
+            Goal.name.ilike("%safety net%")
+        )
+    ).first()
+
+    if not emergency_exists:
+        profile = current_user.profile_dict()
+        essentials = float(profile.get("rent_amount") or 0) + \
+                     float(profile.get("bills_amount") or 0) + \
+                     float(profile.get("groceries_estimate") or 0) + \
+                     float(profile.get("transport_estimate") or 0)
+        emergency_target = round(essentials * 3, 2)
+
+        emergency_goal = Goal(
+            user_id=current_user.id,
+            name="Emergency fund",
+            type="savings_target",
+            target_amount=emergency_target,
+            current_amount=0,
+            priority_rank=0
+        )
+        db.session.add(emergency_goal)
+        db.session.commit()
+
 
 def _build_whisper_data():
     """Builds the data object used by the insight engine."""
@@ -517,6 +551,7 @@ def my_money():
 @page_bp.route("/my-goals")
 @login_required
 def my_goals():
+    _ensure_emergency_goal()
     goals = Goal.query.filter_by(
         user_id=current_user.id, status="active"
     ).order_by(Goal.priority_rank.asc()).all()
@@ -537,8 +572,44 @@ def plan():
     smart_plan = None
     plan_summary = None
     if current_user.factfind_completed and current_user.monthly_income:
+        _ensure_emergency_goal()
         user_profile = current_user.profile_dict()
         goals_data = data["goals"]
+        smart_plan = generate_financial_plan(user_profile, goals_data)
+
+        # Auto-create emergency fund goal if none exists
+        emergency_exists = Goal.query.filter_by(
+            user_id=current_user.id, status="active"
+        ).filter(
+            db.or_(
+                Goal.name.ilike("%emergency%"),
+                Goal.name.ilike("%rainy day%"),
+                Goal.name.ilike("%safety net%")
+            )
+        ).first()
+
+        if not emergency_exists:
+            essentials = float(user_profile.get("rent_amount") or 0) + \
+                         float(user_profile.get("bills_amount") or 0) + \
+                         float(user_profile.get("groceries_estimate") or 0) + \
+                         float(user_profile.get("transport_estimate") or 0)
+            emergency_target = round(essentials * 3, 2)
+
+            emergency_goal = Goal(
+                user_id=current_user.id,
+                name="Emergency fund",
+                type="savings_target",
+                target_amount=emergency_target,
+                current_amount=0,
+                priority_rank=0
+            )
+            db.session.add(emergency_goal)
+            db.session.commit()
+
+        goals_data = [g.to_dict() for g in Goal.query.filter_by(
+            user_id=current_user.id, status="active"
+        ).order_by(Goal.priority_rank.asc()).all()]
+
         smart_plan = generate_financial_plan(user_profile, goals_data)
         if "error" not in smart_plan:
             plan_summary = get_plan_summary(smart_plan)
