@@ -1,15 +1,17 @@
 """
 Smart Financial Planner — Claro v5
 
-Takes a user's income, expenses, goals, and timelines.
-Returns a complete phased financial plan with:
-- Recommended pot structure (no presets — built from user goals)
-- Optimal monthly allocations calculated from deadlines
-- Phased plan with automatic milestone-based reallocation
-- Month-by-month projections for every pot simultaneously
-- Alerts for upcoming phase changes
+Follows professional financial planning methodology:
+  Stage 1: Mini emergency buffer (£1,000 or 1 month essentials)
+  Stage 2: Clear ALL debt aggressively
+  Stage 3: Full emergency fund (3 months essentials)
+  Stage 4: Goals by deadline urgency
+  Stage 5: Long-term goals
 
 The user provides 5%. The planner does 95%.
+
+FCA compliance: This is financial guidance (cash flow planning),
+not regulated advice. We never recommend specific financial products.
 """
 
 from datetime import date, timedelta
@@ -20,31 +22,18 @@ from copy import deepcopy
 
 # ─── CONSTANTS ───────────────────────────────────────────────
 
-EMERGENCY_MONTHS = 3          # Target: 3 months of essentials
-LIFESTYLE_PERCENT = 0.15      # 15% of surplus goes to lifestyle minimum
-BUFFER_PERCENT = 0.05         # 5% buffer always maintained
-MAX_PROJECTION_MONTHS = 120   # 10 years max projection
-LIFESTYLE_MIN = 100           # Minimum lifestyle allowance (£)
-BUFFER_MIN = 50               # Minimum buffer (£)
+EMERGENCY_MONTHS = 3
+MINI_EMERGENCY = 1000
+LIFESTYLE_PERCENT = 0.15
+BUFFER_PERCENT = 0.05
+MAX_PROJECTION_MONTHS = 120
+LIFESTYLE_MIN = 100
+BUFFER_MIN = 50
 
 
 # ─── MAIN ENTRY POINT ───────────────────────────────────────
 
 def generate_financial_plan(user_profile, goals, debts=None, upcoming_expenses=None):
-    """
-    Generate a complete phased financial plan.
-
-    Args:
-        user_profile: dict with monthly_income, rent_amount, bills_amount,
-                      groceries_estimate, transport_estimate (optional fields)
-        goals: list of dicts with name, target_amount, current_amount,
-               deadline (date or ISO string), type, goal_id
-        debts: list of dicts with name, amount, min_payment (optional)
-        upcoming_expenses: list of dicts with name, amount, due_date (optional)
-
-    Returns:
-        dict with plan phases, pot allocations, monthly projections, alerts
-    """
     if not user_profile or not user_profile.get("monthly_income"):
         return {"error": "Monthly income is required to generate a plan"}
 
@@ -65,20 +54,11 @@ def generate_financial_plan(user_profile, goals, debts=None, upcoming_expenses=N
             "surplus": round(surplus, 2)
         }
 
-    # Build the pot structure
     pots = _build_pots(surplus, essentials, goals, debts)
-
-    # Calculate optimal allocations
-    pots = _calculate_allocations(pots, surplus)
-
-    # Run the month-by-month simulation with phased reallocation
+    pots = _staged_allocation(pots, surplus, essentials)
     phases, monthly_projections = _simulate_phases(pots, surplus)
-
-    # Generate alerts
     alerts = _generate_alerts(phases, monthly_projections, pots)
 
-    # Summary stats
-    total_allocated = sum(p["monthly_amount"] for p in pots if p["type"] != "lifestyle" and p["type"] != "buffer")
     lifestyle_pot = next((p for p in pots if p["type"] == "lifestyle"), None)
     buffer_pot = next((p for p in pots if p["type"] == "buffer"), None)
 
@@ -98,7 +78,9 @@ def generate_financial_plan(user_profile, goals, debts=None, upcoming_expenses=N
         "alerts": alerts,
         "lifestyle_monthly": round(lifestyle_pot["monthly_amount"], 2) if lifestyle_pot else 0,
         "buffer_monthly": round(buffer_pot["monthly_amount"], 2) if buffer_pot else 0,
-        "total_goal_allocation": round(total_allocated, 2),
+        "total_goal_allocation": round(sum(
+            p["monthly_amount"] for p in pots if p["type"] not in ("lifestyle", "buffer")
+        ), 2),
         "phase_count": len(phases),
         "current_phase": phases[0] if phases else None
     }
@@ -107,11 +89,9 @@ def generate_financial_plan(user_profile, goals, debts=None, upcoming_expenses=N
 # ─── POT BUILDING ───────────────────────────────────────────
 
 def _build_pots(surplus, essentials, goals, debts=None):
-    """Build the pot structure from user goals. No presets — everything from input."""
     pots = []
     today = date.today()
 
-    # 1. Debt pots (always first priority)
     if debts:
         for i, debt in enumerate(debts):
             pots.append({
@@ -122,12 +102,11 @@ def _build_pots(surplus, essentials, goals, debts=None):
                 "monthly_amount": 0,
                 "min_payment": float(debt.get("min_payment", 0)),
                 "deadline": None,
-                "priority": 0,  # Highest priority
+                "priority": 0,
                 "completed": False,
                 "goal_id": debt.get("goal_id")
             })
 
-    # 2. Emergency fund (always included)
     emergency_target = round(essentials * EMERGENCY_MONTHS, 2)
     existing_emergency = _find_existing_savings(goals, "emergency")
 
@@ -143,11 +122,10 @@ def _build_pots(surplus, essentials, goals, debts=None):
         "goal_id": _find_goal_id(goals, "emergency")
     })
 
-    # 3. User goals sorted by deadline urgency
     user_goals = _parse_goals(goals, today)
     for i, goal in enumerate(user_goals):
         if goal["type"] == "emergency":
-            continue  # Already handled
+            continue
         pots.append({
             "name": goal["name"],
             "type": goal.get("pot_type", "savings"),
@@ -161,11 +139,10 @@ def _build_pots(surplus, essentials, goals, debts=None):
             "goal_id": goal.get("goal_id")
         })
 
-    # 4. Lifestyle (always included — calculated, not guessed)
     pots.append({
         "name": "Lifestyle & family",
         "type": "lifestyle",
-        "target": None,  # No target — ongoing
+        "target": None,
         "current": 0,
         "monthly_amount": 0,
         "deadline": None,
@@ -174,7 +151,6 @@ def _build_pots(surplus, essentials, goals, debts=None):
         "goal_id": None
     })
 
-    # 5. Buffer (always included)
     pots.append({
         "name": "Buffer",
         "type": "buffer",
@@ -191,14 +167,12 @@ def _build_pots(surplus, essentials, goals, debts=None):
 
 
 def _parse_goals(goals, today):
-    """Parse user goals into a standardised format sorted by deadline urgency."""
     parsed = []
 
     for goal in goals:
         name = goal.get("name", "")
         goal_type = goal.get("type", "savings_target")
 
-        # Detect emergency fund goals by name
         if _is_emergency(name):
             parsed.append({
                 "name": name,
@@ -230,7 +204,9 @@ def _parse_goals(goals, today):
         current = float(goal.get("current_amount") or 0)
 
         pot_type = "savings"
-        if goal_type == "spending_allocation":
+        if _is_debt_goal(name):
+            pot_type = "debt"
+        elif goal_type == "spending_allocation":
             pot_type = "spending"
         elif goal_type == "accumulation":
             pot_type = "accumulation"
@@ -246,23 +222,27 @@ def _parse_goals(goals, today):
             "pot_type": pot_type
         })
 
-    # Sort: goals with deadlines first (soonest first), then goals without deadlines
     with_deadline = [g for g in parsed if g["months_until_deadline"] is not None]
     without_deadline = [g for g in parsed if g["months_until_deadline"] is None and g["type"] != "emergency"]
-
     with_deadline.sort(key=lambda g: g["months_until_deadline"])
 
     return with_deadline + without_deadline
 
 
 def _is_emergency(name):
-    """Check if a goal name refers to an emergency fund."""
     lower = name.lower()
     return any(term in lower for term in ["emergency", "rainy day", "safety net", "safety fund"])
 
 
+def _is_debt_goal(name):
+    lower = name.lower()
+    return any(term in lower for term in [
+        "credit card", "loan", "debt", "overdraft", "pay off",
+        "pay back", "repay", "owe", "borrowed"
+    ])
+
+
 def _find_existing_savings(goals, goal_type):
-    """Find existing savings for a goal type."""
     for goal in goals:
         if _is_emergency(goal.get("name", "")):
             return float(goal.get("current_amount") or 0)
@@ -270,138 +250,178 @@ def _find_existing_savings(goals, goal_type):
 
 
 def _find_goal_id(goals, goal_type):
-    """Find goal_id for a specific type."""
     for goal in goals:
         if _is_emergency(goal.get("name", "")):
             return goal.get("id") or goal.get("goal_id")
     return None
 
 
-# ─── ALLOCATION CALCULATION ──────────────────────────────────
+# ─── STAGED ALLOCATION ──────────────────────────────────────
 
-def _calculate_allocations(pots, surplus):
-    """Calculate optimal monthly allocation for each pot.
-    
-    Every active goal gets a share. Higher priority goals get more,
-    but no goal gets zero. This mirrors how a real financial adviser
-    would split your money — emergency fund gets the biggest chunk,
-    but your house deposit still moves forward.
-    """
-    # Reserve lifestyle and buffer first
+def _staged_allocation(pots, surplus, essentials):
     lifestyle_amount = max(round(surplus * LIFESTYLE_PERCENT, 2), LIFESTYLE_MIN)
     buffer_amount = max(round(surplus * BUFFER_PERCENT, 2), BUFFER_MIN)
 
-    # Cap lifestyle + buffer at 30% of surplus
     if lifestyle_amount + buffer_amount > surplus * 0.30:
         lifestyle_amount = round(surplus * 0.20, 2)
         buffer_amount = round(surplus * 0.05, 2)
 
-    available_for_goals = surplus - lifestyle_amount - buffer_amount
-
-    if available_for_goals <= 0:
-        for pot in pots:
-            if pot["type"] == "lifestyle":
-                pot["monthly_amount"] = max(surplus * 0.60, 0)
-            elif pot["type"] == "buffer":
-                pot["monthly_amount"] = max(surplus * 0.10, 0)
-        return pots
-
-    # Assign lifestyle and buffer
     for pot in pots:
         if pot["type"] == "lifestyle":
             pot["monthly_amount"] = lifestyle_amount
         elif pot["type"] == "buffer":
             pot["monthly_amount"] = buffer_amount
 
-    # Get active goal pots
-    goal_pots = [p for p in pots if p["type"] not in ("lifestyle", "buffer") and not p["completed"]]
-
-    if not goal_pots:
-        for pot in pots:
-            if pot["type"] == "lifestyle":
-                pot["monthly_amount"] += available_for_goals
+    available = surplus - lifestyle_amount - buffer_amount
+    if available <= 0:
         return pots
 
-    # Calculate ideal monthly amount for each goal
-    for pot in goal_pots:
-        remaining = pot["target"] - pot["current"] if pot["target"] else 0
-        if remaining <= 0:
-            pot["ideal_monthly"] = 0
-            pot["completed"] = True
-            continue
+    emergency = next((p for p in pots if p["type"] == "emergency" and not p["completed"]), None)
+    debt_pots = [p for p in pots if (p["type"] == "debt" or _is_debt_goal(p.get("name", "")))
+                 and not p.get("completed") and p["type"] not in ("lifestyle", "buffer", "emergency")]
+    goal_pots = [p for p in pots if p["type"] not in ("lifestyle", "buffer", "emergency", "debt")
+                 and not _is_debt_goal(p.get("name", ""))
+                 and not p.get("completed")]
 
-        if pot["type"] == "debt":
-            pot["ideal_monthly"] = max(pot.get("min_payment", 0) * 2, remaining / 6)
-        elif pot.get("months_until_deadline") and pot["months_until_deadline"] > 0:
-            pot["ideal_monthly"] = remaining / pot["months_until_deadline"]
-        elif pot["type"] == "emergency":
-            pot["ideal_monthly"] = remaining / 7
+    for pot in debt_pots + ([emergency] if emergency else []) + goal_pots:
+        if pot and pot.get("target"):
+            pot["_remaining"] = max(pot["target"] - pot["current"], 0)
         else:
-            pot["ideal_monthly"] = remaining / 24 if remaining > 0 else 0
+            pot["_remaining"] = 0
 
-    # Remove completed pots
-    active_pots = [p for p in goal_pots if not p.get("completed") and p.get("ideal_monthly", 0) > 0]
+    # ── STAGE 1: Mini emergency buffer ──
+    mini_target = MINI_EMERGENCY
 
-    if not active_pots:
-        for pot in pots:
-            if pot["type"] == "lifestyle":
-                pot["monthly_amount"] = round(pot["monthly_amount"] + available_for_goals, 2)
+    if emergency and emergency["current"] < mini_target and not emergency["completed"]:
+        mini_needed = mini_target - emergency["current"]
+        mini_allocation = min(mini_needed, available)
+        emergency["monthly_amount"] = round(mini_allocation, 2)
+        emergency["_stage"] = "mini"
+        available -= mini_allocation
+        if available <= 0:
+            return pots
+
+    # ── STAGE 2: Clear ALL debt ──
+    total_debt_remaining = sum(p["_remaining"] for p in debt_pots)
+
+    if total_debt_remaining > 0:
+        debt_budget = available
+
+        if len(debt_pots) == 1:
+            debt_pots[0]["monthly_amount"] = round(debt_budget, 2)
+        else:
+            debt_pots.sort(key=lambda p: p["_remaining"])
+            remaining_budget = debt_budget
+            for pot in debt_pots:
+                if pot["_remaining"] <= 0:
+                    continue
+                give = min(remaining_budget, pot["_remaining"])
+                pot["monthly_amount"] = round(give, 2)
+                remaining_budget -= give
+                if remaining_budget <= 0:
+                    break
+            if remaining_budget > 0:
+                for pot in debt_pots:
+                    if pot["monthly_amount"] > 0:
+                        pot["monthly_amount"] = round(pot["monthly_amount"] + remaining_budget, 2)
+                        break
+
         return pots
 
-    # Priority-weighted proportional allocation
-    # Higher priority (lower number) gets a bigger weight
-    total_ideal = sum(p["ideal_monthly"] for p in active_pots)
+    # ── STAGE 3: Full emergency fund ──
+    if emergency and not emergency.get("completed"):
+        emergency_remaining = emergency["target"] - emergency["current"]
+        if emergency_remaining > 0:
+            urgent_goals = [p for p in goal_pots if p.get("months_until_deadline") and p["months_until_deadline"] <= 6]
 
-    if total_ideal <= available_for_goals:
-        # Enough money for everyone's ideal — allocate ideals and distribute remainder
-        for pot in active_pots:
-            pot["monthly_amount"] = round(pot["ideal_monthly"], 2)
-        remainder = available_for_goals - total_ideal
-        if remainder > 1 and active_pots:
-            # Give extra to highest priority
-            active_pots[0]["monthly_amount"] = round(
-                active_pots[0]["monthly_amount"] + remainder, 2
-            )
-    else:
-        # Not enough for everyone — split proportionally with priority weighting
-        # Priority weights: debt=4x, emergency=3x, deadline goals=2x, no deadline=1x
-        for pot in active_pots:
-            if pot["type"] == "debt":
-                pot["priority_weight"] = 4.0
-            elif pot["type"] == "emergency":
-                pot["priority_weight"] = 3.0
-            elif pot.get("months_until_deadline"):
-                pot["priority_weight"] = 2.0
+            if urgent_goals:
+                emergency_share = round(available * 0.60, 2)
+                urgent_share = available - emergency_share
+                emergency["monthly_amount"] = round(
+                    emergency.get("monthly_amount", 0) + emergency_share, 2
+                )
+                _distribute_by_deadline(urgent_goals, urgent_share)
+                available = 0
             else:
-                pot["priority_weight"] = 1.0
+                emergency_allocation = min(emergency_remaining, available)
+                emergency["monthly_amount"] = round(
+                    emergency.get("monthly_amount", 0) + emergency_allocation, 2
+                )
+                available -= emergency_allocation
 
-        # Weighted ideal = ideal * weight
-        weighted_totals = sum(p["ideal_monthly"] * p["priority_weight"] for p in active_pots)
+    if available <= 0:
+        return pots
 
-        for pot in active_pots:
-            if weighted_totals > 0:
-                share = (pot["ideal_monthly"] * pot["priority_weight"]) / weighted_totals
-                pot["monthly_amount"] = round(available_for_goals * share, 2)
-            else:
-                pot["monthly_amount"] = round(available_for_goals / len(active_pots), 2)
+    # ── STAGE 4 & 5: Goals by deadline urgency ──
+    unfunded_goals = [p for p in goal_pots if p["monthly_amount"] == 0 and p["_remaining"] > 0]
 
-    # Ensure allocations don't exceed available (rounding fix)
-    total_allocated = sum(p["monthly_amount"] for p in active_pots)
-    if total_allocated > available_for_goals + 0.01:
-        diff = total_allocated - available_for_goals
-        active_pots[-1]["monthly_amount"] = round(active_pots[-1]["monthly_amount"] - diff, 2)
+    if not unfunded_goals:
+        for pot in pots:
+            if pot["type"] == "lifestyle":
+                pot["monthly_amount"] = round(pot["monthly_amount"] + available, 2)
+        return pots
+
+    _distribute_by_deadline(unfunded_goals, available)
 
     return pots
+
+
+def _distribute_by_deadline(goal_pots, available):
+    if not goal_pots or available <= 0:
+        return
+
+    for pot in goal_pots:
+        remaining = pot.get("_remaining", pot.get("target", 0) - pot.get("current", 0))
+        if remaining <= 0:
+            pot["_ideal"] = 0
+            continue
+
+        if pot.get("months_until_deadline") and pot["months_until_deadline"] > 0:
+            pot["_ideal"] = remaining / pot["months_until_deadline"]
+        else:
+            pot["_ideal"] = remaining / 24 if remaining > 0 else 0
+
+        if pot.get("months_until_deadline") and pot["months_until_deadline"] <= 6:
+            pot["_weight"] = 4.0
+        elif pot.get("months_until_deadline") and pot["months_until_deadline"] <= 12:
+            pot["_weight"] = 2.5
+        elif pot.get("months_until_deadline") and pot["months_until_deadline"] <= 24:
+            pot["_weight"] = 1.5
+        else:
+            pot["_weight"] = 1.0
+
+    active = [p for p in goal_pots if p.get("_ideal", 0) > 0]
+    if not active:
+        return
+
+    total_ideal = sum(p["_ideal"] for p in active)
+
+    if total_ideal <= available:
+        for pot in active:
+            pot["monthly_amount"] = round(pot.get("monthly_amount", 0) + pot["_ideal"], 2)
+        remainder = available - total_ideal
+        if remainder > 1 and active:
+            active[0]["monthly_amount"] = round(active[0]["monthly_amount"] + remainder, 2)
+    else:
+        weighted_total = sum(p["_ideal"] * p["_weight"] for p in active)
+        for pot in active:
+            if weighted_total > 0:
+                share = (pot["_ideal"] * pot["_weight"]) / weighted_total
+                pot["monthly_amount"] = round(pot.get("monthly_amount", 0) + available * share, 2)
+            else:
+                pot["monthly_amount"] = round(
+                    pot.get("monthly_amount", 0) + available / len(active), 2
+                )
+
+    total_given = sum(p.get("monthly_amount", 0) for p in active)
+    if total_given > available + 0.01:
+        diff = total_given - available
+        active[-1]["monthly_amount"] = round(active[-1]["monthly_amount"] - diff, 2)
 
 
 # ─── PHASE SIMULATION ────────────────────────────────────────
 
 def _simulate_phases(pots, surplus):
-    """
-    Run month-by-month simulation. When a pot hits its target,
-    redistribute its allocation to remaining goals.
-    Returns phases list and monthly projections.
-    """
     today = date.today()
     sim_pots = deepcopy(pots)
     phases = []
@@ -420,21 +440,16 @@ def _simulate_phases(pots, surplus):
             "pots": {}
         }
 
-        # Apply monthly contributions
         for pot in sim_pots:
             if pot.get("completed"):
                 continue
-
             pot["current"] = round(pot["current"] + pot["monthly_amount"], 2)
-
-            # Check if pot hit target
             if pot["target"] and pot["current"] >= pot["target"]:
                 pot["current"] = pot["target"]
                 pot["completed"] = True
                 pot["completed_month"] = month + 1
                 pot["completed_date"] = current_date.isoformat()
 
-        # Record balances
         for pot in sim_pots:
             month_data["pots"][pot["name"]] = {
                 "balance": round(pot["current"], 2),
@@ -445,12 +460,10 @@ def _simulate_phases(pots, surplus):
 
         monthly_projections.append(month_data)
 
-        # Check if any pot completed this month — trigger reallocation
         newly_completed = [p for p in sim_pots
                           if p.get("completed") and p.get("completed_month") == month + 1]
 
         if newly_completed:
-            # Close current phase
             freed_amount = sum(p["monthly_amount"] for p in newly_completed)
             completed_names = [p["name"] for p in newly_completed]
 
@@ -463,22 +476,18 @@ def _simulate_phases(pots, surplus):
                 "duration_months": month + 1 - phase_start_month,
                 "active_pots": current_phase_pots,
                 "completed_pots": completed_names,
-                "description": _phase_description(phase_number, current_phase_pots, completed_names)
+                "description": _phase_description(phase_number, current_phase_pots, completed_names, sim_pots)
             })
 
-            # Redistribute freed money
             _redistribute(sim_pots, freed_amount)
 
-            # Start new phase
             phase_number += 1
             phase_start_month = month + 1
             current_phase_pots = _get_active_pot_names(sim_pots)
 
-        # Check if all goals are complete
         active_goals = [p for p in sim_pots
                        if p["type"] not in ("lifestyle", "buffer") and not p.get("completed")]
         if not active_goals:
-            # Final phase
             if phase_start_month <= month:
                 phases.append({
                     "phase": phase_number,
@@ -489,11 +498,35 @@ def _simulate_phases(pots, surplus):
                     "duration_months": month + 1 - phase_start_month,
                     "active_pots": current_phase_pots,
                     "completed_pots": [p["name"] for p in newly_completed] if newly_completed else [],
-                    "description": "All goals reached. Surplus redirected to lifestyle and growth."
+                    "description": "All goals reached. Your full surplus is now available."
                 })
             break
 
-    # If we hit MAX months without completing, close the open phase
+    while len(monthly_projections) < 24:
+        month_idx = len(monthly_projections)
+        current_date = today + relativedelta(months=month_idx)
+        month_data = {
+            "month": month_idx + 1,
+            "date": current_date.isoformat(),
+            "date_display": current_date.strftime("%b %Y"),
+            "pots": {}
+        }
+        for pot in sim_pots:
+            if pot["type"] in ("lifestyle", "buffer"):
+                pot["current"] = round(pot["current"] + pot["monthly_amount"], 2)
+            month_data["pots"][pot["name"]] = {
+                "balance": round(pot["current"], 2),
+                "monthly_amount": round(pot["monthly_amount"], 2),
+                "completed": pot.get("completed", False),
+                "target": pot.get("target")
+            }
+        monthly_projections.append(month_data)
+
+    last_completion = max((p.get("completed_month", 0) for p in sim_pots), default=0)
+    trim_to = min(last_completion + 12, len(monthly_projections))
+    trim_to = max(trim_to, 24)
+    monthly_projections = monthly_projections[:trim_to]
+
     if not phases or phases[-1]["end_month"] < len(monthly_projections):
         remaining_goals = [p for p in sim_pots
                           if p["type"] not in ("lifestyle", "buffer") and not p.get("completed")]
@@ -507,64 +540,29 @@ def _simulate_phases(pots, surplus):
                 "duration_months": len(monthly_projections) - phase_start_month,
                 "active_pots": current_phase_pots,
                 "completed_pots": [],
-                "description": _phase_description(phase_number, current_phase_pots, []),
-                "note": "Some goals extend beyond the 10-year projection window"
+                "description": _phase_description(phase_number, current_phase_pots, [], sim_pots)
             })
-
-    # Pad to at least 24 months if simulation ended early
-    while len(monthly_projections) < 24:
-        month_idx = len(monthly_projections)
-        current_date = today + relativedelta(months=month_idx)
-        month_data = {
-            "month": month_idx + 1,
-            "date": current_date.isoformat(),
-            "date_display": current_date.strftime("%b %Y"),
-            "pots": {}
-        }
-        for pot in sim_pots:
-            # Lifestyle and buffer keep accumulating, goals stay at target
-            if pot["type"] in ("lifestyle", "buffer"):
-                pot["current"] = round(pot["current"] + pot["monthly_amount"], 2)
-            month_data["pots"][pot["name"]] = {
-                "balance": round(pot["current"], 2),
-                "monthly_amount": round(pot["monthly_amount"], 2),
-                "completed": pot.get("completed", False),
-                "target": pot.get("target")
-            }
-        monthly_projections.append(month_data)
-
-    # Trim to relevant period (up to 12 months after last completion)
-    last_completion = max((p.get("completed_month", 0) for p in sim_pots), default=0)
-    trim_to = min(last_completion + 12, len(monthly_projections))
-    trim_to = max(trim_to, 24)
-    monthly_projections = monthly_projections[:trim_to]
 
     return phases, monthly_projections
 
 
 def _redistribute(pots, freed_amount):
-    """Redistribute freed money from completed pots to remaining goals."""
     remaining_goals = [p for p in pots
                       if p["type"] not in ("lifestyle", "buffer") and not p.get("completed")]
 
     if not remaining_goals:
-        # All goals done — add to lifestyle
         for pot in pots:
             if pot["type"] == "lifestyle":
                 pot["monthly_amount"] = round(pot["monthly_amount"] + freed_amount, 2)
         return
 
-    # Sort by priority
     remaining_goals.sort(key=lambda p: p["priority"])
 
-    # Give to highest priority remaining goal first
-    # If that goal has a deadline, check if it needs the full amount
     for goal in remaining_goals:
         remaining_needed = (goal["target"] - goal["current"]) if goal["target"] else float("inf")
         if remaining_needed <= 0:
             continue
 
-        # Calculate how much this goal could use
         if goal.get("months_until_deadline") and goal["months_until_deadline"] > 0:
             ideal = remaining_needed / max(goal["months_until_deadline"] - (goal.get("completed_month", 0) or 0), 1)
             can_use = max(ideal - goal["monthly_amount"], 0)
@@ -578,7 +576,6 @@ def _redistribute(pots, freed_amount):
         if freed_amount <= 0:
             break
 
-    # Any remaining freed amount goes to the first active goal
     if freed_amount > 0 and remaining_goals:
         remaining_goals[0]["monthly_amount"] = round(
             remaining_goals[0]["monthly_amount"] + freed_amount, 2
@@ -586,17 +583,27 @@ def _redistribute(pots, freed_amount):
 
 
 def _get_active_pot_names(pots):
-    """Get names of pots that are actively receiving contributions."""
     return [p["name"] for p in pots
             if p["monthly_amount"] > 0 and not p.get("completed")]
 
 
-def _phase_description(phase_num, active_pots, completed_pots):
-    """Generate a human-readable phase description."""
+def _phase_description(phase_num, active_pots, completed_pots, all_pots=None):
     goal_pots = [p for p in active_pots if p not in ("Lifestyle & family", "Buffer")]
+
+    debt_active = []
+    if all_pots:
+        debt_active = [p["name"] for p in all_pots
+                      if (p["type"] == "debt" or _is_debt_goal(p.get("name", "")))
+                      and not p.get("completed") and p["monthly_amount"] > 0]
+
+    if debt_active and not completed_pots:
+        debt_str = " and ".join(debt_active)
+        return f"Clearing {debt_str}. Other goals begin once debt is gone."
 
     if completed_pots:
         completed_str = " and ".join(completed_pots)
+        if debt_active:
+            return f"Clearing debt. {completed_str} completed at end of phase."
         if len(goal_pots) <= 1:
             focus = goal_pots[0] if goal_pots else "your goals"
         else:
@@ -613,10 +620,24 @@ def _phase_description(phase_num, active_pots, completed_pots):
 # ─── ALERTS ──────────────────────────────────────────────────
 
 def _generate_alerts(phases, monthly_projections, pots):
-    """Generate alerts about the plan."""
     alerts = []
 
-    # Alert: upcoming phase change
+    debt_pots = [p for p in pots if (p["type"] == "debt" or _is_debt_goal(p.get("name", "")))
+                 and not p.get("completed") and p["monthly_amount"] > 0]
+    if debt_pots:
+        debt_names = " and ".join(p["name"] for p in debt_pots)
+        months_to_clear = max(
+            (math.ceil((p["target"] - p["current"]) / p["monthly_amount"]) if p["monthly_amount"] > 0 else 0)
+            for p in debt_pots
+        )
+        alerts.append({
+            "type": "debt_priority",
+            "severity": "info",
+            "message": f"Your surplus is focused on clearing {debt_names} first. "
+                      f"Clearing debt before saving is the fastest way to improve your position. "
+                      f"Once cleared (~{int(months_to_clear)} months), that money goes straight to your goals."
+        })
+
     if len(phases) > 1:
         next_change = phases[0].get("end_month", 0)
         if next_change <= 3:
@@ -625,13 +646,13 @@ def _generate_alerts(phases, monthly_projections, pots):
                 alerts.append({
                     "type": "phase_change_soon",
                     "severity": "info",
-                    "message": f"Your {' and '.join(completed)} will be fully funded in {next_change} month{'s' if next_change != 1 else ''}. "
+                    "message": f"Your {' and '.join(completed)} will be fully funded in "
+                              f"{next_change} month{'s' if next_change != 1 else ''}. "
                               f"That money will automatically redirect to your next priority."
                 })
 
-    # Alert: goal won't hit deadline
     for pot in pots:
-        if pot.get("deadline") and not pot.get("completed"):
+        if pot.get("deadline") and not pot.get("completed") and pot["monthly_amount"] > 0:
             remaining = pot["target"] - pot["current"]
             if pot["monthly_amount"] > 0:
                 months_needed = math.ceil(remaining / pot["monthly_amount"])
@@ -640,18 +661,30 @@ def _generate_alerts(phases, monthly_projections, pots):
                     alerts.append({
                         "type": "deadline_risk",
                         "severity": "warning",
-                        "message": f"'{pot['name']}' needs {months_needed} months at current pace but deadline is in {months_available} months. "
-                                  f"Consider increasing the allocation or extending the deadline."
+                        "message": f"'{pot['name']}' needs {months_needed} months at current pace "
+                                  f"but deadline is in {months_available} months. "
+                                  f"Consider extending the deadline or adjusting the target."
                     })
 
-    # Alert: no emergency fund
+    paused_goals = [p for p in pots if p["type"] not in ("lifestyle", "buffer", "emergency", "debt")
+                    and not _is_debt_goal(p.get("name", ""))
+                    and p["monthly_amount"] == 0 and not p.get("completed")]
+    if paused_goals and debt_pots:
+        names = ", ".join(p["name"] for p in paused_goals)
+        alerts.append({
+            "type": "goals_paused",
+            "severity": "info",
+            "message": f"Your {names} {'is' if len(paused_goals) == 1 else 'are'} paused while debt is being cleared. "
+                      f"This is the fastest way to free up money for your goals."
+        })
+
     emergency = next((p for p in pots if p["type"] == "emergency"), None)
-    if emergency and emergency["current"] < emergency["target"] * 0.5:
+    if emergency and not debt_pots and emergency["current"] < emergency["target"] * 0.5:
         alerts.append({
             "type": "low_emergency_fund",
             "severity": "warning",
             "message": f"Your emergency fund is below 50%. The plan prioritises building this to "
-                      f"£{emergency['target']:,.0f}, covering {EMERGENCY_MONTHS} months of essentials."
+                      f"£{emergency['target']:,.0f} ({EMERGENCY_MONTHS} months of essentials)."
         })
 
     return alerts
@@ -660,18 +693,6 @@ def _generate_alerts(phases, monthly_projections, pots):
 # ─── AFFORDABILITY CHECK ─────────────────────────────────────
 
 def can_i_afford(plan, expense_name, amount, target_month=None):
-    """
-    Check if a one-off expense is affordable against the plan.
-
-    Args:
-        plan: the output of generate_financial_plan()
-        expense_name: description of the expense
-        amount: cost in pounds
-        target_month: which month (1-indexed) to check, defaults to current
-
-    Returns:
-        dict with verdict, impact on plan, and suggestions
-    """
     if "error" in plan:
         return {"affordable": False, "reason": plan["error"]}
 
@@ -681,7 +702,6 @@ def can_i_afford(plan, expense_name, amount, target_month=None):
 
     monthly_lifestyle = lifestyle_pot["monthly_amount"]
 
-    # Check target month's projected lifestyle balance
     if target_month and target_month <= len(plan.get("monthly_projections", [])):
         proj = plan["monthly_projections"][target_month - 1]
         lifestyle_balance = proj["pots"].get("Lifestyle & family", {}).get("balance", 0)
@@ -697,7 +717,7 @@ def can_i_afford(plan, expense_name, amount, target_month=None):
             "source": "Lifestyle & family pot",
             "balance_before": round(lifestyle_balance, 2),
             "balance_after": round(remaining_after, 2),
-            "message": f"Yes, your lifestyle pot will have £{lifestyle_balance:,.0f} by then. "
+            "message": f"Yes — your lifestyle pot will have £{lifestyle_balance:,.0f} by then. "
                       f"After the {expense_name} you'll have £{remaining_after:,.0f} left.",
             "impact": "none"
         }
@@ -721,8 +741,9 @@ def can_i_afford(plan, expense_name, amount, target_month=None):
             "amount": round(amount, 2),
             "balance_available": round(lifestyle_balance, 2),
             "shortfall": round(amount - lifestyle_balance, 2),
-            "message": f"{expense_name} costs £{amount:,.0f} and your lifestyle pot has £{lifestyle_balance:,.0f}. "
-                      f"You'd need to pause a goal contribution for a month to cover the £{amount - lifestyle_balance:,.0f} gap.",
+            "message": f"The {expense_name} (£{amount:,.0f}) exceeds your lifestyle pot "
+                      f"(£{lifestyle_balance:,.0f}). You'd need to pause a goal contribution "
+                      f"for a month to cover the difference.",
             "impact": "significant"
         }
 
@@ -730,16 +751,6 @@ def can_i_afford(plan, expense_name, amount, target_month=None):
 # ─── REPLAN ON LIFE EVENTS ───────────────────────────────────
 
 def replan_with_change(user_profile, goals, change_type, change_data, debts=None):
-    """
-    Regenerate the plan with a life event applied.
-
-    Args:
-        change_type: "raise", "job_loss", "new_goal", "remove_goal", "income_change"
-        change_data: dict with relevant change info
-
-    Returns:
-        dict with new_plan and comparison to old plan
-    """
     old_plan = generate_financial_plan(user_profile, goals, debts)
 
     modified_profile = deepcopy(user_profile)
@@ -748,23 +759,18 @@ def replan_with_change(user_profile, goals, change_type, change_data, debts=None
     if change_type == "raise":
         amount = float(change_data.get("amount", 0))
         modified_profile["monthly_income"] = float(modified_profile["monthly_income"]) + amount
-
     elif change_type == "income_change":
         modified_profile["monthly_income"] = float(change_data.get("new_income", 0))
-
     elif change_type == "job_loss":
         modified_profile["monthly_income"] = float(change_data.get("partner_income", 0))
-
     elif change_type == "new_goal":
         modified_goals.append(change_data.get("goal", {}))
-
     elif change_type == "remove_goal":
         goal_id = change_data.get("goal_id")
         modified_goals = [g for g in modified_goals if g.get("id") != goal_id]
 
     new_plan = generate_financial_plan(modified_profile, modified_goals, debts)
 
-    # Compare key metrics
     comparison = {}
     if "error" not in old_plan and "error" not in new_plan:
         comparison = {
@@ -785,10 +791,9 @@ def replan_with_change(user_profile, goals, change_type, change_data, debts=None
     }
 
 
-# ─── PLAN SUMMARY (for whispers and overview) ────────────────
+# ─── PLAN SUMMARY ────────────────────────────────────────────
 
 def get_plan_summary(plan):
-    """Generate a one-sentence summary of the current plan state."""
     if "error" in plan:
         return plan["error"]
 
@@ -798,19 +803,58 @@ def get_plan_summary(plan):
         return "Your financial plan is being calculated."
 
     current_phase = phases[0]
-    total_phases = plan.get("phase_count", 1)
 
-    # What's completing in this phase?
+    debt_pots = [p for p in pots if (p["type"] == "debt" or _is_debt_goal(p.get("name", "")))
+                 and not p.get("completed") and p.get("monthly_amount", 0) > 0]
+    if debt_pots:
+        debt_names = " and ".join(p["name"] for p in debt_pots)
+        goal_pots = [p for p in pots if p["type"] not in ("lifestyle", "buffer", "emergency", "debt")
+                     and not _is_debt_goal(p.get("name", "")) and not p.get("completed")]
+        if goal_pots:
+            goal_names = " and ".join(p["name"] for p in goal_pots)
+            return (
+                f"Right now, your surplus is clearing {debt_names}. "
+                f"Clearing debt first is the fastest way to free up money. "
+                f"Once done, your {goal_names} will accelerate."
+            )
+        return f"Your surplus is focused on clearing {debt_names}. Once done, your goals begin."
+
+    underfunded = []
+    for pot in pots:
+        if (pot.get("months_to_target") and pot.get("months_until_deadline")
+                and pot["months_to_target"] > pot["months_until_deadline"]
+                and not pot.get("completed")):
+            underfunded.append({
+                "name": pot["name"],
+                "months_needed": pot["months_to_target"],
+                "months_available": pot["months_until_deadline"]
+            })
+
+    if underfunded:
+        most_urgent = min(underfunded, key=lambda u: u["months_available"])
+        if len(underfunded) == 1:
+            return (
+                f"Your {most_urgent['name']} is underfunded — at current pace it needs "
+                f"{most_urgent['months_needed']} months but the deadline is in "
+                f"{most_urgent['months_available']}. Consider adjusting the target or timeline."
+            )
+        else:
+            names = " and ".join(u["name"] for u in underfunded)
+            return (
+                f"{len(underfunded)} goals are tight for their deadlines: {names}. "
+                f"The most urgent is {most_urgent['name']} — needs "
+                f"{most_urgent['months_needed']} months but deadline is in "
+                f"{most_urgent['months_available']}."
+            )
+
     completing = current_phase.get("completed_pots", [])
     duration = current_phase.get("duration_months", 0)
 
-    # What goals exist after the completing pots?
     active_after = [p["name"] for p in pots
                     if p["type"] not in ("lifestyle", "buffer")
                     and not p.get("completed")
                     and p["name"] not in completing]
 
-    # Build the summary
     if completing and active_after:
         completing_str = " and ".join(completing)
         boost_str = " and ".join(active_after)
@@ -828,7 +872,6 @@ def get_plan_summary(plan):
             f"After that, your surplus frees up entirely."
         )
     else:
-        # No completions in this phase — long-running goals
         active_pots = [p["name"] for p in pots
                       if p["type"] not in ("lifestyle", "buffer")
                       and not p.get("completed")
@@ -839,7 +882,6 @@ def get_plan_summary(plan):
         else:
             summary = "Your surplus is allocated across your goals."
 
-    # Add total remaining
     remaining_total = sum(
         (p.get("target", 0) - p.get("current", 0))
         for p in pots
@@ -856,7 +898,6 @@ def get_plan_summary(plan):
 # ─── HELPERS ─────────────────────────────────────────────────
 
 def _pot_to_dict(pot):
-    """Convert a pot to a clean dict for API responses."""
     result = {
         "name": pot["name"],
         "type": pot["type"],
@@ -878,7 +919,6 @@ def _pot_to_dict(pot):
     if pot.get("months_until_deadline"):
         result["months_until_deadline"] = pot["months_until_deadline"]
 
-    # Calculate months to target at current rate
     if pot["target"] and pot["monthly_amount"] > 0 and not pot.get("completed"):
         remaining = pot["target"] - pot["current"]
         if remaining > 0:
