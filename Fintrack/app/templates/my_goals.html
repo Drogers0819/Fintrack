@@ -62,7 +62,7 @@
         <!-- Percent -->
         <div style="font-size: 0.7rem; color: var(--text-tertiary); margin-bottom: {% if g.monthly_allocation or (g.target_amount and g.monthly_allocation) %}14px{% else %}0{% endif %};">
             {{ g.progress_percent if g.progress_percent else 0 }}% saved
-            {% if g.monthly_allocation %} · £{{ "%.0f" | format(g.monthly_allocation) }}/mo{% endif %}
+            {% if g.monthly_allocation %} · £{{ "{:,.0f}".format(g.monthly_allocation) }}/mo{% endif %}
         </div>
         {% endif %}
 

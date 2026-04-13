@@ -122,7 +122,7 @@
         </div>
         <div style="padding: 8px 0; display: flex; justify-content: space-between; margin-bottom: 20px;">
             <span style="font-size: 0.85rem; color: var(--text-tertiary);">Member since</span>
-            <span style="font-size: 0.85rem;">{{ current_user.created_at.strftime("%B %Y") if current_user.created_at else "—" }}</span>
+            <span style="font-size: 0.85rem;">{{ current_user.created_at.strftime("%B %Y") if current_user.created_at else "Unknown" }}</span>
         </div>
 
         <div style="font-size: 0.72rem; color: var(--text-tertiary); margin-bottom: 12px;">Change email</div>
@@ -197,13 +197,23 @@
 
 <script>
 function toggleSettings(key) {
-    var panel = document.getElementById('panel-' + key);
-    var chevron = document.getElementById('chevron-' + key);
-    var btn = panel.previousElementSibling;
-    var isOpen = !panel.hidden;
-    panel.hidden = isOpen;
-    chevron.style.transform = isOpen ? 'rotate(0deg)' : 'rotate(90deg)';
-    btn.setAttribute('aria-expanded', String(!isOpen));
+    var keys = ['profile', 'appearance', 'account', 'security'];
+    keys.forEach(function(k) {
+        var p = document.getElementById('panel-' + k);
+        var c = document.getElementById('chevron-' + k);
+        if (!p) return;
+        var b = p.previousElementSibling;
+        if (k === key) {
+            var isOpen = !p.hidden;
+            p.hidden = isOpen;
+            c.style.transform = isOpen ? 'rotate(0deg)' : 'rotate(90deg)';
+            b.setAttribute('aria-expanded', String(!isOpen));
+        } else {
+            p.hidden = true;
+            c.style.transform = 'rotate(0deg)';
+            b.setAttribute('aria-expanded', 'false');
+        }
+    });
 }
 </script>
 {% endblock %}

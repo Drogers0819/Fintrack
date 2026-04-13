@@ -398,11 +398,11 @@ def calculate_budget_status(predictions, user_profile, goals_data):
 
     if surplus_after_goals >= 0:
         status = "healthy"
-        message = f"On track — you'll have £{surplus_after_goals:.0f} left after all your goals this month."
+        message = f"On track. You'll have £{surplus_after_goals:,.0f} left after all your goals this month."
     elif predicted_surplus >= 0:
         status = "tight"
         shortfall = abs(surplus_after_goals)
-        message = f"A little tight — you're about £{shortfall:.0f} short of fully funding your goals this month."
+        message = f"A little tight. You're about £{shortfall:,.0f} short of fully funding your goals this month."
     else:
         status = "over budget"
         message = f"You're on track to overspend by £{abs(predicted_surplus):.0f} this month. Small cuts now will help."

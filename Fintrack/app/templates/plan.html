@@ -13,7 +13,7 @@
 <div class="gold-card" style="margin-bottom: 28px;">
     <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 10px;">
         <span class="ai-pulse"></span>
-        <span class="metric-label" style="margin-bottom: 0; color: var(--roman-gold);">What you need to know</span>
+        <span style="font-size: 0.65rem; color: var(--roman-gold); text-transform: uppercase; letter-spacing: 0.06em;">What you need to know</span>
     </div>
     <p style="font-size: 0.9rem; color: var(--text-secondary); line-height: 1.7; font-style: italic;">{{ plan_summary }}</p>
 </div>
@@ -45,7 +45,7 @@
                 <span style="font-size: 0.7rem; color: var(--text-tertiary); margin-left: 6px;">{{ pot.months_to_target }} months to go</span>
                 {% endif %}
             </div>
-            <span style="font-size: 0.85rem; color: var(--roman-gold); font-weight: 500;">£{{ "{:,.0f}".format(pot.monthly_amount) }}/mo</span>
+            <span style="font-size: 0.85rem; color: var(--text-secondary); font-weight: 500;">£{{ "{:,.0f}".format(pot.monthly_amount) }}/mo</span>
         </div>
         {% if pot.target %}
         <div style="margin-top: 6px;">
@@ -78,7 +78,7 @@
     {% for phase in smart_plan.phases %}
     <div style="padding: 14px 16px; margin-bottom: 8px; border-radius: 12px; background: {% if loop.first %}var(--roman-gold-dim){% else %}var(--glass-bg){% endif %}; border: 0.5px solid {% if loop.first %}var(--glass-border){% else %}rgba(255,255,255,0.04){% endif %};">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
-            <span style="font-size: 0.8rem; font-weight: 500; color: {% if loop.first %}var(--roman-gold){% else %}var(--text-secondary){% endif %};">Phase {{ phase.phase }}</span>
+            <span style="font-size: 0.8rem; font-weight: 500; color: {% if loop.first %}var(--text-primary){% else %}var(--text-secondary){% endif %};">Phase {{ phase.phase }}</span>
             <span style="font-size: 0.7rem; color: var(--text-tertiary);">{{ phase.duration_months }} month{{ 's' if phase.duration_months != 1 else '' }}</span>
         </div>
         <p style="font-size: 0.8rem; color: var(--text-secondary); line-height: 1.5;">{{ phase.description }}</p>
@@ -98,9 +98,13 @@
 {% if smart_plan.alerts %}
 <div style="margin-bottom: 32px;">
     {% for alert in smart_plan.alerts %}
-    <div style="padding: 12px 16px; margin-bottom: 8px; border-radius: 10px; background: {% if alert.severity == 'warning' %}rgba(246,173,85,0.06){% else %}var(--glass-bg){% endif %}; border: 0.5px solid {% if alert.severity == 'warning' %}rgba(246,173,85,0.15){% else %}var(--glass-border){% endif %};">
-        <p style="font-size: 0.8rem; color: {% if alert.severity == 'warning' %}rgba(246,173,85,0.9){% else %}var(--text-secondary){% endif %}; line-height: 1.5;">{{ alert.message }}</p>
+    {% if alert.severity == 'warning' %}
+    <div style="padding: 12px 16px; margin-bottom: 8px; border-radius: 10px; background: rgba(246,173,85,0.06); border: 0.5px solid rgba(246,173,85,0.2);">
+        <p style="font-size: 0.8rem; color: rgba(246,173,85,0.9); line-height: 1.5;">{{ alert.message }}</p>
     </div>
+    {% else %}
+    <p style="font-size: 0.8rem; color: var(--text-secondary); line-height: 1.6; margin-bottom: 8px;">{{ alert.message }}</p>
+    {% endif %}
     {% endfor %}
 </div>
 {% endif %}
@@ -129,7 +133,7 @@
 <div class="gold-card" style="margin-bottom: 28px;">
     <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 10px;">
         <span class="ai-pulse"></span>
-        <span class="metric-label" style="margin-bottom: 0; color: var(--roman-gold);">Claro</span>
+        <span style="font-size: 0.65rem; color: var(--roman-gold); text-transform: uppercase; letter-spacing: 0.06em;">Claro</span>
     </div>
     <p style="font-size: 0.9rem; color: var(--text-secondary); line-height: 1.7; font-style: italic;">{{ afford_result.message }}</p>
 </div>
@@ -162,7 +166,7 @@
                        placeholder="e.g. Netflix, takeaways..." value="{{ habit_description if habit_description else '' }}">
             </div>
         </div>
-        <button type="submit" class="btn-primary btn-sm" style="margin-top: 12px;">Show me</button>
+        <button type="submit" class="btn-secondary btn-sm" style="margin-top: 12px;">Show me</button>
     </form>
 </div>
 
@@ -170,7 +174,7 @@
 <div class="gold-card" style="margin-top: 16px; margin-bottom: 28px;">
     <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 12px;">
         <span class="ai-pulse"></span>
-        <span class="metric-label" style="margin-bottom: 0; color: var(--roman-gold);">Claro</span>
+        <span style="font-size: 0.65rem; color: var(--roman-gold); text-transform: uppercase; letter-spacing: 0.06em;">Claro</span>
     </div>
     <div style="font-size: 1rem; font-weight: 500; color: var(--text-primary); margin-bottom: 8px; line-height: 1.4;">
         {{ habit_result.insight.headline }}

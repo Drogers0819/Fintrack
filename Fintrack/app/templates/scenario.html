@@ -13,7 +13,7 @@
 
 <div style="margin-bottom: 32px;">
     <form method="POST" action="{{ url_for('pages.scenario_page') }}">
-        <div class="metric-label" style="margin-bottom: 16px;">Income & commitments</div>
+        <div class="section-label" style="margin-top: 0; margin-bottom: 16px;">Income & commitments</div>
         <div class="grid-2" style="margin-bottom: 24px;">
             <div class="form-group" style="margin-bottom: 0;">
                 <label class="form-label">Monthly income (£)</label>
@@ -29,7 +29,7 @@
 
         {% if goals | length > 0 %}
         <div style="border-top: 0.5px solid rgba(255,255,255,0.06); padding-top: 20px; margin-top: 4px;">
-            <div class="metric-label" style="margin-bottom: 6px;">Goal savings per month</div>
+            <div class="section-label" style="margin-top: 0; margin-bottom: 6px;">Goal savings per month</div>
             <p style="font-size: 0.75rem; color: var(--text-tertiary); margin-bottom: 16px;">
                 Adjust any number to see what changes.
             </p>
@@ -37,7 +37,7 @@
             <div class="form-group" style="{% if not loop.last %}margin-bottom: 16px;{% else %}margin-bottom: 0;{% endif %}">
                 <label class="form-label" style="display: flex; justify-content: space-between;">
                     <span>{{ g.name }}</span>
-                    <span style="color: var(--text-tertiary); font-weight: 400;">currently £{{ "%.0f" | format(g.monthly_allocation) }}/mo</span>
+                    <span style="color: var(--text-tertiary); font-weight: 400;">currently £{{ "{:,.0f}".format(g.monthly_allocation) }}/mo</span>
                 </label>
                 <input type="number" name="goal_{{ g.id }}" class="form-input" step="1" min="0"
                        value="{{ g.monthly_allocation | int }}">
@@ -108,7 +108,7 @@
             </span>
         </div>
         <div style="font-size: 0.75rem; color: var(--text-tertiary);">
-            £{{ "%.0f" | format(c.current_allocation) }}/mo → £{{ "%.0f" | format(c.proposed_allocation) }}/mo
+            £{{ "{:,.0f}".format(c.current_allocation) }}/mo · £{{ "{:,.0f}".format(c.proposed_allocation) }}/mo proposed
             {% if c.proposed_date and c.proposed_date != "N/A" %} · on track for {{ c.proposed_date }}{% endif %}
         </div>
     </div>

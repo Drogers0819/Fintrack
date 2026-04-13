@@ -318,11 +318,11 @@ def generate_month_end_summary(user_data):
 
     if hist_avg > 0:
         if diff > 0:
-            spending_verdict = f"You spent £{total_spent:,.2f} this month — £{diff:.2f} more than your average of £{hist_avg:,.2f}."
+            spending_verdict = f"You spent £{total_spent:,.2f} this month, £{diff:,.2f} more than your average of £{hist_avg:,.2f}."
         elif diff < 0:
-            spending_verdict = f"You spent £{total_spent:,.2f} this month — £{abs(diff):.2f} less than your average. A lighter month."
+            spending_verdict = f"You spent £{total_spent:,.2f} this month, £{abs(diff):,.2f} less than your average. A lighter month."
         else:
-            spending_verdict = f"You spent £{total_spent:,.2f} this month — right on your average."
+            spending_verdict = f"You spent £{total_spent:,.2f} this month, right on your average."
     else:
         spending_verdict = f"You spent £{total_spent:,.2f} this month."
 

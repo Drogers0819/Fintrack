@@ -23,7 +23,7 @@
     </div>
     <p style="font-size: 0.85rem; color: var(--text-secondary); font-style: italic;">
         <span id="months-display">{{ projection.months_to_target }} months</span> away at
-        <span id="slider-value">£{{ "%.2f" | format(projection.monthly_contribution) }}</span>/month
+        <span id="slider-value">£{{ "{:,.2f}".format(projection.monthly_contribution) }}</span>/month
     </p>
 </div>
 
@@ -36,7 +36,7 @@
 
     <div style="display: flex; justify-content: space-between; font-size: 0.7rem; color: var(--text-tertiary); margin-bottom: 4px;">
         <span>£0</span>
-        <span>£{{ "%.0f" | format(max_contribution) }}</span>
+        <span>£{{ "{:,.0f}".format(max_contribution) }}</span>
     </div>
 
     <input type="range" id="contribution-slider"
@@ -48,7 +48,7 @@
 
     <div style="text-align: center; margin-top: 12px;">
         <span class="metric-value md gold" id="slider-amount">
-            £{{ "%.2f" | format(projection.monthly_contribution) }}/month
+            £{{ "{:,.2f}".format(projection.monthly_contribution) }}/month
         </span>
     </div>
 </div>
@@ -151,7 +151,7 @@
 
                 // Update slider value display
                 if (elements.sliderValue) {
-                    elements.sliderValue.textContent = '£' + newContribution.toFixed(2) + '/month';
+                    elements.sliderValue.textContent = '£' + newContribution.toLocaleString('en-GB', {minimumFractionDigits: 2, maximumFractionDigits: 2}) + '/month';
                 }
 
                 updateSliderBackground();

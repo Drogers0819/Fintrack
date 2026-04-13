@@ -40,17 +40,17 @@
     <p>{{ month_name }} {{ year }}</p>
 </div>
 
-<div class="grid-3" style="margin-bottom: 32px;">
+<div class="glass-card" style="margin-bottom: 12px; border-left: 3px solid var(--roman-gold); padding-left: 20px;">
+    <div class="metric-label">Total spending</div>
+    <div class="metric-value hero" style="margin: 4px 0;">£{{ "{:,.2f}".format(total_expenses) }}</div>
+</div>
+<div class="grid-2" style="margin-bottom: 32px;">
     <div class="glass-card">
-        <div class="metric-label">Total Spending</div>
-        <div class="metric-value md">£{{ "{:,.2f}".format(total_expenses) }}</div>
+        <div class="metric-label">Categories</div>
+        <div class="metric-value md" style="margin: 4px 0;">{{ categories | length }}</div>
     </div>
     <div class="glass-card">
-        <div class="metric-label">Categories Used</div>
-        <div class="metric-value md">{{ categories | length }}</div>
-    </div>
-    <div class="glass-card">
-        <div class="metric-label">Biggest Category</div>
+        <div class="metric-label">Top category</div>
         {% if categories | length > 0 %}
         <div style="display: flex; align-items: center; gap: 8px; margin-top: 6px;">
             {{ category_icon(categories[0].name, categories[0].colour) }}

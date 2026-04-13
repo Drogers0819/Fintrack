@@ -427,17 +427,17 @@ def overview():
 
     # Top 3 spending categories this month
     top_categories = db.session.query(
-        Category.name, Category.icon,
+        Category.name, Category.icon, Category.colour,
         func.sum(Transaction.amount).label("total")
     ).join(Category, Transaction.category_id == Category.id).filter(
         Transaction.user_id == current_user.id,
         Transaction.type == "expense",
         extract("month", Transaction.date) == today.month,
         extract("year", Transaction.date) == today.year
-    ).group_by(Category.id, Category.name, Category.icon
+    ).group_by(Category.id, Category.name, Category.icon, Category.colour
     ).order_by(func.sum(Transaction.amount).desc()).limit(3).all()
 
-    categories = [{"name": c.name, "icon": c.icon, "total": float(c.total)} for c in top_categories]
+    categories = [{"name": c.name.replace(c.icon, "").strip() if c.icon and c.name.startswith(c.icon) else c.name, "icon": c.icon, "colour": c.colour or "var(--text-tertiary)", "total": float(c.total)} for c in top_categories]
 
     # Last upload date
     last_transaction = Transaction.query.filter_by(

@@ -2,6 +2,29 @@
 {% block title %}Overview – Claro{% endblock %}
 
 {% block content %}
+{% macro category_icon(name, colour) %}
+<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
+     stroke="{{ colour }}" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"
+     style="flex-shrink: 0; opacity: 0.8;">
+{% if name == 'Bills' or name == 'Housing' %}
+    <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>
+{% elif name == 'Food' or name == 'Eating Out' or name == 'Groceries' %}
+    <path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/><path d="M7 2v20"/><path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3z"/><path d="M21 15v7"/>
+{% elif name == 'Shopping' %}
+    <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/>
+{% elif name == 'Transport' or name == 'Travel' %}
+    <rect x="1" y="3" width="15" height="13" rx="2"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/>
+{% elif name == 'Health' %}
+    <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+{% elif name == 'Subscriptions' or name == 'Entertainment' %}
+    <polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/>
+{% elif name == 'Savings' or name == 'Investments' %}
+    <line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+{% else %}
+    <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/>
+{% endif %}
+</svg>
+{% endmacro %}
 <div class="page-header">
     <h1>Good {{ greeting }}, {{ current_user.name.split()[0] }}.</h1>
 </div>
@@ -19,7 +42,7 @@
 <div class="gold-card" style="margin-bottom: 24px;">
     <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 12px;">
         <span class="ai-pulse"></span>
-        <span class="metric-label" style="margin-bottom: 0; color: var(--roman-gold);">Your plan</span>
+        <span style="font-size: 0.65rem; color: var(--roman-gold); text-transform: uppercase; letter-spacing: 0.06em;">Your plan</span>
     </div>
     <p style="font-size: 0.95rem; color: var(--text-primary); line-height: 1.7; margin-bottom: 12px;">{{ plan_summary }}</p>
 
@@ -27,7 +50,7 @@
     <div style="display: flex; gap: 12px; margin-top: 12px; padding-top: 12px; border-top: 0.5px solid rgba(255,255,255,0.06);">
         <div style="flex: 1;">
             <div style="font-size: 0.65rem; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 2px;">Phase</div>
-            <div style="font-size: 1rem; color: var(--roman-gold); font-weight: 500;">{{ smart_plan.current_phase.phase }} of {{ smart_plan.phase_count }}</div>
+            <div style="font-size: 1rem; color: var(--text-primary); font-weight: 500;">{{ smart_plan.current_phase.phase }} of {{ smart_plan.phase_count }}</div>
         </div>
         <div style="flex: 1;">
             <div style="font-size: 0.65rem; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 2px;">Surplus</div>
@@ -40,25 +63,27 @@
     </div>
     {% endif %}
 
-    <a href="{{ url_for('pages.plan') }}" style="display: inline-block; margin-top: 14px; font-size: 0.75rem; color: var(--roman-gold); text-decoration: none;">
-        View full plan <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle;"><path d="M9 18l6-6-6-6"/></svg>
+    <a href="{{ url_for('pages.plan') }}" class="btn-secondary btn-sm" style="margin-top: 14px;">
+        View full plan
     </a>
 </div>
 
 <!-- ════ ACTIVE POTS — compact progress ════ -->
 {% set goal_pots = smart_plan.pots | selectattr("type", "ne", "lifestyle") | selectattr("type", "ne", "buffer") | list %}
 {% if goal_pots %}
-<div class="glass-card" style="margin-bottom: 24px;">
+<div style="margin-bottom: 24px; padding-top: 20px; border-top: 0.5px solid rgba(255,255,255,0.06);">
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
         <span class="section-label" style="margin-bottom: 0;">Your pots</span>
-        <a href="{{ url_for('pages.my_goals') }}" style="font-size: 0.75rem; color: var(--roman-gold); text-decoration: none;">
-            {% if active_goals_count > 0 %}{{ active_goals_count }} goal{{ 's' if active_goals_count != 1 else '' }}{% endif %}
-        </a>
+        <a href="{{ url_for('pages.my_goals') }}" class="btn-secondary btn-sm">My goals</a>
     </div>
 
     {% for pot in goal_pots %}
     {% if pot.monthly_amount > 0 %}
+    {% if pot.goal_id %}
+    <a href="{{ url_for('pages.goal_detail', goal_id=pot.goal_id) }}" style="display: block; padding: 8px 0; {% if not loop.last %}border-bottom: 0.5px solid rgba(255,255,255,0.04);{% endif %} text-decoration: none;">
+    {% else %}
     <div style="padding: 8px 0; {% if not loop.last %}border-bottom: 0.5px solid rgba(255,255,255,0.04);{% endif %}">
+    {% endif %}
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
             <div style="display: flex; align-items: center; gap: 6px;">
                 <span style="font-size: 0.85rem; color: var(--text-primary);">{{ pot.name }}</span>
@@ -66,7 +91,10 @@
                 <span style="font-size: 0.6rem; padding: 1px 6px; border-radius: 4px; background: rgba(72,187,120,0.1); color: rgba(72,187,120,0.8);">done</span>
                 {% endif %}
             </div>
-            <span style="font-size: 0.8rem; color: var(--text-secondary);">£{{ "{:,.0f}".format(pot.monthly_amount) }}/mo</span>
+            <div style="display: flex; align-items: center; gap: 6px;">
+                <span style="font-size: 0.8rem; color: var(--text-secondary);">£{{ "{:,.0f}".format(pot.monthly_amount) }}/mo</span>
+                {% if pot.goal_id %}<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="var(--text-tertiary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>{% endif %}
+            </div>
         </div>
         {% if pot.target and not pot.completed %}
         <div style="height: 3px; background: rgba(255,255,255,0.04); border-radius: 2px; overflow: hidden;">
@@ -79,7 +107,7 @@
             {% endif %}
         </div>
         {% endif %}
-    </div>
+    {% if pot.goal_id %}</a>{% else %}</div>{% endif %}
     {% endif %}
     {% endfor %}
 </div>
@@ -89,9 +117,13 @@
 {% if smart_plan.alerts %}
 <div style="margin-bottom: 24px;">
     {% for alert in smart_plan.alerts %}
-    <div style="padding: 10px 14px; margin-bottom: 6px; border-radius: 10px; background: {% if alert.severity == 'warning' %}rgba(246,173,85,0.06){% else %}var(--glass-bg){% endif %}; border: 0.5px solid {% if alert.severity == 'warning' %}rgba(246,173,85,0.12){% else %}var(--glass-border){% endif %};">
-        <p style="font-size: 0.8rem; color: {% if alert.severity == 'warning' %}rgba(246,173,85,0.9){% else %}var(--text-secondary){% endif %}; line-height: 1.5; margin: 0;">{{ alert.message }}</p>
+    {% if alert.severity == 'warning' %}
+    <div style="padding: 10px 14px; margin-bottom: 6px; border-radius: 10px; background: rgba(246,173,85,0.06); border: 0.5px solid rgba(246,173,85,0.2);">
+        <p style="font-size: 0.8rem; color: rgba(246,173,85,0.9); line-height: 1.5; margin: 0;">{{ alert.message }}</p>
     </div>
+    {% else %}
+    <p style="font-size: 0.8rem; color: var(--text-secondary); line-height: 1.6; margin-bottom: 6px;">{{ alert.message }}</p>
+    {% endif %}
     {% endfor %}
 </div>
 {% endif %}
@@ -102,8 +134,8 @@
 {% if has_data %}
 <div class="glass-card" style="margin-bottom: 24px;">
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
-        <span class="metric-label" style="margin-bottom: 0;">This month</span>
-        <a href="{{ url_for('pages.my_money') }}" style="font-size: 0.75rem; color: var(--roman-gold); text-decoration: none;">Details</a>
+        <span class="section-label" style="margin-bottom: 0;">This month</span>
+        <a href="{{ url_for('pages.my_money') }}" class="btn-secondary btn-sm">My money</a>
     </div>
 
     <div style="display: flex; gap: 12px; margin-bottom: 14px;">
@@ -127,8 +159,11 @@
     {% if top_categories %}
     <div style="padding-top: 10px; border-top: 0.5px solid rgba(255,255,255,0.04);">
         {% for cat in top_categories %}
-        <div style="display: flex; justify-content: space-between; padding: 4px 0;">
-            <span style="font-size: 0.8rem; color: var(--text-secondary);">{{ cat.name }}</span>
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: 4px 0;">
+            <span style="display: flex; align-items: center; gap: 6px; font-size: 0.8rem; color: var(--text-secondary);">
+                {{ category_icon(cat.name, cat.colour) }}
+                {{ cat.name }}
+            </span>
             <span style="font-size: 0.8rem; color: var(--text-tertiary);">£{{ "{:,.0f}".format(cat.total) }}</span>
         </div>
         {% endfor %}
