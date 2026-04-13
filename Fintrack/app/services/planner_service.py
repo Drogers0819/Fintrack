@@ -651,7 +651,7 @@ def _generate_alerts(phases, monthly_projections, pots):
             "type": "low_emergency_fund",
             "severity": "warning",
             "message": f"Your emergency fund is below 50%. The plan prioritises building this to "
-                      f"£{emergency['target']:,.0f} ({EMERGENCY_MONTHS} months of essentials)."
+                      f"£{emergency['target']:,.0f}, covering {EMERGENCY_MONTHS} months of essentials."
         })
 
     return alerts
