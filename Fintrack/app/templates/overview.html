@@ -44,24 +44,22 @@
         <span class="ai-pulse"></span>
         <span style="font-size: 0.65rem; color: var(--roman-gold); text-transform: uppercase; letter-spacing: 0.06em;">Your plan</span>
     </div>
-    <p style="font-size: 0.95rem; color: var(--text-primary); line-height: 1.7; margin-bottom: 12px;">{{ plan_summary }}</p>
+    <p style="font-size: 0.95rem; color: var(--text-primary); line-height: 1.7;">{{ plan_summary }}</p>
 
-    {% if smart_plan.current_phase %}
-    <div style="display: flex; gap: 12px; margin-top: 12px; padding-top: 12px; border-top: 0.5px solid rgba(255,255,255,0.06);">
+    <div style="display: flex; gap: 12px; margin-top: 14px; padding-top: 12px; border-top: 0.5px solid rgba(255,255,255,0.06);">
         <div style="flex: 1;">
-            <div style="font-size: 0.65rem; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 2px;">Phase</div>
-            <div style="font-size: 1rem; color: var(--text-primary); font-weight: 500;">{{ smart_plan.current_phase.phase }} of {{ smart_plan.phase_count }}</div>
+            <div style="font-size: 0.6rem; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 2px;">Income</div>
+            <div style="font-size: 1.05rem; color: var(--text-primary); font-weight: 500;">£{{ "{:,.0f}".format(smart_plan.income) }}</div>
         </div>
         <div style="flex: 1;">
-            <div style="font-size: 0.65rem; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 2px;">Surplus</div>
-            <div style="font-size: 1rem; color: var(--text-primary); font-weight: 500;">£{{ "{:,.0f}".format(smart_plan.surplus) }}/mo</div>
+            <div style="font-size: 0.6rem; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 2px;">Fixed costs</div>
+            <div style="font-size: 1.05rem; color: var(--text-secondary);">£{{ "{:,.0f}".format(smart_plan.essentials) }}</div>
         </div>
         <div style="flex: 1;">
-            <div style="font-size: 0.65rem; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 2px;">Lifestyle</div>
-            <div style="font-size: 1rem; color: var(--text-primary); font-weight: 500;">£{{ "{:,.0f}".format(smart_plan.lifestyle_monthly) }}/mo</div>
+            <div style="font-size: 0.6rem; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 2px;">Surplus</div>
+            <div style="font-size: 1.05rem; color: var(--roman-gold); font-weight: 500;">£{{ "{:,.0f}".format(smart_plan.surplus) }}</div>
         </div>
     </div>
-    {% endif %}
 
     <a href="{{ url_for('pages.plan') }}" class="btn-secondary btn-sm" style="margin-top: 14px;">
         View full plan
@@ -69,7 +67,7 @@
 </div>
 
 <!-- ════ ACTIVE POTS — compact progress ════ -->
-{% set goal_pots = smart_plan.pots | selectattr("type", "ne", "lifestyle") | selectattr("type", "ne", "buffer") | list %}
+{% set goal_pots = smart_plan.pots %}
 {% if goal_pots %}
 <div style="margin-bottom: 24px; padding-top: 20px; border-top: 0.5px solid rgba(255,255,255,0.06);">
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">

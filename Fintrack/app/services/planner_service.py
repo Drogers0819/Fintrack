@@ -788,39 +788,67 @@ def replan_with_change(user_profile, goals, change_type, change_data, debts=None
 # ─── PLAN SUMMARY (for whispers and overview) ────────────────
 
 def get_plan_summary(plan):
-    """Generate a one-paragraph summary of the current plan state."""
+    """Generate a one-sentence summary of the current plan state."""
     if "error" in plan:
         return plan["error"]
 
-    current_phase = plan.get("current_phase")
-    if not current_phase:
+    phases = plan.get("phases", [])
+    pots = plan.get("pots", [])
+    if not phases:
         return "Your financial plan is being calculated."
 
-    phase_num = current_phase.get("phase", 1)
+    current_phase = phases[0]
     total_phases = plan.get("phase_count", 1)
-    active_pots = [p for p in current_phase.get("active_pots", [])
-                   if p not in ("Lifestyle & family", "Buffer")]
+
+    # What's completing in this phase?
+    completing = current_phase.get("completed_pots", [])
     duration = current_phase.get("duration_months", 0)
-    completed = current_phase.get("completed_pots", [])
 
-    if active_pots:
-        focus = " and ".join(active_pots)
-    else:
-        focus = "your goals"
+    # What goals exist after the completing pots?
+    active_after = [p["name"] for p in pots
+                    if p["type"] not in ("lifestyle", "buffer")
+                    and not p.get("completed")
+                    and p["name"] not in completing]
 
-    summary = f"Phase {phase_num} of {total_phases}, building {focus}."
-
-    if completed:
-        summary += f" {' and '.join(completed)} will be done in {duration} month{'s' if duration != 1 else ''}."
-
-    surplus_pots = [p for p in plan.get("pots", [])
-                    if p["type"] not in ("lifestyle", "buffer") and not p.get("completed")]
-    if surplus_pots:
-        remaining_total = sum(
-            (p.get("target", 0) - p.get("current", 0)) for p in surplus_pots if p.get("target")
+    # Build the summary
+    if completing and active_after:
+        completing_str = " and ".join(completing)
+        boost_str = " and ".join(active_after)
+        summary = (
+            f"Following the current plan, once your {completing_str} "
+            f"{'is' if len(completing) == 1 else 'are'} complete "
+            f"(~{duration} months), that money redirects to boost "
+            f"your {boost_str}."
         )
-        if remaining_total > 0:
-            summary += f" £{remaining_total:,.0f} to go across all goals."
+    elif completing and not active_after:
+        completing_str = " and ".join(completing)
+        summary = (
+            f"Following the current plan, your {completing_str} "
+            f"will be fully funded in ~{duration} months. "
+            f"After that, your surplus frees up entirely."
+        )
+    else:
+        # No completions in this phase — long-running goals
+        active_pots = [p["name"] for p in pots
+                      if p["type"] not in ("lifestyle", "buffer")
+                      and not p.get("completed")
+                      and p["monthly_amount"] > 0]
+        if active_pots:
+            pots_str = " and ".join(active_pots)
+            summary = f"Your surplus is currently building your {pots_str}."
+        else:
+            summary = "Your surplus is allocated across your goals."
+
+    # Add total remaining
+    remaining_total = sum(
+        (p.get("target", 0) - p.get("current", 0))
+        for p in pots
+        if p["type"] not in ("lifestyle", "buffer")
+        and not p.get("completed")
+        and p.get("target")
+    )
+    if remaining_total > 0:
+        summary += f" £{remaining_total:,.0f} to go across all goals."
 
     return summary
 
