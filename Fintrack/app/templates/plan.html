@@ -13,7 +13,7 @@
 <div class="gold-card" style="margin-bottom: 28px;">
     <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 10px;">
         <span class="ai-pulse"></span>
-        <span style="font-size: 0.65rem; color: var(--roman-gold); text-transform: uppercase; letter-spacing: 0.06em;">What you need to know</span>
+        <span style="font-size: 0.65rem; color: var(--roman-gold); text-transform: uppercase; letter-spacing: 0.06em;">Plan overview</span>
     </div>
     <p style="font-size: 0.9rem; color: var(--text-secondary); line-height: 1.7; font-style: italic;">{{ plan_summary }}</p>
 </div>
@@ -26,10 +26,10 @@
     <div style="padding: 8px 0; border-bottom: 0.5px solid var(--glass-border);">
         <div style="display: flex; justify-content: space-between;">
             <span style="font-size: 0.85rem; color: var(--text-tertiary);">Essentials</span>
-            <span style="font-size: 0.85rem; color: var(--text-secondary);">£{{ "{:,.0f}".format(smart_plan.essentials) }}</span>
+            <span style="font-size: 0.85rem; color: var(--text-secondary);">£{{ "{:,.2f}".format(smart_plan.essentials) }}</span>
         </div>
         <div style="font-size: 0.7rem; color: var(--text-tertiary); margin-top: 2px;">
-            Rent £{{ "{:,.0f}".format(smart_plan.essentials_breakdown.rent) }} · Bills £{{ "{:,.0f}".format(smart_plan.essentials_breakdown.bills) }}{% if smart_plan.essentials_breakdown.groceries > 0 %} · Groceries £{{ "{:,.0f}".format(smart_plan.essentials_breakdown.groceries) }}{% endif %}{% if smart_plan.essentials_breakdown.transport > 0 %} · Transport £{{ "{:,.0f}".format(smart_plan.essentials_breakdown.transport) }}{% endif %}
+            Rent £{{ "{:,.2f}".format(smart_plan.essentials_breakdown.rent) }} · Bills £{{ "{:,.2f}".format(smart_plan.essentials_breakdown.bills) }}{% if smart_plan.essentials_breakdown.groceries > 0 %} · Groceries £{{ "{:,.2f}".format(smart_plan.essentials_breakdown.groceries) }}{% endif %}{% if smart_plan.essentials_breakdown.transport > 0 %} · Transport £{{ "{:,.2f}".format(smart_plan.essentials_breakdown.transport) }}{% endif %}
         </div>
     </div>
 
@@ -41,31 +41,31 @@
                 <span style="font-size: 0.85rem; color: var(--text-primary);">{{ pot.name }}</span>
                 {% if pot.completed %}
                 <span style="font-size: 0.65rem; padding: 2px 8px; border-radius: 4px; background: rgba(72,187,120,0.1); color: rgba(72,187,120,0.8); margin-left: 6px;">done</span>
-                {% elif pot.target and pot.months_to_target is defined %}
-                <span style="font-size: 0.7rem; color: var(--text-tertiary); margin-left: 6px;">{{ pot.months_to_target }} months to go</span>
                 {% endif %}
             </div>
-            <span style="font-size: 0.85rem; color: var(--text-secondary); font-weight: 500;">£{{ "{:,.0f}".format(pot.monthly_amount) }}/mo</span>
+            <span style="font-size: 0.85rem; color: var(--text-secondary); font-weight: 500; font-variant-numeric: tabular-nums;">£{{ "{:,.2f}".format(pot.monthly_amount) }}/mo</span>
         </div>
         {% if pot.target %}
         <div style="margin-top: 6px;">
             <div style="height: 3px; background: rgba(255,255,255,0.04); border-radius: 2px; overflow: hidden;">
-                <div style="height: 100%; border-radius: 2px; background: var(--roman-gold); width: {{ ((pot.current / pot.target) * 100) | round(1) }}%;"></div>
+                <div style="height: 100%; border-radius: 2px; background: var(--roman-gold); width: {{ [(pot.current / pot.target * 100), 100] | min | round(1) }}%;"></div>
             </div>
             <div style="display: flex; justify-content: space-between; margin-top: 3px;">
-                <span style="font-size: 0.65rem; color: var(--text-tertiary);">£{{ "{:,.0f}".format(pot.current) }}</span>
-                <span style="font-size: 0.65rem; color: var(--text-tertiary);">£{{ "{:,.0f}".format(pot.target) }}</span>
+                <span style="font-size: 0.65rem; color: var(--text-secondary);">£{{ "{:,.2f}".format(pot.current) }}{% if not pot.completed and pot.months_to_target is defined %} · {{ pot.months_to_target }} months to go{% endif %}</span>
+                <span style="font-size: 0.65rem; color: var(--text-tertiary);">£{{ "{:,.2f}".format(pot.target) }}</span>
             </div>
         </div>
+        {% elif not pot.completed and pot.months_to_target is defined %}
+        <div style="font-size: 0.65rem; color: var(--text-tertiary); margin-top: 3px;">{{ pot.months_to_target }} months to go</div>
         {% endif %}
     </div>
     {% endif %}
     {% endfor %}
 
-    <div style="padding: 10px 0; margin-top: 4px;">
+    <div style="padding: 8px 0; margin-top: 4px; border-top: 0.5px solid var(--glass-border);">
         <div style="display: flex; justify-content: space-between;">
-            <span style="font-size: 0.8rem; color: var(--text-tertiary); font-weight: 500;">Surplus</span>
-            <span style="font-size: 0.8rem; color: var(--text-secondary); font-weight: 500;">£{{ "{:,.0f}".format(smart_plan.surplus) }}/mo</span>
+            <span style="font-size: 0.85rem; color: var(--text-tertiary);">Surplus</span>
+            <span style="font-size: 0.85rem; color: var(--text-secondary); font-weight: 500; font-variant-numeric: tabular-nums;">£{{ "{:,.2f}".format(smart_plan.surplus) }}/mo</span>
         </div>
     </div>
 </div>
@@ -147,7 +147,7 @@
 
 <!-- Habit cost calculator -->
 <div style="padding-top: 32px; margin-top: 8px; border-top: 0.5px solid rgba(255,255,255,0.06);">
-    <div class="section-label" style="margin-bottom: 6px;">Habit cost</div>
+    <div style="font-size: 0.72rem; color: var(--text-tertiary); margin-bottom: 6px;">Habit cost</div>
     <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 12px;">See what a daily or monthly habit really costs over time.</p>
     <form method="POST" action="{{ url_for('pages.plan') }}">
         <input type="hidden" name="form_type" value="habit_cost">
@@ -186,8 +186,8 @@
             {% set is_headline = (key == "10_year") %}
             <div style="flex: 1; text-align: center; {% if not loop.last %}border-right: 0.5px solid rgba(255,255,255,0.06); padding-right: 12px; margin-right: 12px;{% endif %}">
                 <div style="font-size: 0.65rem; color: var(--text-tertiary); letter-spacing: 0.06em; margin-bottom: 6px; text-transform: uppercase;">{{ h.years }} yr</div>
-                <div style="font-size: {% if is_headline %}1.1rem{% else %}0.9rem{% endif %}; font-weight: {% if is_headline %}600{% else %}400{% endif %}; color: {% if is_headline %}var(--text-primary){% else %}var(--text-secondary){% endif %}; margin-bottom: 4px;">£{{ "{:,.0f}".format(h.opportunity_cost) }}</div>
-                <div style="font-size: 0.65rem; color: var(--text-tertiary);">incl. £{{ "{:,.0f}".format(h.lost_growth) }} growth</div>
+                <div style="font-size: {% if is_headline %}1.1rem{% else %}0.9rem{% endif %}; font-weight: {% if is_headline %}600{% else %}400{% endif %}; color: {% if is_headline %}var(--text-primary){% else %}var(--text-secondary){% endif %}; margin-bottom: 4px;">£{{ "{:,.2f}".format(h.opportunity_cost) }}</div>
+                <div style="font-size: 0.65rem; color: var(--text-tertiary);">incl. £{{ "{:,.2f}".format(h.lost_growth) }} growth</div>
             </div>
             {% endfor %}
         </div>

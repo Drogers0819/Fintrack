@@ -1,6 +1,7 @@
 {% extends "base.html" %}
 {% block title %}Check-in – Claro{% endblock %}
 
+
 {% block content %}
 <div class="page-header">
     <h1>Monthly check-in</h1>
@@ -24,15 +25,15 @@
 
 {% if existing and existing.entries %}
 <div class="glass-card" style="margin-bottom: 24px;">
-    <div class="metric-label" style="margin-bottom: 14px;">What you reported</div>
+    <div style="font-size: 0.72rem; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 14px;">What you reported</div>
     {% for entry in existing.entries %}
     <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 0; {% if not loop.last %}border-bottom: 0.5px solid rgba(255,255,255,0.04);{% endif %}">
         <span style="font-size: 0.85rem; color: var(--text-primary);">{{ entry.pot_name }}</span>
         <div style="text-align: right;">
-            <span style="font-size: 0.85rem; {% if entry.difference >= 0 %}color: var(--text-primary){% else %}color: var(--danger){% endif %};">£{{ "{:,.0f}".format(entry.actual_amount) }}</span>
+            <span style="font-size: 0.85rem; {% if entry.difference >= 0 %}color: var(--text-primary){% else %}color: var(--danger){% endif %};">£{{ "{:,.2f}".format(entry.actual_amount) }}</span>
             {% if entry.difference != 0 %}
             <span style="font-size: 0.7rem; color: var(--text-tertiary); margin-left: 6px;">
-                ({% if entry.difference > 0 %}+{% endif %}£{{ "{:,.0f}".format(entry.difference) }} vs plan)
+                {% if entry.difference > 0 %}+£{{ "{:,.2f}".format(entry.difference) }}{% else %}−£{{ "{:,.2f}".format(entry.difference | abs) }}{% endif %} vs plan
             </span>
             {% endif %}
         </div>
@@ -43,10 +44,10 @@
 
 {% else %}
 <!-- Check-in form -->
-<div class="glass-card" style="margin-bottom: 24px;">
-    <div class="metric-label" style="margin-bottom: 6px;">{{ checkin_month }}</div>
+<div style="margin-bottom: 24px;">
+    <p style="font-size: 0.72rem; color: var(--text-tertiary); margin-bottom: 6px;">{{ checkin_month }}</p>
     <p style="font-size: 0.85rem; color: var(--text-secondary); line-height: 1.6; margin-bottom: 20px;">
-        Looking back at {{ checkin_month }} — how much did you actually put toward each pot? Be honest — the plan adjusts to reality, not the other way around.
+        Looking back at {{ checkin_month }}. How much did you actually put toward each pot? Be honest. The plan adjusts to reality, not the other way around.
     </p>
 
     <form method="POST" action="{{ url_for('pages.checkin') }}">
@@ -56,10 +57,10 @@
                 <div>
                     <span style="font-size: 0.9rem; color: var(--text-primary);">{{ pot.name }}</span>
                     {% if pot.target %}
-                    <span style="font-size: 0.7rem; color: var(--text-tertiary); margin-left: 6px;">£{{ "{:,.0f}".format(pot.current) }} of £{{ "{:,.0f}".format(pot.target) }}</span>
+                    <span style="font-size: 0.7rem; color: var(--text-tertiary); margin-left: 6px;">£{{ "{:,.2f}".format(pot.current) }} of £{{ "{:,.2f}".format(pot.target) }}</span>
                     {% endif %}
                 </div>
-                <span style="font-size: 0.75rem; color: var(--text-tertiary);">Plan: £{{ "{:,.0f}".format(pot.planned) }}</span>
+                <span style="font-size: 0.75rem; color: var(--text-tertiary);">Plan: £{{ "{:,.2f}".format(pot.planned) }}</span>
             </div>
             <div class="form-group" style="margin-bottom: 0;">
                 <input type="number" name="actual_{{ pot.name | replace(' ', '_') }}"
@@ -75,24 +76,25 @@
         </button>
     </form>
 </div>
+
 {% endif %}
 
 <!-- Past check-ins -->
 {% if past_checkins %}
 <div style="margin-top: 32px; padding-top: 24px; border-top: 0.5px solid rgba(255,255,255,0.06);">
-    <div class="metric-label" style="margin-bottom: 14px;">History</div>
+    <div style="font-size: 0.72rem; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 14px;">History</div>
     {% for ci in past_checkins %}
     <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 0; {% if not loop.last %}border-bottom: 0.5px solid rgba(255,255,255,0.04);{% endif %}">
         <span style="font-size: 0.85rem; color: var(--text-secondary);">
-            {{ '{:02d}/{}'.format(ci.month, ci.year) }}
+            {{ ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"][ci.month - 1] }} {{ ci.year }}
         </span>
         <div>
             {% set total_planned = ci.entries | sum(attribute='planned_amount') %}
             {% set total_actual = ci.entries | sum(attribute='actual_amount') %}
-            <span style="font-size: 0.85rem; color: var(--text-primary);">£{{ "{:,.0f}".format(total_actual) }}</span>
+            <span style="font-size: 0.85rem; color: var(--text-primary);">£{{ "{:,.2f}".format(total_actual) }}</span>
             {% if total_actual != total_planned %}
             <span style="font-size: 0.7rem; color: var(--text-tertiary); margin-left: 4px;">
-                of £{{ "{:,.0f}".format(total_planned) }} planned
+                of £{{ "{:,.2f}".format(total_planned) }} planned
             </span>
             {% endif %}
         </div>

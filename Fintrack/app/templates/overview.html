@@ -49,15 +49,15 @@
     <div style="display: flex; gap: 12px; margin-top: 14px; padding-top: 12px; border-top: 0.5px solid rgba(255,255,255,0.06);">
         <div style="flex: 1;">
             <div style="font-size: 0.6rem; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 2px;">Income</div>
-            <div style="font-size: 1.05rem; color: var(--text-primary); font-weight: 500;">£{{ "{:,.0f}".format(smart_plan.income) }}</div>
+            <div style="font-size: 1.05rem; color: var(--text-primary); font-weight: 500;">£{{ "{:,.2f}".format(smart_plan.income) }}</div>
         </div>
         <div style="flex: 1;">
             <div style="font-size: 0.6rem; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 2px;">Fixed costs</div>
-            <div style="font-size: 1.05rem; color: var(--text-secondary);">£{{ "{:,.0f}".format(smart_plan.essentials) }}</div>
+            <div style="font-size: 1.05rem; color: var(--text-secondary);">£{{ "{:,.2f}".format(smart_plan.essentials) }}</div>
         </div>
         <div style="flex: 1;">
             <div style="font-size: 0.6rem; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 2px;">Surplus</div>
-            <div style="font-size: 1.05rem; color: var(--roman-gold); font-weight: 500;">£{{ "{:,.0f}".format(smart_plan.surplus) }}</div>
+            <div style="font-size: 1.05rem; color: var(--text-secondary); font-weight: 500;">£{{ "{:,.2f}".format(smart_plan.surplus) }}</div>
         </div>
     </div>
 
@@ -90,7 +90,7 @@
                 {% endif %}
             </div>
             <div style="display: flex; align-items: center; gap: 6px;">
-                <span style="font-size: 0.8rem; color: var(--text-secondary);">£{{ "{:,.0f}".format(pot.monthly_amount) }}/mo</span>
+                <span style="font-size: 0.8rem; color: var(--text-secondary);">£{{ "{:,.2f}".format(pot.monthly_amount) }}/mo</span>
                 {% if pot.goal_id %}<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="var(--text-tertiary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>{% endif %}
             </div>
         </div>
@@ -99,7 +99,7 @@
             <div style="height: 100%; border-radius: 2px; background: var(--roman-gold); width: {{ ((pot.current / pot.target) * 100) | round(1) }}%;"></div>
         </div>
         <div style="display: flex; justify-content: space-between; margin-top: 3px;">
-            <span style="font-size: 0.65rem; color: var(--text-tertiary);">£{{ "{:,.0f}".format(pot.current) }} of £{{ "{:,.0f}".format(pot.target) }}</span>
+            <span style="font-size: 0.65rem; color: var(--text-tertiary);">£{{ "{:,.2f}".format(pot.current) }} of £{{ "{:,.2f}".format(pot.target) }}</span>
             {% if pot.months_to_target is defined %}
             <span style="font-size: 0.65rem; color: var(--text-tertiary);">{{ pot.months_to_target }} months</span>
             {% endif %}
@@ -135,16 +135,16 @@
         <div style="flex: 1;">
             <div style="font-size: 0.65rem; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 2px;">Left to spend</div>
             <div style="font-size: 1.1rem; font-weight: 500; color: {% if money_left >= 0 %}var(--text-primary){% else %}var(--danger){% endif %};">
-                {% if money_left < 0 %}−{% endif %}£{{ "{:,.0f}".format(money_left | abs) }}
+                {% if money_left < 0 %}−{% endif %}£{{ "{:,.2f}".format(money_left | abs) }}
             </div>
             {% if money_left > 0 and days_remaining > 0 %}
-            <div style="font-size: 0.65rem; color: var(--text-tertiary);">£{{ "{:,.0f}".format((money_left / days_remaining) | int) }}/day · {{ days_remaining }} days</div>
+            <div style="font-size: 0.65rem; color: var(--text-tertiary);">£{{ "{:,.2f}".format((money_left / days_remaining) | int) }}/day · {{ days_remaining }} days</div>
             {% endif %}
         </div>
         {% endif %}
         <div style="flex: 1;">
             <div style="font-size: 0.65rem; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 2px;">Spent so far</div>
-            <div style="font-size: 1.1rem; font-weight: 500; color: var(--text-primary);">£{{ "{:,.0f}".format(monthly_spending) }}</div>
+            <div style="font-size: 1.1rem; font-weight: 500; color: var(--text-primary);">£{{ "{:,.2f}".format(monthly_spending) }}</div>
         </div>
     </div>
 
@@ -156,7 +156,7 @@
                 {{ category_icon(cat.name, cat.colour) }}
                 {{ cat.name }}
             </span>
-            <span style="font-size: 0.8rem; color: var(--text-tertiary);">£{{ "{:,.0f}".format(cat.total) }}</span>
+            <span style="font-size: 0.8rem; color: var(--text-tertiary);">£{{ "{:,.2f}".format(cat.total) }}</span>
         </div>
         {% endfor %}
     </div>

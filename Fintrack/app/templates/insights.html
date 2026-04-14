@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}Monthly Insights — Claro{% endblock %}
+{% block title %}Monthly Insights – Claro{% endblock %}
 
 {% block content %}
 <a href="{{ url_for('pages.my_money') }}" style="display: inline-flex; align-items: center; gap: 6px; font-size: 0.75rem; color: var(--text-tertiary); text-decoration: none; margin-bottom: 16px;">
@@ -67,7 +67,7 @@
     {% if predictions.comparison.difference != 0 %}
     <div style="margin-bottom: 12px;">
         <div class="metric-value md {% if predictions.comparison.difference > 0 %}danger{% else %}success{% endif %}">
-            {% if predictions.comparison.difference > 0 %}+£{{ "{:,.2f}".format(predictions.comparison.difference) }}{% else %}−£{{ "{:,.2f}".format(predictions.comparison.difference | abs) }}{% endif %}
+            {% if predictions.comparison.difference > 0 %}£{{ "{:,.2f}".format(predictions.comparison.difference) }}{% else %}−£{{ "{:,.2f}".format(predictions.comparison.difference | abs) }}{% endif %}
         </div>
         <div style="font-size: 0.75rem; color: var(--text-tertiary); margin-top: 2px;">
             {% if predictions.comparison.difference > 0 %}above your usual spending at this point{% else %}below your usual spending at this point{% endif %}
@@ -96,7 +96,7 @@
     <!-- Header: question + badge -->
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
         <div style="font-size: 0.8rem; color: var(--text-primary);">Can you fund your goals this month?</div>
-        <span class="badge {% if budget_status.status == 'healthy' %}badge-success{% elif budget_status.status == 'tight' %}badge-warning{% else %}badge-danger{% endif %}">
+        <span class="badge {% if budget_status.status == 'healthy' %}badge-default{% elif budget_status.status == 'tight' %}badge-warning{% else %}badge-danger{% endif %}">
             {{ budget_status.status }}
         </span>
     </div>

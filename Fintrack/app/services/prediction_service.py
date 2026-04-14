@@ -390,7 +390,7 @@ def calculate_budget_status(predictions, user_profile, goals_data):
     planned_surplus = round(income - commitments, 2)
 
     total_goal_allocation = sum(
-        float(g.get("monthly_allocation", 0))
+        float(g.get("monthly_allocation") or 0)
         for g in goals_data
     )
 

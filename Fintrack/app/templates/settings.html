@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}Settings — Claro{% endblock %}
+{% block title %}Settings – Claro{% endblock %}
 
 {% block content %}
 <a href="{{ url_for('pages.overview') }}" style="display: inline-flex; align-items: center; gap: 6px; font-size: 0.75rem; color: var(--text-tertiary); text-decoration: none; margin-bottom: 16px;">
@@ -36,19 +36,19 @@
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
             <div>
                 <div style="font-size: 0.7rem; color: var(--text-tertiary);">Take-home pay</div>
-                <div style="font-size: 0.9rem;">£{{ "{:,.0f}".format(current_user.monthly_income | float) }}/month</div>
+                <div style="font-size: 0.9rem;">£{{ "{:,.2f}".format(current_user.monthly_income | float) }}/month</div>
             </div>
             <div>
                 <div style="font-size: 0.7rem; color: var(--text-tertiary);">Rent/mortgage</div>
-                <div style="font-size: 0.9rem;">£{{ "{:,.0f}".format(current_user.rent_amount | float) }}/month</div>
+                <div style="font-size: 0.9rem;">£{{ "{:,.2f}".format(current_user.rent_amount | float) }}/month</div>
             </div>
             <div>
                 <div style="font-size: 0.7rem; color: var(--text-tertiary);">Bills</div>
-                <div style="font-size: 0.9rem;">£{{ "{:,.0f}".format(current_user.bills_amount | float) }}/month</div>
+                <div style="font-size: 0.9rem;">£{{ "{:,.2f}".format(current_user.bills_amount | float) }}/month</div>
             </div>
             <div>
                 <div style="font-size: 0.7rem; color: var(--text-tertiary);">Available for goals</div>
-                <div style="font-size: 0.9rem;">£{{ "{:,.0f}".format(current_user.monthly_surplus) }}/month</div>
+                <div style="font-size: 0.9rem;">£{{ "{:,.2f}".format(current_user.monthly_surplus) }}/month</div>
             </div>
         </div>
         {% else %}

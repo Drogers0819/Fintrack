@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}What If — Claro{% endblock %}
+{% block title %}What If – Claro{% endblock %}
 
 {% block content %}
 <a href="{{ url_for('pages.plan') }}" style="display: inline-flex; align-items: center; gap: 6px; font-size: 0.75rem; color: var(--text-tertiary); text-decoration: none; margin-bottom: 16px;">
@@ -37,7 +37,7 @@
             <div class="form-group" style="{% if not loop.last %}margin-bottom: 16px;{% else %}margin-bottom: 0;{% endif %}">
                 <label class="form-label" style="display: flex; justify-content: space-between;">
                     <span>{{ g.name }}</span>
-                    <span style="color: var(--text-tertiary); font-weight: 400;">currently £{{ "{:,.0f}".format(g.monthly_allocation) }}/mo</span>
+                    <span style="color: var(--text-tertiary); font-weight: 400;">currently £{{ "{:,.2f}".format(g.monthly_allocation) }}/mo</span>
                 </label>
                 <input type="number" name="goal_{{ g.id }}" class="form-input" step="1" min="0"
                        value="{{ g.monthly_allocation | int }}">
@@ -76,14 +76,14 @@
     </div>
     <div style="display: flex; align-items: baseline; gap: 8px; margin-bottom: 4px; flex-wrap: wrap;">
         <span style="font-size: 1.6rem; font-weight: 600; {% if change > 0 %}color: var(--success);{% else %}color: var(--danger);{% endif %}">
-            £{{ "{:,.0f}".format(scenario_result.summary.proposed_surplus) }}
+            £{{ "{:,.2f}".format(scenario_result.summary.proposed_surplus) }}
         </span>
         <span style="font-size: 0.8rem; color: var(--text-tertiary);">/month free</span>
     </div>
     <div style="font-size: 0.75rem; color: var(--text-tertiary); margin-bottom: {% if scenario_result.summary.net_insight %}14px{% else %}0{% endif %};">
         after rent and bills ·
         <span style="{% if change > 0 %}color: var(--success);{% else %}color: var(--danger);{% endif %}">
-            {% if change > 0 %}+£{{ "{:,.0f}".format(change) }}{% else %}−£{{ "{:,.0f}".format(change | abs) }}{% endif %} vs your saved profile
+            {% if change > 0 %}+£{{ "{:,.2f}".format(change) }}{% else %}−£{{ "{:,.2f}".format(change | abs) }}{% endif %} vs your saved profile
         </span>
     </div>
 
@@ -108,7 +108,7 @@
             </span>
         </div>
         <div style="font-size: 0.75rem; color: var(--text-tertiary);">
-            £{{ "{:,.0f}".format(c.current_allocation) }}/mo · £{{ "{:,.0f}".format(c.proposed_allocation) }}/mo proposed
+            £{{ "{:,.2f}".format(c.current_allocation) }}/mo · £{{ "{:,.2f}".format(c.proposed_allocation) }}/mo proposed
             {% if c.proposed_date and c.proposed_date != "N/A" %} · on track for {{ c.proposed_date }}{% endif %}
         </div>
     </div>

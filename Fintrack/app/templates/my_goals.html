@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}My Goals — Claro{% endblock %}
+{% block title %}My Goals – Claro{% endblock %}
 
 {% block content %}
 <div class="page-header" style="margin-bottom: 24px;">
@@ -46,10 +46,10 @@
         <!-- Progress amount + target -->
         <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 8px;">
             <span style="font-size: 1.5rem; font-variant-numeric: tabular-nums; color: var(--text-primary); letter-spacing: -0.01em;">
-                £{{ "{:,.0f}".format(g.current_amount) }}
+                £{{ "{:,.2f}".format(g.current_amount) }}
             </span>
             <span style="font-size: 0.75rem; color: var(--text-tertiary);">
-                of £{{ "{:,.0f}".format(g.target_amount) }}
+                of £{{ "{:,.2f}".format(g.target_amount) }}
             </span>
         </div>
 
@@ -62,7 +62,7 @@
         <!-- Percent -->
         <div style="font-size: 0.7rem; color: var(--text-tertiary); margin-bottom: {% if g.monthly_allocation or (g.target_amount and g.monthly_allocation) %}14px{% else %}0{% endif %};">
             {{ g.progress_percent if g.progress_percent else 0 }}% saved
-            {% if g.monthly_allocation %} · £{{ "{:,.0f}".format(g.monthly_allocation) }}/mo{% endif %}
+            {% if g.monthly_allocation %} · £{{ "{:,.2f}".format(g.monthly_allocation) }}/mo{% endif %}
         </div>
         {% endif %}
 

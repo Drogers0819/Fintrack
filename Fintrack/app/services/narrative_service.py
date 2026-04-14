@@ -125,7 +125,7 @@ def _build_opening(month_name, year, total_expenses, total_income, txn_count, co
         text = (
             f"{greeting}{month_name} {year} in review.\n\n"
             f"This was {verdict}. You spent £{total_expenses:,.2f} across "
-            f"{txn_count} transactions — {tone}."
+            f"{txn_count} transactions. {tone}."
         )
     elif total_expenses > 0:
         text = (
@@ -311,7 +311,7 @@ def _build_closing(total_expenses, goals, budgets, month_name, user_data):
 
         if progress and progress > 0:
             remaining = 100 - progress
-            parts.append(f"You're {progress}% of the way to {name} — {remaining}% to go.")
+            parts.append(f"You're {progress}% of the way to {name}. {remaining}% to go.")
 
     money_left = user_data.get("money_left")
     days_remaining = user_data.get("days_remaining", 0)
@@ -349,13 +349,13 @@ def _generate_subject_line(month_name, total_expenses, comparison, goals):
     # Try comparison-based subject
     if hist_avg > 0 and diff != 0:
         if diff < 0:
-            return f"You spent £{abs(diff):.0f} less in {month_name} — here's the full picture"
+            return f"You spent £{abs(diff):,.0f} less in {month_name}. Here's the full picture"
         else:
-            return f"Your {month_name} spending was £{diff:.0f} above average — let's look at why"
+            return f"Your {month_name} spending was £{diff:,.0f} above average. Let's look at why"
 
     # Fallback
     if total_expenses > 0:
-        return f"Your {month_name} financial story — £{total_expenses:,.0f} in review"
+        return f"Your {month_name} financial story: £{total_expenses:,.0f} in review"
     else:
         return f"Your {month_name} financial summary"
 

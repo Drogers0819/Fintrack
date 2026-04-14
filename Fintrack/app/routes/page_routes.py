@@ -1404,7 +1404,7 @@ def insights():
         budget_status = calc_prediction_budget_status(
             data["predictions"],
             {"monthly_income": float(current_user.monthly_income),
-             "fixed_commitments": current_user.fixed_commitments},
+             "fixed_commitments": current_user.fixed_commitments or 0},
             [{"id": g["id"], "name": g["name"],
               "monthly_allocation": g.get("monthly_allocation", 0)}
              for g in data["goals"]]
