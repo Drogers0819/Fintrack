@@ -9,6 +9,20 @@
     </div>
 
     <form method="POST" action="{{ url_for('pages.goal_chips') }}" id="goalForm">
+
+        <!-- Emergency savings question -->
+        <div class="glass-card" style="padding: 16px 20px; margin-bottom: 24px;">
+            <div style="font-size: 0.9rem; color: var(--text-primary); margin-bottom: 12px;">Do you have any savings set aside for emergencies?</div>
+            <div style="display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 10px;">
+                <label class="amt-opt"><input type="radio" name="has_emergency" value="no" style="display:none;" onchange="selOpt(this); document.getElementById('emergency-amount').style.display='none';" checked><span>No, starting fresh</span></label>
+                <label class="amt-opt"><input type="radio" name="has_emergency" value="yes" style="display:none;" onchange="selOpt(this); document.getElementById('emergency-amount').style.display='block';"><span>Yes, I have some</span></label>
+            </div>
+            <input type="number" name="emergency_savings" id="emergency-amount" class="form-input" style="display: none;" placeholder="Roughly how much? (£)" step="100" min="0">
+        </div>
+
+        <div style="font-size: 0.7rem; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 14px;">Now, what are you working toward?</div>
+
+        <!-- Goal chips -->
         <div style="display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 28px;">
             {% set chips = [
                 {"id": "house", "icon": "🏠", "label": "House deposit"},
@@ -31,8 +45,10 @@
             {% endfor %}
         </div>
 
+        <!-- Detail sections -->
         <div id="goal-details" style="display: flex; flex-direction: column; gap: 14px; margin-bottom: 28px;">
 
+            <!-- House deposit -->
             <div class="goal-detail" id="detail-house" style="display: none;">
                 <div class="glass-card" style="padding: 16px 20px;">
                     <div style="font-size: 0.85rem; color: var(--text-primary); margin-bottom: 10px;">🏠 House deposit — roughly how much?</div>
@@ -45,16 +61,7 @@
                 </div>
             </div>
 
-            <div id="holiday-mustHit" style="display: none; margin-top: 12px; padding: 10px 14px; border-radius: 8px; background: rgba(197,163,93,0.04); border: 0.5px solid rgba(197,163,93,0.1);">
-                        <label style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
-                            <input type="checkbox" name="holiday_must_hit" value="1" style="accent-color: var(--roman-gold); width: 16px; height: 16px;">
-                            <div>
-                                <span style="font-size: 0.8rem; color: var(--text-primary);">This trip is booked — I have to go</span>
-                                <span style="display: block; font-size: 0.7rem; color: var(--text-tertiary); margin-top: 2px;">We'll make sure this gets funded first, even before the emergency fund</span>
-                            </div>
-                        </label>
-                    </div>
-
+            <!-- Holiday -->
             <div class="goal-detail" id="detail-holiday" style="display: none;">
                 <div class="glass-card" style="padding: 16px 20px;">
                     <div style="font-size: 0.85rem; color: var(--text-primary); margin-bottom: 10px;">✈️ Holiday — when and how much?</div>
@@ -65,9 +72,19 @@
                         <label class="amt-opt"><input type="radio" name="holiday_timeline" value="0" style="display:none;" onchange="selOpt(this); hideMustHit('holiday')"><span>No rush</span></label>
                     </div>
                     <input type="number" name="holiday_amount" class="form-input" placeholder="Budget (£) e.g. 2000" step="100" min="100">
+                    <div id="holiday-mustHit" style="display: none; margin-top: 12px; padding: 10px 14px; border-radius: 8px; background: rgba(197,163,93,0.04); border: 0.5px solid rgba(197,163,93,0.1);">
+                        <label style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
+                            <input type="checkbox" name="holiday_must_hit" value="1" style="accent-color: var(--roman-gold); width: 16px; height: 16px;">
+                            <div>
+                                <span style="font-size: 0.8rem; color: var(--text-primary);">This trip is booked — I have to go</span>
+                                <span style="display: block; font-size: 0.7rem; color: var(--text-tertiary); margin-top: 2px;">We'll make sure this gets funded first, even before the emergency fund</span>
+                            </div>
+                        </label>
+                    </div>
                 </div>
             </div>
 
+            <!-- Baby fund -->
             <div class="goal-detail" id="detail-baby" style="display: none;">
                 <div class="glass-card" style="padding: 16px 20px;">
                     <div style="font-size: 0.85rem; color: var(--text-primary); margin-bottom: 10px;">👶 Baby fund</div>
@@ -84,6 +101,7 @@
                 </div>
             </div>
 
+            <!-- Pay off debt -->
             <div class="goal-detail" id="detail-debt" style="display: none;">
                 <div class="glass-card" style="padding: 16px 20px;">
                     <div style="font-size: 0.85rem; color: var(--text-primary); margin-bottom: 10px;">💳 What debt are you clearing?</div>
@@ -92,6 +110,7 @@
                 </div>
             </div>
 
+            <!-- Car -->
             <div class="goal-detail" id="detail-car" style="display: none;">
                 <div class="glass-card" style="padding: 16px 20px;">
                     <div style="font-size: 0.85rem; color: var(--text-primary); margin-bottom: 10px;">🚗 Car — roughly how much?</div>
@@ -99,6 +118,7 @@
                 </div>
             </div>
 
+            <!-- Wedding -->
             <div class="goal-detail" id="detail-wedding" style="display: none;">
                 <div class="glass-card" style="padding: 16px 20px;">
                     <div style="font-size: 0.85rem; color: var(--text-primary); margin-bottom: 10px;">💍 Wedding</div>
@@ -116,6 +136,7 @@
                 </div>
             </div>
 
+            <!-- Student loan -->
             <div class="goal-detail" id="detail-student" style="display: none;">
                 <div class="glass-card" style="padding: 16px 20px;">
                     <div style="font-size: 0.85rem; color: var(--text-primary); margin-bottom: 10px;">🎓 Student loan — how much to clear?</div>
@@ -123,6 +144,7 @@
                 </div>
             </div>
 
+            <!-- New purchase -->
             <div class="goal-detail" id="detail-purchase" style="display: none;">
                 <div class="glass-card" style="padding: 16px 20px;">
                     <div style="font-size: 0.85rem; color: var(--text-primary); margin-bottom: 10px;">💻 What are you saving for?</div>
@@ -136,6 +158,7 @@
                 </div>
             </div>
 
+            <!-- Something else -->
             <div class="goal-detail" id="detail-custom" style="display: none;">
                 <div class="glass-card" style="padding: 16px 20px;">
                     <div style="font-size: 0.85rem; color: var(--text-primary); margin-bottom: 10px;">➕ What's the goal?</div>
@@ -157,7 +180,6 @@
 .amt-opt input:checked+span{border-color:var(--roman-gold);background:rgba(197,163,93,0.1);color:var(--roman-gold);}
 </style>
 
-
 <script>
 function toggleChip(cb){
     var chip=document.getElementById('chip-'+cb.value);
@@ -171,14 +193,13 @@ function updateBtn(){
     var c=document.querySelectorAll('input[name="goals"]:checked');
     document.getElementById('buildBtn').style.display=c.length>0?'block':'none';
 }
-
-function showMustHit(goal) {
-    var el = document.getElementById(goal + '-mustHit');
-    if (el) el.style.display = 'block';
+function showMustHit(goal){
+    var el=document.getElementById(goal+'-mustHit');
+    if(el)el.style.display='block';
 }
-function hideMustHit(goal) {
-    var el = document.getElementById(goal + '-mustHit');
-    if (el) { el.style.display = 'none'; el.querySelector('input[type="checkbox"]').checked = false; }
+function hideMustHit(goal){
+    var el=document.getElementById(goal+'-mustHit');
+    if(el){el.style.display='none';el.querySelector('input[type="checkbox"]').checked=false;}
 }
 </script>
 {% endblock %}

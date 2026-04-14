@@ -805,6 +805,10 @@ def goal_chips():
         selected = request.form.getlist("goals")
         today = date.today()
 
+        # Clear any goals from previous onboarding attempts
+        Goal.query.filter_by(user_id=current_user.id).delete()
+        db.session.commit()
+
         for chip in selected:
             name = None
             target = None
@@ -882,6 +886,18 @@ def goal_chips():
                     pass
 
         db.session.commit()
+
+        # Store emergency savings for plan_reveal to apply
+        emergency_savings = request.form.get("emergency_savings")
+        if emergency_savings:
+            try:
+                amount = round(float(emergency_savings), 2)
+                if amount > 0:
+                    from flask import session
+                    session["emergency_savings"] = amount
+            except (ValueError, TypeError):
+                pass
+
         return redirect(url_for("pages.plan_reveal"))
 
     return render_template("goal_chips.html")
@@ -896,6 +912,17 @@ def plan_reveal():
         return redirect(url_for("pages.factfind"))
 
     _ensure_emergency_goal()
+
+    # Apply emergency savings from goal chips if provided
+    from flask import session
+    emergency_savings = session.pop("emergency_savings", None)
+    if emergency_savings:
+        emergency = Goal.query.filter_by(
+            user_id=current_user.id
+        ).filter(Goal.name.ilike("%emergency%")).first()
+        if emergency:
+            emergency.current_amount = emergency_savings
+            db.session.commit()
 
     user_profile = current_user.profile_dict()
     goals_data = [g.to_dict() for g in Goal.query.filter_by(
