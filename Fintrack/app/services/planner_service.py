@@ -259,6 +259,11 @@ def _find_goal_id(goals, goal_type):
 # ─── STAGED ALLOCATION ──────────────────────────────────────
 
 def _staged_allocation(pots, surplus, essentials):
+    """
+    Proportional allocation: everything gets funded simultaneously.
+    Priority pots (emergency, debt) get higher weight, not exclusive access.
+    Phase milestones are descriptive — they don't block other goals.
+    """
     lifestyle_amount = max(round(surplus * LIFESTYLE_PERCENT, 2), LIFESTYLE_MIN)
     buffer_amount = max(round(surplus * BUFFER_PERCENT, 2), BUFFER_MIN)
 
@@ -279,9 +284,9 @@ def _staged_allocation(pots, surplus, essentials):
     # ── STAGE 0: Must-hit deadline goals (funded before everything) ──
     funded_must_hits = set()
     must_hit_pots = [p for p in pots if "(must-hit)" in p.get("name", "").lower()
-                     and p.get("deadline") and p.get("_remaining", 0) > 0]
+                     and p.get("deadline") and not p.get("completed")]
     for pot in must_hit_pots:
-        remaining = pot["target"] - pot["current"]
+        remaining = pot.get("target", 0) - pot.get("current", 0)
         if remaining <= 0:
             continue
         months_left = pot.get("months_until_deadline") or 1
@@ -298,6 +303,7 @@ def _staged_allocation(pots, surplus, essentials):
     if available <= 0:
         return pots
 
+    # ── Gather all active pots for proportional allocation ──
     emergency = next((p for p in pots if p["type"] == "emergency" and not p["completed"]), None)
     debt_pots = [p for p in pots if (p["type"] == "debt" or _is_debt_goal(p.get("name", "")))
                  and not p.get("completed") and p["type"] not in ("lifestyle", "buffer", "emergency")]
@@ -306,95 +312,112 @@ def _staged_allocation(pots, surplus, essentials):
                  and not p.get("completed")
                  and p.get("goal_id") not in funded_must_hits]
 
+    # Build allocation pool: every active pot with remaining > 0
+    pool = []
+
     for pot in debt_pots + ([emergency] if emergency else []) + goal_pots:
-        if pot and pot.get("target"):
-            pot["_remaining"] = max(pot["target"] - pot["current"], 0)
+        if not pot or pot.get("completed"):
+            continue
+        remaining = max((pot.get("target") or 0) - (pot.get("current") or 0), 0)
+        if remaining <= 0:
+            continue
+        pot["_remaining"] = remaining
+
+        # Calculate monthly need
+        months = pot.get("months_until_deadline")
+        if months and months > 0:
+            monthly_need = remaining / months
+        elif pot["type"] == "debt" or _is_debt_goal(pot.get("name", "")):
+            # Debt: target aggressive clearance in 3 months
+            monthly_need = remaining / 3
+        elif pot.get("type") == "emergency":
+            # Emergency: target completion in 6 months
+            monthly_need = remaining / 6
         else:
-            pot["_remaining"] = 0
+            # No deadline: spread over 12 months as a baseline
+            monthly_need = remaining / 12
 
-    # ── STAGE 1: Mini emergency buffer ──
-    mini_target = MINI_EMERGENCY
-    has_debt = len(debt_pots) > 0
-
-    if emergency and emergency["current"] < mini_target and not emergency["completed"]:
-        mini_needed = mini_target - emergency["current"]
-
-        if has_debt and mini_needed > available * 0.5:
-            # Debt is waiting — build mini buffer in 2 months, give rest to debt
-            mini_allocation = round(min(mini_needed / 2, available * 0.5), 2)
+        # Priority weights
+        if pot["type"] == "emergency" or pot.get("type") == "emergency":
+            weight = 3.0
+        elif pot["type"] == "debt" or _is_debt_goal(pot.get("name", "")):
+            weight = 3.0
+        elif months and months <= 6:
+            weight = 4.0
+        elif months and months <= 12:
+            weight = 2.5
+        elif months and months <= 24:
+            weight = 1.5
         else:
-            mini_allocation = min(mini_needed, available)
+            weight = 1.0
 
-        emergency["monthly_amount"] = round(mini_allocation, 2)
-        emergency["_stage"] = "mini"
-        available -= mini_allocation
+        pot["_monthly_need"] = monthly_need
+        pot["_weight"] = weight
+        pot["_weighted_need"] = monthly_need * weight
+        pool.append(pot)
 
-        if available <= 0:
-            return pots
-
-    # ── STAGE 2: Clear ALL debt ──
-
-    # ── STAGE 2: Clear ALL debt ──
-    total_debt_remaining = sum(p["_remaining"] for p in debt_pots)
-
-    if total_debt_remaining > 0:
-        debt_budget = available
-
-        if len(debt_pots) == 1:
-            debt_pots[0]["monthly_amount"] = round(debt_budget, 2)
-        else:
-            debt_pots.sort(key=lambda p: p["_remaining"])
-            remaining_budget = debt_budget
-            for pot in debt_pots:
-                if pot["_remaining"] <= 0:
-                    continue
-                give = min(remaining_budget, pot["_remaining"])
-                pot["monthly_amount"] = round(give, 2)
-                remaining_budget -= give
-                if remaining_budget <= 0:
-                    break
-            if remaining_budget > 0:
-                for pot in debt_pots:
-                    if pot["monthly_amount"] > 0:
-                        pot["monthly_amount"] = round(pot["monthly_amount"] + remaining_budget, 2)
-                        break
-
-        return pots
-
-    # ── STAGE 3: Full emergency fund ──
-    if emergency and not emergency.get("completed"):
-        emergency_remaining = emergency["target"] - emergency["current"]
-        if emergency_remaining > 0:
-            urgent_goals = [p for p in goal_pots if p.get("months_until_deadline") and p["months_until_deadline"] <= 6]
-
-            if urgent_goals:
-                emergency_share = round(available * 0.60, 2)
-                urgent_share = available - emergency_share
-                emergency["monthly_amount"] = round(
-                    emergency.get("monthly_amount", 0) + emergency_share, 2
-                )
-                _distribute_by_deadline(urgent_goals, urgent_share)
-                available = 0
-            else:
-                emergency_allocation = min(emergency_remaining, available)
-                emergency["monthly_amount"] = round(
-                    emergency.get("monthly_amount", 0) + emergency_allocation, 2
-                )
-                available -= emergency_allocation
-
-    if available <= 0:
-        return pots
-
-    # ── STAGE 4 & 5: Goals by deadline urgency ──
-    unfunded_goals = [p for p in goal_pots if p["monthly_amount"] == 0 and p["_remaining"] > 0]
-
-    if not unfunded_goals:
+    if not pool:
+        # Nothing to allocate — give excess to lifestyle
         for pot in pots:
             if pot["type"] == "lifestyle":
                 pot["monthly_amount"] = round(pot["monthly_amount"] + available, 2)
         return pots
 
-    _distribute_by_deadline(unfunded_goals, available)
+    # ── Proportional distribution with caps ──
+    remaining_pool = list(pool)
+    remaining_available = available
+
+    # Multiple passes to handle cap redistribution
+    for _ in range(5):
+        if not remaining_pool or remaining_available <= 0:
+            break
+
+        total_weighted = sum(p["_weighted_need"] for p in remaining_pool)
+        if total_weighted <= 0:
+            # Equal split if no weighted needs
+            each = round(remaining_available / len(remaining_pool), 2)
+            for pot in remaining_pool:
+                pot["monthly_amount"] = round(pot.get("monthly_amount", 0) + each, 2)
+            remaining_available = 0
+            break
+
+        capped = []
+        uncapped = []
+        spent = 0
+
+        for pot in remaining_pool:
+            share = (pot["_weighted_need"] / total_weighted) * remaining_available
+            cap = pot["_remaining"]  # Never allocate more than what's remaining
+
+            if share >= cap:
+                pot["monthly_amount"] = round(pot.get("monthly_amount", 0) + cap, 2)
+                spent += cap
+                capped.append(pot)
+            else:
+                pot["_tentative"] = share
+                uncapped.append(pot)
+
+        if not capped:
+            # No one hit their cap — finalize all tentative allocations
+            for pot in uncapped:
+                pot["monthly_amount"] = round(pot.get("monthly_amount", 0) + pot["_tentative"], 2)
+            remaining_available = 0
+            break
+        else:
+            remaining_available -= spent
+            remaining_pool = uncapped
+
+    # Any leftover goes to lifestyle
+    if remaining_available > 0.01:
+        for pot in pots:
+            if pot["type"] == "lifestyle":
+                pot["monthly_amount"] = round(pot["monthly_amount"] + remaining_available, 2)
+                break
+
+    # Calculate months_to_target for each funded pot
+    for pot in pool:
+        if pot["monthly_amount"] > 0 and pot.get("_remaining", 0) > 0:
+            pot["months_to_target"] = max(1, round(pot["_remaining"] / pot["monthly_amount"]))
 
     return pots
 

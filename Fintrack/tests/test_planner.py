@@ -185,12 +185,14 @@ class TestStagedAllocation:
         lifestyle = next(p for p in plan["pots"] if p["type"] == "lifestyle")
         assert lifestyle["monthly_amount"] >= 100
 
-    def test_debt_cleared_before_goals(self, basic_profile, house_goal):
-        """With debt, goals get £0 — correct staged behaviour"""
+    def test_debt_funded_alongside_goals(self, basic_profile, house_goal):
+        """With debt, both debt and goals get funding — debt clears quickly"""
         debts = [{"name": "Credit card", "amount": 200, "min_payment": 25}]
         plan = generate_financial_plan(basic_profile, [house_goal], debts=debts)
         house = next(p for p in plan["pots"] if p["name"] == "House deposit")
-        assert house["monthly_amount"] == 0  # Paused during debt phase
+        debt = next(p for p in plan["pots"] if "credit" in p["name"].lower() or p["type"] == "debt")
+        assert debt["monthly_amount"] > 0  # Debt gets funding
+        assert house["monthly_amount"] > 0  # Goals get funding too
 
     def test_debt_gets_all_available_after_mini_emergency(self, basic_profile):
         """Debt should get all surplus after lifestyle + buffer + mini emergency"""
@@ -205,7 +207,7 @@ class TestStagedAllocation:
         assert abs(total - plan["surplus"]) < 1
 
     def test_debt_goal_detected_by_name(self, basic_profile, house_goal, emergency_goal_mini_funded):
-        """Credit card as a goal should be treated as debt"""
+        """Credit card as a goal should be treated as debt and get higher priority"""
         cc_goal = {
             "id": 99, "name": "Pay off credit card", "type": "savings_target",
             "target_amount": 500, "current_amount": 0,
@@ -214,16 +216,16 @@ class TestStagedAllocation:
         cc = next(p for p in plan["pots"] if p["name"] == "Pay off credit card")
         house = next(p for p in plan["pots"] if p["name"] == "House deposit")
         assert cc["monthly_amount"] > 0
-        assert house["monthly_amount"] == 0  # Paused during debt
+        assert cc["monthly_amount"] > house["monthly_amount"]  # Debt prioritised
 
-    def test_goals_paused_during_emergency_build(self, basic_profile, house_goal):
-        """Non-urgent goals get £0 while emergency fund is building"""
+    def test_emergency_prioritised_during_build(self, basic_profile, house_goal):
+        """Emergency gets higher share than non-urgent goals"""
         plan = generate_financial_plan(basic_profile, [house_goal])
         emergency = next(p for p in plan["pots"] if p["type"] == "emergency")
         house = next(p for p in plan["pots"] if p["name"] == "House deposit")
         assert emergency["monthly_amount"] > 0
-        # House has a 3-year deadline, not urgent — paused during emergency
-        assert house["monthly_amount"] == 0
+        assert house["monthly_amount"] > 0  # Gets funding too
+        assert emergency["monthly_amount"] > house["monthly_amount"]  # But emergency is prioritised
 
     def test_urgent_goal_runs_parallel_with_emergency(self, basic_profile, holiday_goal, emergency_goal_mini_funded):
         """Goal within 6 months gets funding alongside emergency (60/40 split)"""
@@ -294,8 +296,8 @@ class TestPhases:
             assert "description" in phase
             assert len(phase["description"]) > 0
 
-    def test_debt_phase_pauses_goals(self, basic_profile, house_goal, emergency_goal_mini_funded):
-        """Debt phase should show goals as paused"""
+    def test_debt_phase_shows_priority_alert(self, basic_profile, house_goal, emergency_goal_mini_funded):
+        """Debt phase should show debt priority alert"""
         cc_goal = {
             "id": 99, "name": "Pay off credit card", "type": "savings_target",
             "target_amount": 500, "current_amount": 0,
@@ -303,7 +305,6 @@ class TestPhases:
         plan = generate_financial_plan(basic_profile, [house_goal, cc_goal, emergency_goal_mini_funded])
         alert_types = [a["type"] for a in plan["alerts"]]
         assert "debt_priority" in alert_types
-        assert "goals_paused" in alert_types
 
 
 # ─── PROJECTIONS ─────────────────────────────────────────────
@@ -486,14 +487,14 @@ class TestAlerts:
         alert_types = [a["type"] for a in plan["alerts"]]
         assert "debt_priority" in alert_types
 
-    def test_goals_paused_alert_during_debt(self, basic_profile, house_goal, emergency_goal_mini_funded):
+    def test_debt_priority_alert_during_debt(self, basic_profile, house_goal, emergency_goal_mini_funded):
         cc_goal = {
             "id": 99, "name": "Pay off credit card", "type": "savings_target",
             "target_amount": 500, "current_amount": 0,
         }
         plan = generate_financial_plan(basic_profile, [house_goal, cc_goal, emergency_goal_mini_funded])
         alert_types = [a["type"] for a in plan["alerts"]]
-        assert "goals_paused" in alert_types
+        assert "debt_priority" in alert_types
 
     def test_deadline_risk_when_goal_funded(self, basic_profile, emergency_goal_funded):
         """Deadline risk should fire when a goal is funded but can't hit deadline"""

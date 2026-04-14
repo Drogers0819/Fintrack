@@ -820,6 +820,8 @@ def goal_chips():
                 months = request.form.get("holiday_timeline", type=int)
                 if months and months > 0:
                     deadline = today + relativedelta(months=months)
+                if request.form.get("holiday_must_hit"):
+                    name = "Holiday (must-hit)"
 
             elif chip == "baby":
                 name = "Baby fund"
