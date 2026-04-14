@@ -147,8 +147,9 @@ def _ensure_emergency_goal():
     if not current_user.factfind_completed or not current_user.monthly_income:
         return
 
+    # Check for any emergency goal — active OR completed
     emergency_exists = Goal.query.filter_by(
-        user_id=current_user.id, status="active"
+        user_id=current_user.id
     ).filter(
         db.or_(
             Goal.name.ilike("%emergency%"),
@@ -725,14 +726,15 @@ def checkin():
 
         if "error" not in smart_plan:
             for pot in smart_plan["pots"]:
-                if pot["monthly_amount"] > 0 and pot["type"] not in ("lifestyle", "buffer"):
+                if pot["type"] not in ("lifestyle", "buffer") and not pot.get("completed"):
                     pots_for_checkin.append({
                         "name": pot["name"],
                         "planned": pot["monthly_amount"],
                         "goal_id": pot.get("goal_id"),
                         "target": pot.get("target"),
                         "current": pot.get("current", 0),
-                        "type": pot["type"]
+                        "type": pot["type"],
+                        "paused": pot["monthly_amount"] == 0
                     })
 
     if request.method == "POST" and not existing:

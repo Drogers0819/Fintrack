@@ -56,11 +56,14 @@
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
                 <div>
                     <span style="font-size: 0.9rem; color: var(--text-primary);">{{ pot.name }}</span>
+                    {% if pot.paused %}
+                    <span style="font-size: 0.6rem; padding: 1px 6px; border-radius: 4px; background: rgba(255,255,255,0.04); color: var(--text-tertiary); margin-left: 6px;">paused in plan</span>
+                    {% endif %}
                     {% if pot.target %}
-                    <span style="font-size: 0.7rem; color: var(--text-tertiary); margin-left: 6px;">£{{ "{:,.2f}".format(pot.current) }} of £{{ "{:,.2f}".format(pot.target) }}</span>
+                    <span style="font-size: 0.7rem; color: var(--text-tertiary); margin-left: 6px;">£{{ "{:,.0f}".format(pot.current) }} of £{{ "{:,.0f}".format(pot.target) }}</span>
                     {% endif %}
                 </div>
-                <span style="font-size: 0.75rem; color: var(--text-tertiary);">Plan: £{{ "{:,.2f}".format(pot.planned) }}</span>
+                <span style="font-size: 0.75rem; color: var(--text-tertiary);">Plan: £{{ "{:,.0f}".format(pot.planned) }}</span>
             </div>
             <div class="form-group" style="margin-bottom: 0;">
                 <input type="number" name="actual_{{ pot.name | replace(' ', '_') }}"
