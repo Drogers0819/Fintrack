@@ -3,3 +3,4 @@ from app.models.category import Category
 from app.models.transaction import Transaction
 from app.models.goal import Goal
 from app.models.budget import Budget
+from app.models.chat import ChatMessage

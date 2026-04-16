@@ -28,6 +28,12 @@ class User(db.Model, UserMixin):
     income_day = db.Column(db.Integer, nullable=True)
     factfind_completed = db.Column(db.Boolean, default=False)
 
+    # Subscription
+    subscription_tier = db.Column(db.String(20), default="free")
+    trial_ends_at = db.Column(db.DateTime, nullable=True)
+    companion_messages_today = db.Column(db.Integer, default=0)
+    companion_last_reset = db.Column(db.Date, nullable=True)
+
     # Preferences
     theme = db.Column(db.String(30), default="racing-green")
 
@@ -63,7 +69,18 @@ class User(db.Model, UserMixin):
         return income - self.fixed_commitments
     @property
     def tier(self):
-        return "Claro Core"
+        tier_labels = {
+            "free": "Claro Free",
+            "pro": "Claro Pro",
+            "pro_plus": "Claro Pro+",
+            "joint": "Claro Joint"
+        }
+        return tier_labels.get(self.subscription_tier, "Claro Free")
+
+    @property
+    def daily_message_limit(self):
+        limits = {"free": 0, "pro": 10, "pro_plus": 30, "joint": 50}
+        return limits.get(self.subscription_tier, 0)
 
     def profile_dict(self):
         return {
