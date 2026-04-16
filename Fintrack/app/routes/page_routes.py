@@ -944,16 +944,22 @@ def goal_chips():
 
         db.session.commit()
 
-        # Store emergency savings for plan_reveal to apply
-        emergency_savings = request.form.get("emergency_savings")
-        if emergency_savings:
-            try:
-                amount = round(float(emergency_savings), 2)
-                if amount > 0:
-                    from flask import session
-                    session["emergency_savings"] = amount
-            except (ValueError, TypeError):
-                pass
+        # Handle emergency fund preference
+        from flask import session
+        has_emergency = request.form.get("has_emergency", "no")
+        if has_emergency == "skip":
+            session["skip_emergency"] = True
+            session.pop("emergency_savings", None)
+        else:
+            session.pop("skip_emergency", None)
+            emergency_savings = request.form.get("emergency_savings")
+            if emergency_savings:
+                try:
+                    amount = round(float(emergency_savings), 2)
+                    if amount > 0:
+                        session["emergency_savings"] = amount
+                except (ValueError, TypeError):
+                    pass
 
         return redirect(url_for("pages.plan_reveal"))
 
@@ -968,10 +974,12 @@ def plan_reveal():
     if not current_user.factfind_completed:
         return redirect(url_for("pages.factfind"))
 
-    _ensure_emergency_goal()
+    from flask import session
+    skip_emergency = session.pop("skip_emergency", None)
+    if not skip_emergency:
+        _ensure_emergency_goal()
 
     # Apply emergency savings from goal chips if provided
-    from flask import session
     emergency_savings = session.pop("emergency_savings", None)
     if emergency_savings:
         emergency = Goal.query.filter_by(

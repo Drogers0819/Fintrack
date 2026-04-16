@@ -335,17 +335,17 @@ def _staged_allocation(pots, surplus, essentials):
             # Debt: target aggressive clearance in 3 months
             monthly_need = remaining / 3
         elif pot.get("type") == "emergency":
-            # Emergency: target completion in 6 months
-            monthly_need = remaining / 6
+            # Emergency: target completion in 12 months
+            monthly_need = remaining / 12
         else:
             # No deadline: spread over 12 months as a baseline
             monthly_need = remaining / 12
 
         # Priority weights
         if pot["type"] == "emergency" or pot.get("type") == "emergency":
-            weight = 3.0
+            weight = 1.5
         elif pot["type"] == "debt" or _is_debt_goal(pot.get("name", "")):
-            weight = 3.0
+            weight = 2.0
         elif months and months <= 6:
             weight = 4.0
         elif months and months <= 12:
@@ -889,23 +889,53 @@ def get_plan_summary(plan):
     if not phases:
         return "Your financial plan is being calculated."
 
-    current_phase = phases[0]
+    # Find all active funded pots (not lifestyle/buffer)
+    active_pots = [p for p in pots if p.get("monthly_amount", 0) > 0
+                   and p["type"] not in ("lifestyle", "buffer")
+                   and not p.get("completed")]
 
-    debt_pots = [p for p in pots if (p["type"] == "debt" or _is_debt_goal(p.get("name", "")))
-                 and not p.get("completed") and p.get("monthly_amount", 0) > 0]
-    if debt_pots:
-        debt_names = " and ".join(p["name"] for p in debt_pots)
-        goal_pots = [p for p in pots if p["type"] not in ("lifestyle", "buffer", "emergency", "debt")
-                     and not _is_debt_goal(p.get("name", "")) and not p.get("completed")]
-        if goal_pots:
-            goal_names = " and ".join(p["name"] for p in goal_pots)
+    if not active_pots:
+        return "All your goals are on track. Your surplus is free."
+
+    # Find the pot closest to completion
+    completing_soon = None
+    for pot in active_pots:
+        months = pot.get("months_to_target")
+        if months and months > 0:
+            if not completing_soon or months < completing_soon.get("months_to_target", 999):
+                completing_soon = pot
+
+    # Find the next pot that would benefit from the redirect
+    if completing_soon:
+        remaining_pots = [p for p in active_pots
+                          if p.get("goal_id") != completing_soon.get("goal_id")
+                          and p.get("name") != completing_soon.get("name")]
+
+        # Sort by: deadline urgency first, then largest remaining amount
+        remaining_pots.sort(key=lambda p: (
+            p.get("months_until_deadline") or 999,
+            -(p.get("target", 0) - p.get("current", 0))
+        ))
+
+        next_pot = remaining_pots[0] if remaining_pots else None
+        soon_name = completing_soon["name"]
+        soon_months = completing_soon.get("months_to_target", 0)
+        soon_amount = completing_soon.get("monthly_amount", 0)
+
+        if next_pot:
+            next_name = next_pot["name"]
             return (
-                f"Right now, your surplus is clearing {debt_names}. "
-                f"Clearing debt first is the fastest way to free up money. "
-                f"Once done, your {goal_names} will accelerate."
+                f"Your {soon_name} is closest to completion (~{soon_months} months). "
+                f"Once done, that £{soon_amount:,.0f}/month redirects to your {next_name}, "
+                f"accelerating it automatically."
             )
-        return f"Your surplus is focused on clearing {debt_names}. Once done, your goals begin."
+        else:
+            return (
+                f"Your {soon_name} completes in ~{soon_months} months. "
+                f"After that, your £{soon_amount:,.0f}/month surplus frees up entirely."
+            )
 
+    # Fallback: underfunded goals warning
     underfunded = []
     for pot in pots:
         if (pot.get("months_to_target") and pot.get("months_until_deadline")
@@ -921,7 +951,7 @@ def get_plan_summary(plan):
         most_urgent = min(underfunded, key=lambda u: u["months_available"])
         if len(underfunded) == 1:
             return (
-                f"Your {most_urgent['name']} is underfunded — at current pace it needs "
+                f"Your {most_urgent['name']} is tight — at current pace it needs "
                 f"{most_urgent['months_needed']} months but the deadline is in "
                 f"{most_urgent['months_available']}. Consider adjusting the target or timeline."
             )
@@ -934,53 +964,8 @@ def get_plan_summary(plan):
                 f"{most_urgent['months_available']}."
             )
 
-    completing = current_phase.get("completed_pots", [])
-    duration = current_phase.get("duration_months", 0)
-
-    active_after = [p["name"] for p in pots
-                    if p["type"] not in ("lifestyle", "buffer")
-                    and not p.get("completed")
-                    and p["name"] not in completing]
-
-    if completing and active_after:
-        completing_str = " and ".join(completing)
-        boost_str = " and ".join(active_after)
-        summary = (
-            f"Following the current plan, once your {completing_str} "
-            f"{'is' if len(completing) == 1 else 'are'} complete "
-            f"(~{duration} months), that money redirects to boost "
-            f"your {boost_str}."
-        )
-    elif completing and not active_after:
-        completing_str = " and ".join(completing)
-        summary = (
-            f"Following the current plan, your {completing_str} "
-            f"will be fully funded in ~{duration} months. "
-            f"After that, your surplus frees up entirely."
-        )
-    else:
-        active_pots = [p["name"] for p in pots
-                      if p["type"] not in ("lifestyle", "buffer")
-                      and not p.get("completed")
-                      and p["monthly_amount"] > 0]
-        if active_pots:
-            pots_str = " and ".join(active_pots)
-            summary = f"Your surplus is currently building your {pots_str}."
-        else:
-            summary = "Your surplus is allocated across your goals."
-
-    remaining_total = sum(
-        (p.get("target", 0) - p.get("current", 0))
-        for p in pots
-        if p["type"] not in ("lifestyle", "buffer")
-        and not p.get("completed")
-        and p.get("target")
-    )
-    if remaining_total > 0:
-        summary += f" £{remaining_total:,.0f} to go across all goals."
-
-    return summary
-
+    # Default: healthy plan
+    return "Your plan is on track. Every goal is funded and progressing."
 
 # ─── HELPERS ─────────────────────────────────────────────────
 

@@ -14,8 +14,12 @@
         <div class="glass-card" style="padding: 16px 20px; margin-bottom: 24px;">
             <div style="font-size: 0.9rem; color: var(--text-primary); margin-bottom: 12px;">Do you have any savings set aside for emergencies?</div>
             <div style="display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 10px;">
-                <label class="amt-opt"><input type="radio" name="has_emergency" value="no" style="display:none;" onchange="selOpt(this); document.getElementById('emergency-amount').style.display='none';" checked><span>No, starting fresh</span></label>
-                <label class="amt-opt"><input type="radio" name="has_emergency" value="yes" style="display:none;" onchange="selOpt(this); document.getElementById('emergency-amount').style.display='block';"><span>Yes, I have some</span></label>
+                <label class="amt-opt"><input type="radio" name="has_emergency" value="no" style="display:none;" onchange="selOpt(this); document.getElementById('emergency-amount').style.display='none'; document.getElementById('emergency-skip-note').style.display='none';" checked><span>No, starting fresh</span></label>
+                <label class="amt-opt"><input type="radio" name="has_emergency" value="yes" style="display:none;" onchange="selOpt(this); document.getElementById('emergency-amount').style.display='block'; document.getElementById('emergency-skip-note').style.display='none';"><span>Yes, I have some</span></label>
+                <label class="amt-opt"><input type="radio" name="has_emergency" value="skip" style="display:none;" onchange="selOpt(this); document.getElementById('emergency-amount').style.display='none'; document.getElementById('emergency-skip-note').style.display='block';"><span>I'll manage my own safety net</span></label>
+            </div>
+            <div id="emergency-skip-note" style="display: none; padding: 10px 14px; border-radius: 8px; background: rgba(197,163,93,0.04); border: 0.5px solid rgba(197,163,93,0.1); margin-top: 6px;">
+                <span style="font-size: 0.75rem; color: var(--text-tertiary); line-height: 1.5;">No emergency fund will be included in your plan. Your full surplus will be allocated across your goals. You can add one later from the Goals page.</span>
             </div>
             <input type="number" name="emergency_savings" id="emergency-amount" class="form-input" style="display: none;" placeholder="Roughly how much? (£)" step="100" min="0">
         </div>
