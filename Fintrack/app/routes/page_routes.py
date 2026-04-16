@@ -147,6 +147,8 @@ def _ensure_emergency_goal():
     """Auto-create an emergency fund goal if the user doesn't have one."""
     if not current_user.factfind_completed or not current_user.monthly_income:
         return
+    if current_user.skip_emergency_fund:
+        return
 
     # Check for any emergency goal — active OR completed
     emergency_exists = Goal.query.filter_by(
@@ -948,10 +950,12 @@ def goal_chips():
         from flask import session
         has_emergency = request.form.get("has_emergency", "no")
         if has_emergency == "skip":
-            session["skip_emergency"] = True
+            current_user.skip_emergency_fund = True
+            db.session.commit()
             session.pop("emergency_savings", None)
         else:
-            session.pop("skip_emergency", None)
+            current_user.skip_emergency_fund = False
+            db.session.commit()
             emergency_savings = request.form.get("emergency_savings")
             if emergency_savings:
                 try:
@@ -974,10 +978,7 @@ def plan_reveal():
     if not current_user.factfind_completed:
         return redirect(url_for("pages.factfind"))
 
-    from flask import session
-    skip_emergency = session.pop("skip_emergency", None)
-    if not skip_emergency:
-        _ensure_emergency_goal()
+    _ensure_emergency_goal()
 
     # Apply emergency savings from goal chips if provided
     emergency_savings = session.pop("emergency_savings", None)

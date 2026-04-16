@@ -28,6 +28,7 @@ class User(db.Model, UserMixin):
     income_day = db.Column(db.Integer, nullable=True)
     factfind_completed = db.Column(db.Boolean, default=False)
 
+    skip_emergency_fund = db.Column(db.Boolean, default=False)
     # Subscription
     subscription_tier = db.Column(db.String(20), default="free")
     trial_ends_at = db.Column(db.DateTime, nullable=True)
