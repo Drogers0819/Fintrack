@@ -23,6 +23,8 @@ class User(db.Model, UserMixin):
     groceries_estimate = db.Column(db.Numeric(10, 2), nullable=True)
     transport_estimate = db.Column(db.Numeric(10, 2), nullable=True)
     subscriptions_total = db.Column(db.Numeric(10, 2), nullable=True)
+    other_commitments = db.Column(db.Numeric(10, 2), nullable=True)
+    lifestyle_budget = db.Column(db.Numeric(10, 2), nullable=True)
     income_day = db.Column(db.Integer, nullable=True)
     factfind_completed = db.Column(db.Boolean, default=False)
 
@@ -52,7 +54,8 @@ class User(db.Model, UserMixin):
         groceries = float(self.groceries_estimate) if self.groceries_estimate else 0
         transport = float(self.transport_estimate) if self.transport_estimate else 0
         subs = float(self.subscriptions_total) if self.subscriptions_total else 0
-        return rent + bills + groceries + transport + subs
+        other = float(self.other_commitments) if self.other_commitments else 0
+        return rent + bills + groceries + transport + subs + other
 
     @property
     def monthly_surplus(self):
@@ -70,6 +73,8 @@ class User(db.Model, UserMixin):
             "groceries_estimate": float(self.groceries_estimate) if self.groceries_estimate else None,
             "transport_estimate": float(self.transport_estimate) if self.transport_estimate else None,
             "subscriptions_total": float(self.subscriptions_total) if self.subscriptions_total else None,
+            "other_commitments": float(self.other_commitments) if self.other_commitments else None,
+            "lifestyle_budget": float(self.lifestyle_budget) if self.lifestyle_budget else None,
             "income_day": self.income_day,
             "fixed_commitments": self.fixed_commitments,
             "total_essentials": self.total_essentials,

@@ -792,6 +792,37 @@ def checkin():
         past_checkins=[c.to_dict() for c in past_checkins]
     )
 
+# ─── SURPLUS REVEAL (Onboarding) ─────────────────────────────
+@page_bp.route("/onboarding/surplus", methods=["GET", "POST"])
+@login_required
+def surplus_reveal():
+    if not current_user.factfind_completed:
+        return redirect(url_for("pages.factfind"))
+
+    profile = current_user.profile_dict()
+    income = float(current_user.monthly_income or 0)
+    essentials = current_user.total_essentials
+
+    surplus = round(income - essentials, 2)
+
+    if request.method == "POST":
+        try:
+            lifestyle = round(float(request.form.get("lifestyle_budget", 0)), 2)
+        except (ValueError, TypeError):
+            lifestyle = 0
+
+        current_user.lifestyle_budget = lifestyle
+        db.session.commit()
+
+        return redirect(url_for("pages.goal_chips"))
+
+    return render_template("surplus_reveal.html",
+        profile=profile,
+        income=round(income, 2),
+        essentials=round(essentials, 2),
+        surplus=surplus
+    )
+
 # ─── GOAL CHIPS (Onboarding) ─────────────────────────────────
 # Add this to app/routes/page_routes.py
 
@@ -1033,15 +1064,20 @@ def factfind():
         current_user.transport_estimate = transport_estimate
         try:
             subscriptions_total = round(float(request.form.get("subscriptions_total", 0)), 2)
-        except (ValueError, TypeError):
+        except (ValueError, TypeError): 
             subscriptions_total = 0
         current_user.subscriptions_total = subscriptions_total
+        try:
+            other_commitments = round(float(request.form.get("other_commitments", 0)), 2)
+        except (ValueError, TypeError):
+            other_commitments = 0
+        current_user.other_commitments = other_commitments
         current_user.income_day = income_day
         current_user.factfind_completed = True
 
         db.session.commit()
         flash("Financial profile saved", "success")
-        return redirect(url_for("pages.goal_chips"))
+        return redirect(url_for("pages.surplus_reveal"))
 
     return render_template("factfind.html", profile=current_user.profile_dict())
 

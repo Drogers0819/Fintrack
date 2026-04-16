@@ -113,6 +113,64 @@
 
     <input type="hidden" name="subscriptions_total" id="subscriptions_total" value="{{ '%g' | format(profile.subscriptions_total) if profile.subscriptions_total else '0' }}">
 
+<!-- ─── OTHER REGULAR PAYMENTS ─── -->
+    <div class="section-label" style="margin-top: 4px; margin-bottom: 10px;">Other regular payments</div>
+    <p style="font-size: 0.75rem; color: var(--text-tertiary); margin-bottom: 14px;">Tap any that apply and enter the monthly amount.</p>
+
+    <div id="other-payments" style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 14px;">
+        {% set payments = [
+            {"id": "car_finance", "label": "Car finance / PCP"},
+            {"id": "car_insurance", "label": "Car insurance"},
+            {"id": "isa", "label": "ISA contributions"},
+            {"id": "pension", "label": "Pension (additional)"},
+            {"id": "lisa", "label": "LISA contributions"},
+            {"id": "childcare", "label": "Childcare"},
+            {"id": "child_maintenance", "label": "Child maintenance"},
+            {"id": "health_insurance", "label": "Private health / dental"},
+            {"id": "loan_repayment", "label": "Loan repayment"},
+            {"id": "storage", "label": "Storage unit"},
+            {"id": "parking", "label": "Parking permit"}
+        ] %}
+
+        <div style="display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 8px;">
+            {% for p in payments %}
+            <label style="cursor: pointer;">
+                <input type="checkbox" class="payment-checkbox" data-id="{{ p.id }}" style="display: none;" onchange="togglePayment(this, '{{ p.id }}')">
+                <div class="sub-chip" id="pay-chip-{{ p.id }}" style="display: flex; align-items: center; gap: 6px; padding: 7px 14px; border-radius: 50px; border: 1px solid rgba(255,255,255,0.08); background: rgba(255,255,255,0.02); transition: all 0.2s ease; font-size: 0.78rem; color: var(--text-secondary); user-select: none;">
+                    {{ p.label }}
+                </div>
+            </label>
+            {% endfor %}
+        </div>
+
+        <!-- Expanded amount inputs for selected payments -->
+        {% for p in payments %}
+        <div id="pay-input-{{ p.id }}" style="display: none;">
+            <div style="display: flex; align-items: center; gap: 10px; padding: 8px 14px; border-radius: 8px; background: rgba(255,255,255,0.02); border: 0.5px solid rgba(255,255,255,0.06);">
+                <span style="font-size: 0.78rem; color: var(--text-secondary); flex: 1;">{{ p.label }}</span>
+                <input type="number" class="form-input payment-amount" data-id="{{ p.id }}" placeholder="£/mo" step="0.01" min="0" oninput="updatePaymentTotal()" style="width: 90px; padding: 6px 10px; font-size: 0.8rem;">
+            </div>
+        </div>
+        {% endfor %}
+
+        <!-- Custom payment -->
+        <div style="display: flex; gap: 8px; align-items: center; margin-top: 4px;">
+            <input type="text" id="custom-pay-name" class="form-input" placeholder="Other payment (e.g. car finance, ISA, pension)" style="flex: 1; padding: 8px 12px; font-size: 0.8rem;">
+            <input type="number" id="custom-pay-cost" class="form-input" placeholder="£/mo" step="0.01" min="0" style="width: 80px; padding: 8px 12px; font-size: 0.8rem;">
+            <button type="button" onclick="addCustomPayment()" style="padding: 8px 14px; border-radius: 8px; border: 1px solid rgba(197,163,93,0.3); background: rgba(197,163,93,0.05); color: var(--roman-gold); font-size: 0.75rem; cursor: pointer; white-space: nowrap;">+ Add</button>
+        </div>
+
+        <div id="custom-payments-list" style="margin-top: 6px;"></div>
+    </div>
+
+    <!-- Other payments total -->
+    <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px 14px; border-radius: 8px; background: rgba(197,163,93,0.04); border: 0.5px solid rgba(197,163,93,0.1); margin-bottom: 24px;">
+        <span style="font-size: 0.8rem; color: var(--text-secondary);">Other payments total</span>
+        <span id="pay-total-display" style="font-size: 0.9rem; font-weight: 500; color: var(--roman-gold);">£0.00</span>
+    </div>
+
+    <input type="hidden" name="other_commitments" id="other_commitments" value="{{ '%g' | format(profile.other_commitments) if profile.other_commitments else '0' }}">
+
     <!-- ─── LIVING COSTS ─── -->
     <div class="section-label" style="margin-top: 4px; margin-bottom: 16px;">Living costs</div>
 
@@ -231,5 +289,66 @@ function renderCustomSubs() {
         container.appendChild(div);
     });
 }
+
+var customPayments = [];
+
+function togglePayment(cb, id) {
+    var chip = document.getElementById('pay-chip-' + id);
+    var input = document.getElementById('pay-input-' + id);
+    if (cb.checked) {
+        chip.classList.add('selected');
+        input.style.display = 'block';
+    } else {
+        chip.classList.remove('selected');
+        input.style.display = 'none';
+        var amountInput = input.querySelector('.payment-amount');
+        if (amountInput) amountInput.value = '';
+    }
+    updatePaymentTotal();
+}
+
+function updatePaymentTotal() {
+    var total = 0;
+    document.querySelectorAll('.payment-amount').forEach(function(input) {
+        var val = parseFloat(input.value);
+        if (!isNaN(val) && val > 0) total += val;
+    });
+    customPayments.forEach(function(p) { total += p.cost; });
+    total = Math.round(total * 100) / 100;
+    document.getElementById('pay-total-display').textContent = '£' + total.toFixed(2);
+    document.getElementById('other_commitments').value = total.toFixed(2);
+}
+
+function addCustomPayment() {
+    var nameInput = document.getElementById('custom-pay-name');
+    var costInput = document.getElementById('custom-pay-cost');
+    var name = nameInput.value.trim();
+    var cost = parseFloat(costInput.value);
+    if (!name || !cost || cost <= 0) return;
+    customPayments.push({ name: name, cost: cost });
+    nameInput.value = '';
+    costInput.value = '';
+    renderCustomPayments();
+    updatePaymentTotal();
+}
+
+function removeCustomPayment(index) {
+    customPayments.splice(index, 1);
+    renderCustomPayments();
+    updatePaymentTotal();
+}
+
+function renderCustomPayments() {
+    var container = document.getElementById('custom-payments-list');
+    container.innerHTML = '';
+    customPayments.forEach(function(p, i) {
+        var div = document.createElement('div');
+        div.className = 'custom-sub-item';
+        div.innerHTML = '<span>' + p.name + ' <span style="color:var(--text-tertiary);font-size:0.7rem;">£' + p.cost.toFixed(2) + '/mo</span></span>' +
+            '<button type="button" class="custom-sub-remove" onclick="removeCustomPayment(' + i + ')">✕</button>';
+        container.appendChild(div);
+    });
+}
+
 </script>
 {% endblock %}
