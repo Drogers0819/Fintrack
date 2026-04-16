@@ -728,7 +728,9 @@ def _generate_alerts(phases, monthly_projections, pots):
     if len(phases) > 1:
         next_change = phases[0].get("end_month", 0)
         if next_change <= 3:
-            completed = phases[0].get("completed_pots", [])
+            # Only mention pots that are still active and funded
+            active_names = {p["name"] for p in pots if not p.get("completed") and p.get("monthly_amount", 0) > 0}
+            completed = [name for name in phases[0].get("completed_pots", []) if name in active_names]
             if completed:
                 alerts.append({
                     "type": "phase_change_soon",
