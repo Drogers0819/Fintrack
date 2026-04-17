@@ -1691,6 +1691,10 @@ body.theme-mist .glass-card.card-danger {
     opacity: 1;
 }
 
+.glass-card:hover .transaction-delete {
+    opacity: 1;
+}
+
 /* Exceeded state — left accent line, very subtle bg tint */
 .budget-row-danger {
     border-left: 2px solid rgba(252, 129, 129, 0.6);

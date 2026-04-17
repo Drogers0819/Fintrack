@@ -54,7 +54,7 @@ function checkStrength(val) {
     if (/[^A-Za-z0-9]/.test(val)) score++;
 
     var level = score <= 1 ? 1 : score <= 2 ? 2 : 3;
-    var colors = ['', '#FC8181', '#F6AD55', '#68D391'];
+    var colors = ['', 'var(--danger)', 'var(--warning)', 'var(--success)'];
     var labels = ['', 'Weak', 'Fair', 'Strong'];
 
     for (var i = 1; i <= 3; i++) {
