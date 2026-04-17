@@ -109,7 +109,7 @@
     <!-- Header: question + badge -->
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
         <div style="font-size: 0.8rem; color: var(--text-primary);">Can you fund your goals this month?</div>
-        <span class="badge {% if budget_status.status == 'healthy' %}badge-success{% elif budget_status.status == 'tight' %}badge-warning{% else %}badge-danger{% endif %}">
+        <span class="badge {% if budget_status.status == 'healthy' %}badge-default{% elif budget_status.status == 'tight' %}badge-warning{% else %}badge-danger{% endif %}">
             {{ budget_status.status }}
         </span>
     </div>
