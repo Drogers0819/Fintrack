@@ -91,7 +91,7 @@
                 {% set suggested = (surplus * pct.value / 100) | round(0) | int %}
                 <label class="amt-opt">
                     <input type="radio" name="lifestyle_budget" value="{{ suggested }}" style="display:none;" onchange="selLifestyle(this)">
-                    <span>{{ pct.label }} · £{{ suggested }}</span>
+                    <span>{{ pct.label }} · £{{ "{:,.0f}".format(suggested) }}</span>
                 </label>
                 {% endfor %}
             </div>
