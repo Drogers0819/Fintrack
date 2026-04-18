@@ -4,6 +4,29 @@ Project-specific rules for Claude working on this codebase. These are not design
 
 ---
 
+## MANDATORY: Read DESIGN-SYSTEM.md before writing any UI
+
+Before writing or editing any template, read `DESIGN-SYSTEM.md`. It defines every visual pattern: typography, colour, cards, spacing, buttons, forms, icons, navigation, data display, animation. AGENTS.md handles dev/routing rules. DESIGN-SYSTEM.md handles visual decisions.
+
+---
+
+## MANDATORY: Playwright verification after every UI change
+
+**After any change to a template or CSS — run Playwright and screenshot before marking the task done.**
+
+This is not optional. Do not say "done" without Playwright verification. Static code analysis is not sufficient.
+
+Steps:
+1. Navigate to the affected page(s) via Playwright MCP
+2. Screenshot at 375px and 1440px minimum
+3. Review the screenshots visually — check hierarchy, alignment, card usage, colour, spacing
+4. Fix anything that looks wrong
+5. Then mark done
+
+The server runs on **port 5002**. Log in via Playwright browser (separate cookie jar from host browser).
+
+---
+
 ## Dev environment
 
 - Flask runs on **port 5002** (not the default 5000). Always use `http://localhost:5002`.
@@ -21,24 +44,25 @@ These templates exist in `app/templates/` but are **NOT served by any route**. D
 - `simulator.html`
 - `waterfall.html`
 
-Active templates: `overview`, `my_money`, `my_goals`, `plan`, `my_budgets`, `settings`, `factfind`, `upload`, `add_transaction`, `add_goal`, `edit_goal`, `goal_detail`, `scenario`, `analytics`, `insights`, `recurring`, `welcome`, `login`, `register`, `unsubscribe`.
+Active templates: `overview`, `my_money`, `my_goals`, `plan`, `my_budgets`, `settings`, `factfind`, `surplus_reveal`, `goal_chips`, `plan_reveal`, `plan_review`, `upload`, `add_transaction`, `add_goal`, `edit_goal`, `goal_detail`, `scenario`, `analytics`, `insights`, `recurring`, `checkin`, `companion`, `welcome`, `login`, `register`, `unsubscribe`.
 
 ---
 
 ## Navigation active states
 
 - The Settings tab active state must only match `pages.settings`. **Never include `pages.factfind`** — factfind is a standalone onboarding flow, not a Settings sub-page. Including it causes the Settings tab to illuminate when users are on factfind.
-- Bottom nav has 6 tabs: Overview, Money, Check-in, Goals, Companion, Plan.
+- Bottom nav has 5 tabs: Overview, Check-in, Goals, Companion, Plan.
 
 ---
 
-## Mobile avatar (`.mobile-settings-btn`)
+## Mobile header bar
 
-- Defined in `base.html` as a global fixed element: `position: fixed; top: max(14px, calc(env(safe-area-inset-top) + 8px)); right: 16px; z-index: 500`.
-- `viewport-fit=cover` is set in the viewport meta, so `env(safe-area-inset-top)` is non-zero on notched iPhones (typically 47–59px). The avatar and main-content top padding both use the same safe-area-aware calc so they stay aligned on notched and non-notched devices.
+- **Layout**: `.mobile-header-bar` is a fixed bar at the top on mobile, `justify-content: space-between`, `padding: 0 16px`. Logo (36×36) on the LEFT, avatar (36×36) on the RIGHT — equal physical footprint, equal edge padding.
+- **Logo**: `<a class="mobile-logo">` wrapping `<img src="logo.png" style="width:36px;height:36px;object-fit:contain;">`. Use `object-fit: contain` — the logo PNG has internal transparent space; matching container dimensions keeps visual balance consistent with the avatar.
+- **Avatar** (`.mobile-settings-btn`): `position: static` inside the bar on mobile. `viewport-fit=cover` is set in the viewport meta — use `env(safe-area-inset-top)` aware positioning for the bar itself.
 - Main content top padding: `max(16px, calc(env(safe-area-inset-top) + 10px))`. Do not add `padding-top` to page-header or this alignment breaks.
 - Avatar bottom edge: ~50px (no notch) / ~77px (notch). To push a sub-row (count + CTA) below the avatar zone: increase `margin-bottom` on the page-header. Never use `padding-top` on the header (breaks alignment) or `padding-right` on the sub-row (misaligns right edge with surrounding content).
-- Pages with a back-link (`← Money`, `← Goals`) above the header get natural clearance automatically.
+- Pages with a back-link (`← Goals` etc.) above the header get natural clearance automatically.
 
 ---
 
@@ -129,6 +153,26 @@ Active templates: `overview`, `my_money`, `my_goals`, `plan`, `my_budgets`, `set
 
 ---
 
+## Button icon rule
+
+- All CTA buttons and links use **Lucide SVG icons** inline — never Unicode characters (`→`, `←`, `▶`).
+- Forward CTAs: Lucide `chevron-right` (`<path d="M9 18l6-6-6-6"/>`) at `width="14" height="14"`.
+- Back links: Lucide `chevron-left` (`<path d="m15 18-6-6 6-6"/>`) at `width="10" height="10"`.
+- Button layout: `display: flex; align-items: center; justify-content: center; gap: 8px;` — icon is the last child.
+- JS-generated button icons: use `document.createElementNS('http://www.w3.org/2000/svg', 'svg')` — never `innerHTML` or `textContent` with SVG strings.
+
+---
+
+## Onboarding wizard
+
+- The 4-step wizard is: `factfind` (step 1) → `surplus_reveal` (step 2) → `goal_chips` (step 3) → `plan_reveal` (step 4) → `plan_review` → `overview`.
+- **One progress system**: step bars live only in the wizard pages. Do not add a second progress tracker (e.g. a 2-step checklist on overview or welcome) — competing systems confuse users.
+- Step bar layout: `[chevron Back] [bars flex:1] [Step X of 4]` — Back on the LEFT, counter on the RIGHT.
+- AI whisper (gold-card) placement: **only on `plan_review`** (before the allocation breakdown). Never on `plan_reveal` — reveal moments are clean.
+- The overview no-goals nudge links to `/goals/choose` (wizard), not `/add-goal` (manual form).
+
+---
+
 ## Navigation chevron rule
 
 - `>` (chevron-right) icon on a link/button = navigates away from the current page to a different route.
@@ -140,14 +184,52 @@ Active templates: `overview`, `my_money`, `my_goals`, `plan`, `my_budgets`, `set
 
 ## Bottom nav (mobile)
 
-- **6 tabs**: Overview, Money, Check-in, Goals, Companion, Plan.
+- **5 tabs**: Overview, Check-in, Goals, Companion, Plan. (Money tab was removed in the nav restructure.)
 
 ---
 
 ## Registration routing
 
-- New users after registration → `/welcome` (trial framing + 3-step onboarding overview).
-- **Not** `/factfind` — users need context before entering the financial profile form.
+- New users after registration → `/factfind` directly (step 1 of 4 onboarding wizard).
+- The `/welcome` page still exists and is reachable but is **not** part of the new-user flow.
+- Do not re-add the welcome redirect — the wizard handles full onboarding including goal setup.
+
+---
+
+## UI audit — what to check on every page
+
+Run these checks before marking any UI change done. Static analysis is not enough — use Playwright for visual verification.
+
+**Alignment**
+- Page headers (`h1`, `.page-header`) are always **left-aligned**. No centering exceptions, not even for "reveal moments" or emotional milestones.
+- All body text, labels, and form fields are left-aligned. `text-align: center` is only valid for footer disclaimer notes (e.g. guidance/legal copy below a CTA).
+
+**Section order**
+- Standard page order: back-link (if applicable) → step bar (onboarding only) → page-header → onboarding nudge (if factfind incomplete) → primary content → secondary/explanatory content → CTA.
+- Never put explanatory methodology text above financial data. Data first, explanation below.
+
+**Card usage**
+- `glass-card` only on discrete financial objects the user acts on as a whole (goal cards, budget rows, transaction lists, metric grids). See Card usage section.
+- Analysis summaries, plan overview numbers, methodology text, and empty states must be **bare** (no card wrapper).
+- If content explains HOW something works rather than WHAT the user's data is, it does not get a card.
+
+**Text hierarchy**
+- Section labels: `.section-label` class — uppercase, letter-spaced, `var(--text-tertiary)`, small size.
+- Primary data values: `var(--text-primary)`, `font-weight: 500` or `600`.
+- Supporting copy: `var(--text-secondary)`, `0.8rem–0.85rem`.
+- Tertiary/helper copy: `var(--text-tertiary)`, `0.75rem–0.78rem`.
+- Never use `font-style: italic` outside `gold-card` blocks.
+- Never uppercase body copy or data values — only section-label elements.
+
+**Colour consistency**
+- Gold (`--roman-gold`) is NOT a general highlight colour. See Colour semantics section.
+- All gold in templates must flow from `var(--roman-gold)` or `var(--roman-gold-dim)` — never hardcoded `rgba(197,163,93,...)`.
+- Do not use `--success` (green) for anything that is not a real monetary gain.
+- Step bars in onboarding wizard: `rgba(255,255,255,0.25)` filled, `rgba(255,255,255,0.08)` unfilled. Never gold.
+
+**Icons and emoji**
+- Zero emojis anywhere in templates OR service/route files.
+- All icons are inline Lucide SVGs. Icon names in service files must match the Jinja2 mapping in `overview.html`. When adding new icon names, update both the service AND the template mapping simultaneously.
 
 ---
 
