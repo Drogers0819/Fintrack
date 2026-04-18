@@ -1,0 +1,28 @@
+# Playwright MCP session files
+.playwright-mcp/
+
+# Audit and verification screenshots
+audit-*.png
+check-*.png
+fix-*.png
+verify-*.png
+pw-*.png
+cobalt-*.png
+mobile-*.png
+overview-*.png
+plan-*.png
+settings-*.png
+goals-*.png
+insights-*.png
+companion-*.png
+scenario-*.png
+recurring-*.png
+budgets-*.png
+money-*.png
+more-panel-*.png
+toast-*.png
+login-*.png
+welcome-*.png
+popover-*.png
+nav-*.png
+docs/
