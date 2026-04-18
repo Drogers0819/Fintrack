@@ -60,6 +60,7 @@ def create_app(config_class=None):
         from app.models.goal import Goal
         from app.models.budget import Budget
         from app.models.chat import ChatMessage
+        from app.models.life_checkin import LifeCheckIn
         from app.models.checkin import CheckIn, CheckInEntry
         
         db.create_all()

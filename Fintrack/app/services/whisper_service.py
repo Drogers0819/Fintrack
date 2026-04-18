@@ -67,7 +67,7 @@ def generate_action_whisper(user, plan, goals):
         return whisper
 
     # 5. Life check-in (mid-month, around 14th-16th)
-    whisper = _life_checkin_whisper(today, days_since_signup)
+    whisper = _life_checkin_whisper(today, days_since_signup, user)
     if whisper:
         return whisper
 
@@ -257,16 +257,21 @@ def _milestone_whisper(pots, plan):
     return None
 
 
-def _life_checkin_whisper(today, days_since_signup):
+def _life_checkin_whisper(today, days_since_signup, user=None):
     """Mid-month life check-in prompt."""
-    if days_since_signup < 14:  # Don't show in first 2 weeks
+    if days_since_signup < 14:
         return None
+
+    # Don't show if already done this month
+    if user and user.last_life_checkin:
+        if user.last_life_checkin.month == today.month and user.last_life_checkin.year == today.year:
+            return None
 
     if 13 <= today.day <= 16:
         return {
             "message": "Anything come up this month we should know about? A birthday, an unexpected bill, or a change at work? Quick updates keep your plan accurate.",
-            "action_label": "Something changed",
-            "action_url": "/check-in",
+            "action_label": "Quick check-in",
+            "action_url": "/life-checkin",
             "icon": "💬",
             "type": "life_checkin"
         }

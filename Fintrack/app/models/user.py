@@ -34,6 +34,7 @@ class User(db.Model, UserMixin):
     trial_ends_at = db.Column(db.DateTime, nullable=True)
     companion_messages_today = db.Column(db.Integer, default=0)
     companion_last_reset = db.Column(db.Date, nullable=True)
+    last_life_checkin = db.Column(db.Date, nullable=True)
 
     # Preferences
     theme = db.Column(db.String(30), default="racing-green")

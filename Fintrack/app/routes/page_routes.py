@@ -24,6 +24,7 @@ from app.services.simulator_service import (
 import calendar
 from app.services.planner_service import generate_financial_plan, get_plan_summary, can_i_afford
 from app.services.whisper_service import generate_action_whisper
+from app.models.life_checkin import LifeCheckIn
 page_bp = Blueprint("pages", __name__)
 
 
@@ -991,6 +992,94 @@ def plan_review():
         reasoning=reasoning,
         profile=user_profile
     )
+
+# ─── LIFE CHECK-IN ────────────────────────────────────────
+
+@page_bp.route("/life-checkin", methods=["GET", "POST"])
+@login_required
+def life_checkin():
+    today = date.today()
+
+    if request.method == "POST":
+        checkin_type = request.form.get("checkin_type", "all_good")
+        details = request.form.get("details", "").strip() or None
+        amount = None
+
+        try:
+            amt = request.form.get("amount", "")
+            if amt:
+                amount = round(float(amt), 2)
+        except (ValueError, TypeError):
+            pass
+
+        life_ci = LifeCheckIn(
+            user_id=current_user.id,
+            checkin_type=checkin_type,
+            details=details,
+            amount=amount
+        )
+        db.session.add(life_ci)
+
+        current_user.last_life_checkin = today
+        db.session.commit()
+
+        if checkin_type == "all_good":
+            flash("Great — your plan stays on track.", "success")
+            return redirect(url_for("pages.overview"))
+
+        elif checkin_type == "birthday":
+            if amount and amount > 0:
+                event_name = details or "Birthday / event"
+                deadline = today + relativedelta(months=1)
+                goal = Goal(
+                    user_id=current_user.id,
+                    name=event_name,
+                    type="savings_target",
+                    target_amount=amount,
+                    current_amount=0,
+                    deadline=deadline,
+                    priority_rank=99
+                )
+                db.session.add(goal)
+                life_ci.plan_adjusted = True
+                db.session.commit()
+                flash(f"Added '{event_name}' to your goals. Your plan has adjusted.", "success")
+            else:
+                flash("Got it — let us know if you need to budget for it.", "success")
+            return redirect(url_for("pages.overview"))
+
+        elif checkin_type == "unexpected_expense":
+            if amount and amount > 0:
+                flash(f"Noted: £{amount:,.0f} unexpected expense. Use the companion to work out the best way to cover it.", "success")
+            else:
+                flash("Got it. If you need to pull money from your plan, the companion can help.", "success")
+            return redirect(url_for("pages.overview"))
+
+        elif checkin_type == "income_changed":
+            if amount and amount > 0:
+                current_user.monthly_income = amount
+                life_ci.plan_adjusted = True
+                db.session.commit()
+                flash(f"Income updated to £{amount:,.0f}. Your plan has recalculated.", "success")
+            else:
+                flash("Head to your profile to update your income.", "success")
+                return redirect(url_for("pages.factfind"))
+            return redirect(url_for("pages.overview"))
+
+        elif checkin_type == "new_goal":
+            return redirect(url_for("pages.goal_chips"))
+
+        elif checkin_type == "bill_changed":
+            flash("Update your bills in your financial profile.", "success")
+            return redirect(url_for("pages.factfind"))
+
+        elif checkin_type == "ask_later":
+            flash("No problem — we'll check in again soon.", "success")
+            return redirect(url_for("pages.overview"))
+
+        return redirect(url_for("pages.overview"))
+
+    return render_template("life_checkin.html")
 
 # ─── SETTINGS ────────────────────────────────────────────
 
