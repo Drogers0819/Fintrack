@@ -24,6 +24,8 @@ from app.services.simulator_service import (
 import calendar
 from app.services.planner_service import generate_financial_plan, get_plan_summary, can_i_afford
 from app.services.whisper_service import generate_action_whisper
+from app.services.withdrawal_service import get_withdrawal_options
+from app.models.life_checkin import LifeCheckIn
 page_bp = Blueprint("pages", __name__)
 
 
@@ -994,6 +996,121 @@ def plan_review():
         profile=user_profile,
         summary=summary
     )
+
+# ─── WITHDRAWAL ───────────────────────────────────────────
+
+@page_bp.route("/withdraw", methods=["GET", "POST"])
+@login_required
+def withdraw():
+    if not current_user.factfind_completed or not current_user.monthly_income:
+        flash("Complete your financial profile first.", "error")
+        return redirect(url_for("pages.factfind"))
+
+    user_profile = current_user.profile_dict()
+    goals_data = [g.to_dict() for g in Goal.query.filter_by(
+        user_id=current_user.id, status="active"
+    ).order_by(Goal.priority_rank.asc()).all()]
+
+    plan = generate_financial_plan(user_profile, goals_data)
+    result = None
+
+    if request.method == "POST" and "error" not in plan:
+        try:
+            amount = round(float(request.form.get("amount", 0)), 2)
+            if amount > 0:
+                result = get_withdrawal_options(plan, amount)
+        except (ValueError, TypeError):
+            flash("Please enter a valid amount.", "error")
+
+    return render_template("withdraw.html", plan=plan, result=result)
+
+# ─── LIFE CHECK-IN ────────────────────────────────────────
+
+@page_bp.route("/life-checkin", methods=["GET", "POST"])
+@login_required
+def life_checkin():
+    today = date.today()
+
+    if request.method == "POST":
+        checkin_type = request.form.get("checkin_type", "all_good")
+        details = request.form.get("details", "").strip() or None
+        amount = None
+
+        try:
+            amt = request.form.get("amount", "")
+            if amt:
+                amount = round(float(amt), 2)
+        except (ValueError, TypeError):
+            pass
+
+        life_ci = LifeCheckIn(
+            user_id=current_user.id,
+            checkin_type=checkin_type,
+            details=details,
+            amount=amount
+        )
+        db.session.add(life_ci)
+
+        current_user.last_life_checkin = today
+        db.session.commit()
+
+        if checkin_type == "all_good":
+            flash("Great — your plan stays on track.", "success")
+            return redirect(url_for("pages.overview"))
+
+        elif checkin_type == "birthday":
+            if amount and amount > 0:
+                event_name = details or "Birthday / event"
+                deadline = today + relativedelta(months=1)
+                goal = Goal(
+                    user_id=current_user.id,
+                    name=event_name,
+                    type="savings_target",
+                    target_amount=amount,
+                    current_amount=0,
+                    deadline=deadline,
+                    priority_rank=99
+                )
+                db.session.add(goal)
+                life_ci.plan_adjusted = True
+                db.session.commit()
+                flash(f"Added '{event_name}' to your goals. Your plan has adjusted.", "success")
+            else:
+                flash("Got it — let us know if you need to budget for it.", "success")
+            return redirect(url_for("pages.overview"))
+
+        elif checkin_type == "unexpected_expense":
+            if amount and amount > 0:
+                flash(f"Noted: £{amount:,.0f} unexpected expense. Use the companion to work out the best way to cover it.", "success")
+            else:
+                flash("Got it. If you need to pull money from your plan, the companion can help.", "success")
+            return redirect(url_for("pages.overview"))
+
+        elif checkin_type == "income_changed":
+            if amount and amount > 0:
+                current_user.monthly_income = amount
+                life_ci.plan_adjusted = True
+                db.session.commit()
+                flash(f"Income updated to £{amount:,.0f}. Your plan has recalculated.", "success")
+            else:
+                flash("Head to your profile to update your income.", "success")
+                return redirect(url_for("pages.factfind"))
+            return redirect(url_for("pages.overview"))
+
+        elif checkin_type == "new_goal":
+            return redirect(url_for("pages.goal_chips"))
+
+        elif checkin_type == "bill_changed":
+            flash("Update your bills in your financial profile.", "success")
+            return redirect(url_for("pages.factfind"))
+
+        elif checkin_type == "ask_later":
+            flash("No problem — we'll check in again soon.", "success")
+            return redirect(url_for("pages.overview"))
+
+        return redirect(url_for("pages.overview"))
+
+    return render_template("life_checkin.html")
 
 # ─── SETTINGS ────────────────────────────────────────────
 

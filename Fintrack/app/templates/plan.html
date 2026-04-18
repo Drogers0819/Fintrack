@@ -111,15 +111,6 @@
 </div>
 {% endif %}
 
-<!-- Alerts — plain text only, no card treatment -->
-{% if smart_plan.alerts %}
-<div style="margin-bottom: 32px;">
-    {% for alert in smart_plan.alerts %}
-    <p style="font-size: 0.8rem; color: var(--text-secondary); line-height: 1.6; margin-bottom: 6px;">{{ alert.message }}</p>
-    {% endfor %}
-</div>
-{% endif %}
-
 <!-- Can I afford this? -->
 <div style="margin-bottom: 32px; padding-top: 20px; border-top: 0.5px solid var(--glass-border);">
     <div style="font-size: 0.9rem; color: var(--text-primary); font-weight: 500; margin-bottom: 4px;">Can I afford this?</div>

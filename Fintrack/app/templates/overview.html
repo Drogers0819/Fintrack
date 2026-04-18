@@ -110,6 +110,12 @@
 </div>
 {% endif %}
 
+<!-- Quick actions -->
+<div style="display: flex; gap: 8px; margin-bottom: 24px;">
+    <a href="{{ url_for('pages.withdraw') }}" style="display: flex; align-items: center; gap: 8px; padding: 10px 16px; border-radius: 10px; border: 0.5px solid var(--glass-border); background: rgba(255,255,255,0.02); text-decoration: none; font-size: 0.78rem; color: var(--text-tertiary); transition: all 0.2s ease;" onmouseover="this.style.borderColor='rgba(197,163,93,0.3)';this.style.color='var(--roman-gold)'" onmouseout="this.style.borderColor='var(--glass-border)';this.style.color='var(--text-tertiary)'">💸 I need money</a>
+    <a href="{{ url_for('pages.life_checkin') }}" style="display: flex; align-items: center; gap: 8px; padding: 10px 16px; border-radius: 10px; border: 0.5px solid var(--glass-border); background: rgba(255,255,255,0.02); text-decoration: none; font-size: 0.78rem; color: var(--text-tertiary); transition: all 0.2s ease;" onmouseover="this.style.borderColor='rgba(197,163,93,0.3)';this.style.color='var(--roman-gold)'" onmouseout="this.style.borderColor='var(--glass-border)';this.style.color='var(--text-tertiary)'">💬 Life check-in</a>
+</div>
+
 <!-- ════ ACTIVE POTS — compact progress ════ -->
 {% set goal_pots = smart_plan.pots %}
 {% if goal_pots %}
@@ -209,12 +215,6 @@
 
 {% else %}
 <!-- No plan data — only show CTA if no nudge is already visible above -->
-{% if _p and _g %}
-<div style="padding: 8px 0 32px;">
-    <p style="font-size: 0.95rem; color: var(--text-primary); font-weight: 500; margin-bottom: 8px;">Your plan is generating.</p>
-    <p style="font-size: 0.8rem; color: var(--text-tertiary); line-height: 1.6;">Claro is building your financial plan. Check back shortly.</p>
-</div>
-{% endif %}
 {% endif %}
 
 {% endblock %}

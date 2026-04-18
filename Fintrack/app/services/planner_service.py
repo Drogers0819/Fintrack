@@ -652,18 +652,18 @@ def _phase_description(phase_num, active_pots, completed_pots, all_pots=None):
     if completed_pots:
         completed_str = " and ".join(completed_pots)
         if debt_active:
-            return f"Clearing debt. {completed_str} completed at end of phase."
-        if len(goal_pots) <= 1:
-            focus = goal_pots[0] if goal_pots else "your goals"
-        else:
-            focus = ", ".join(goal_pots[:-1]) + " and " + goal_pots[-1]
-        return f"Building {focus}. {completed_str} completed at end of phase."
+            return f"Clearing {' and '.join(debt_active)}, then that money shifts to your goals."
+        # Only mention non-completed goals as the focus
+        remaining = [g for g in goal_pots if g not in completed_pots]
+        if remaining:
+            return f"{completed_str} completes. Funds redirect to {' and '.join(remaining)}."
+        return f"{completed_str} completes this phase."
     else:
         if not goal_pots:
             return "All goals on track."
         if len(goal_pots) == 1:
-            return f"Focus: {goal_pots[0]}."
-        return f"Building {', '.join(goal_pots[:-1])} and {goal_pots[-1]}."
+            return f"Full focus on {goal_pots[0]}."
+        return f"Funding {', '.join(goal_pots[:-1])} and {goal_pots[-1]} simultaneously."
 
 
 # ─── ALERTS ──────────────────────────────────────────────────
