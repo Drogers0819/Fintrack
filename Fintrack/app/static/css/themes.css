@@ -7,6 +7,8 @@ body.theme-racing-green {
     --roman-gold: #C5A35D;
     --roman-gold-dim: rgba(197, 163, 93, 0.15);
     --roman-gold-glow: rgba(197, 163, 93, 0.3);
+    --gold-whisper-bg: rgba(197, 163, 93, 0.05);
+    --gold-whisper-border: rgba(197, 163, 93, 0.08);
     --glass: rgba(255, 255, 255, 0.03);
     --glass-border: rgba(197, 163, 93, 0.12);
     --text-primary: rgba(255, 255, 255, 0.9);
@@ -61,6 +63,8 @@ body.theme-rosso {
     /* Accent — blue for interactive elements only */
     --roman-gold: #63B3ED;
     --roman-gold-dim: rgba(99, 179, 237, 0.08);
+    --gold-whisper-bg: rgba(99, 179, 237, 0.05);
+    --gold-whisper-border: rgba(99, 179, 237, 0.08);
 
     /* Glass — subtle blue tint */
     --glass-bg: rgba(99, 179, 237, 0.05);
@@ -95,6 +99,8 @@ body.theme-ivory {
     --roman-gold: #8B7340;
     --roman-gold-dim: rgba(139, 115, 64, 0.15);
     --roman-gold-glow: rgba(139, 115, 64, 0.25);
+    --gold-whisper-bg: rgba(139, 115, 64, 0.05);
+    --gold-whisper-border: rgba(139, 115, 64, 0.08);
     --glass: rgba(255, 255, 255, 0.4);
     --glass-border: rgba(139, 115, 64, 0.18);
     --text-primary: #1A1A18;

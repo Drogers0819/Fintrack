@@ -15,6 +15,77 @@
 
 <!-- Entries go below this line, newest first -->
 
+## 2026-04-18 — Mixed tappable/non-tappable rows in the same list (affordance failure)
+**Mistake**: Overview pots section showed goal rows (tappable, with chevron) and allocation rows (Lifestyle & family, Buffer — not tappable) in the same visual list. Tried visual differentiation (text-primary+chevron vs text-secondary+no chevron) as a middle ground — this was wrong. On mobile with no hover states, users default to "nothing navigates" and miss the tappable rows entirely regardless of styling.
+**Fix**: Removed Lifestyle & Buffer from the overview pots section entirely. They're allocation categories, not goals — they have no detail pages. The Plan page shows full allocation breakdown. Now every row in "Your pots" is a goal row and every row has a chevron and navigates.
+**Rule**: Lists must be homogenous — all rows navigate, or none do. The fix is structural (remove non-navigable items), not cosmetic (style them differently). Never mix tappable and non-tappable rows in the same visual list on mobile.
+
+## 2026-04-18 — Decorative icon above page headers adds noise
+**Mistake**: trial_gate.html had a 40×40px circular check icon above "Your plan is ready." — the h1 already communicated the success state. Two elements saying the same thing = visual noise that delays the user reading the actual headline.
+**Fix**: Removed the icon entirely. The h1 stands alone using `.page-header`. Strong typography is sufficient.
+**Rule**: Never add a decorative icon above a page h1 unless the icon provides information not already in the heading. "Success checkmark + 'Your plan is ready'" is redundant. The heading wins; remove the icon.
+
+## 2026-04-18 — Never introduce new button variants — use existing classes
+**Mistake**: Created `.withdraw-preset` with `border-radius: 50px` (pill shape) for quick-amount chips on withdraw.html. This introduced a fourth button shape that doesn't exist in the design vocabulary, making buttons inconsistent across the app.
+**Fix**: Replaced with `btn-secondary btn-sm`. Deleted the custom `.withdraw-preset` CSS block.
+**Rule**: The button vocabulary is exactly: `btn-primary`, `btn-secondary`, `btn-danger`, each with optional `btn-sm` and `btn-full` modifiers. Never create a new button class in a page `<style>` block. Exception: `.goal-chip`, `.sub-chip`, `.suggestion-chip` are intentional SELECTION chips (multi-select inputs) — pill shape is correct for them. The violation is pill shape on an ACTION trigger (a button that does something when clicked), not on a selection input.
+
+## 2026-04-18 — Using btn-secondary when btn-primary is correct for a sole CTA
+**Mistake**: goal_detail.html unreachable state used `btn-secondary btn-sm` for "Edit this goal". In that state, editing is the ONLY possible action — it's the primary CTA. Secondary button implies it's secondary to something else.
+**Fix**: Changed to `btn-primary btn-sm`. Also added a heading ("No contribution set") above the message to follow the title + subtitle + button empty-state pattern.
+**Rule**: `btn-secondary` is only correct when it sits alongside a `btn-primary` as a secondary option (e.g., Cancel + Save). A lone action button is always `btn-primary`. If there's nothing to be secondary to, it shouldn't be styled as secondary.
+
+## 2026-04-18 — No-centering rule violated on trial_gate and withdraw pages
+**Mistake**: `trial_gate.html` had `max-width: 520px; margin: 0 auto` wrapper + `text-align: center` on header, value framing, CTA card title, and trust signals. `withdraw.html` had the same `max-width: margin: 0 auto` island pattern. Both pages were centered layout islands while every other page in the app is left-aligned — confirmed by reading 10+ templates.
+**Fix**: Removed outer centering wrappers from both pages. Removed all `text-align: center` from non-table, non-table-cell elements. Trust signals changed to `justify-content: flex-start`. CTA card title left-aligned.
+**Rule**: `max-width + margin: 0 auto` on a page wrapper is always a centering island violation. Grep for it across all templates whenever a new page is built. Table cells (`th`, `td`) may use `text-align: center` — all other block elements must not.
+
+## 2026-04-18 — Hardcoded `rgba(197,163,93,...)` instead of CSS variables
+**Mistake**: Multiple templates used hardcoded `rgba(197,163,93,0.04)`, `rgba(197,163,93,0.15)`, `rgba(197,163,93,0.12)` etc. instead of `var(--roman-gold-dim)`, `var(--gold-whisper-bg)`, `var(--glass-border)` etc. This breaks theme-switching (ivory uses a different gold value, cobalt uses blue) and creates inconsistency when variable values are updated.
+**Fix**: Audited all templates, replaced hardcoded gold rgba with CSS variables. Added `--gold-whisper-bg` and `--gold-whisper-border` to `:root` in `main.css` so all themes inherit them, with ivory and cobalt theme-specific overrides in `themes.css`.
+**Rule**: Never hardcode `rgba(197,163,93,...)` in any template or CSS file. Only `var(--roman-gold)`, `var(--roman-gold-dim)`, `var(--roman-gold-glow)`, `var(--gold-whisper-bg)`, `var(--gold-whisper-border)` are valid. New gold variables must be added to `:root` in `main.css` first, then theme overrides for ivory/cobalt.
+
+## 2026-04-18 — Non-standard split £ input on withdraw page
+**Mistake**: withdraw.html used a `<span>£</span>` + `<input>` with shared border (right border on span removed, left border on input removed) to create a "£ | amount" input. This is visually different from the standard `<input class="form-input">` used on every other page with `(£)` in the label.
+**Fix**: Replaced with standard `<input class="form-input" id="amount-input">` and updated label to "How much do you need? (£)".
+**Rule**: The app has one input pattern: `class="form-input"`. Currency prefix goes in the label as `(£)`, never as a separate HTML element joined to the input. Any split-input with conjoined borders is a violation.
+
+## 2026-04-18 — `empty-page-center` class used incorrectly for non-empty-page states
+**Mistake**: `checkin.html` and `my_goals.html` used `<div class="empty-page-center">` with `max-width: 280px` constraints on empty-state copy. These states appear when the user hasn't set up a profile yet — they're a guided empty state pointing to the next action, not a "nothing here" dead end. The narrow max-width pushed text into short awkward lines.
+**Fix**: Replaced `class="empty-page-center"` with `<div style="padding-top: 8px;">`. Removed all `max-width: 280px` constraints from text.
+**Rule**: `empty-page-center` is only valid when there is literally nothing else on the page. Guided empty states (empty + a CTA to an action) use `padding-top: 8px` left-aligned divs, not centred containers.
+
+## 2026-04-18 — Spacing inconsistency from mixing margin-bottom and margin-top across sections
+**Mistake**: Plan page tool sections used `margin-bottom` on some sections and `margin-top` on others. These compound: a `margin-bottom: 32px` on section A + `margin-top: 8px` on section B = 40px gap. Other section pairs had only 8px. Result: wildly inconsistent spacing between identical structural elements.
+**Fix**: Standardized all tool sections to `margin-top: 20px; padding-top: 20px; border-top:...`. No `margin-bottom` on any section. One value controls every gap.
+**Rule**: For divider-separated sections, use margin-top ONLY on the section div — never margin-bottom on content inside a section. Then every gap = exactly one value, consistent everywhere. Check consistency across all pages when changing spacing on one page.
+
+
+## 2026-04-18 — Section CTAs styled as text links blend into page labels
+**Mistake**: "My goals >" section CTA used `color: var(--text-secondary)` and text-only styling, making it indistinguishable from surrounding body text. No obvious tap affordance.
+**Fix**: Changed to a bordered pill chip — `border: 0.5px solid rgba(255,255,255,0.12); border-radius: 50px; padding: 3px 10px`. Distinct from text without being a heavy button.
+**Rule**: Section-level CTAs (e.g. "My goals >", "See all >") must use a pill chip style, not raw text links. They need a visible border to distinguish them from labels. Apply this pattern consistently wherever a section has a "view all" or navigation CTA.
+
+## 2026-04-18 — Redundant "GOAL" eyebrow on goal detail page
+**Mistake**: goal_detail.html had a "GOAL" eyebrow label above the goal name. The user is already on the goal page, navigated from Goals — the eyebrow adds no information and creates two competing identifiers (nav back-link + eyebrow both say "goal").
+**Fix**: Removed the eyebrow entirely. Back-link provides sufficient context.
+**Rule**: Eyebrow labels on detail pages are only justified if they disambiguate the object type when it's genuinely ambiguous (e.g. multiple object types share the same detail page). Never add eyebrows that just restate the nav context the user already has.
+
+## 2026-04-18 — Interactive elements not obviously discoverable (chevrons faint, rows unseparated)
+**Mistake**: Tappable pot rows in overview used `stroke="var(--text-tertiary)"` for chevrons (nearly invisible) and had no separators between rows, so users couldn't tell individual rows were independent tappable items. The "My goals >" section CTA looked like a label, not a link.
+**Fix**: Chevrons on tappable rows raised to `var(--text-secondary)` and `stroke-width="2.5"`. Row separators (`border-bottom: 0.5px solid var(--glass-border)`) added between items. "My goals" CTA given slightly heavier chevron weight.
+**Rule**: On mobile there are no hover states. Any interactive element must be visually self-evident at rest: chevron at `--text-secondary` or brighter, row separators to define item boundaries, sufficient padding for tap targets. If a user can't see the affordance, the feature doesn't exist for them.
+
+## 2026-04-18 — Dual affordances for one action (Edit header button + Adjust this goal link)
+**Mistake**: goal_detail.html had an "Edit" button in the page header (top-right) AND an "Adjust this goal >" text link in the unreachable state — two labels, two placements, for the same action. Worse: "Adjust this goal" incorrectly linked to `my_goals` (the list) instead of `edit_goal` (the form), sending users backwards in the hierarchy.
+**Fix**: Removed "Edit" from page header. In unreachable state: replaced text link with `btn-primary btn-sm` labeled "Edit this goal" linking to `edit_goal`. In reachable state: added "Edit goal" button at the very bottom after all content.
+**Rule**: One action = one entry point = one label. Never have two clickable elements that do the same thing on one page. When spotting this on any page, check every other page for the same duplication.
+
+## 2026-04-18 — Issue raised on one page not checked app-wide
+**Mistake**: When Victoria raised a layout/hierarchy issue on one page (e.g. goal_detail), Claude fixed it in isolation without checking whether the same pattern (dual affordances, wrong link target, inconsistent labeling) appeared on other pages.
+**Fix**: Check every template for the same pattern before marking fixed. Use Grep to search for the problematic class/attribute/text across all templates.
+**Rule**: When any issue is raised, check every other active page immediately. Never audit or fix in isolation. One instance found = grep the entire codebase for the pattern before concluding the fix is complete.
+
 ## 2026-04-18 — Logo height matched to avatar container, not optical size
 **Mistake**: Set mobile logo to `height: 36px` to match the avatar circle container (also 36px). The logo mark filled nearly the full 52px header height — only 8px breathing room each side. The avatar "T" inside its 36px circle reads optically much smaller, making the logo appear to burst out of the bar while the avatar looked contained.
 **Fix**: Reduced to `height: 24px` — 14px clear space above and below in the 52px bar. Logo mark and avatar letter now have equivalent optical weight and breathing room.

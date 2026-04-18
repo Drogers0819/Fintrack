@@ -202,7 +202,7 @@ Run these checks before marking any UI change done. Static analysis is not enoug
 
 **Alignment**
 - Page headers (`h1`, `.page-header`) are always **left-aligned**. No centering exceptions, not even for "reveal moments" or emotional milestones.
-- All body text, labels, and form fields are left-aligned. `text-align: center` is only valid for footer disclaimer notes (e.g. guidance/legal copy below a CTA).
+- All body text, labels, and form fields are left-aligned. `text-align: center` is only valid for footer disclaimer notes (e.g. guidance/legal copy below a CTA). Grep check: `grep -n "text-align: center" templates/`.
 
 **Section order**
 - Standard page order: back-link (if applicable) → step bar (onboarding only) → page-header → onboarding nudge (if factfind incomplete) → primary content → secondary/explanatory content → CTA.
@@ -230,6 +230,39 @@ Run these checks before marking any UI change done. Static analysis is not enoug
 **Icons and emoji**
 - Zero emojis anywhere in templates OR service/route files.
 - All icons are inline Lucide SVGs. Icon names in service files must match the Jinja2 mapping in `overview.html`. When adding new icon names, update both the service AND the template mapping simultaneously.
+- Decorative icons above `h1` headings are prohibited. If the `h1` already communicates the meaning (e.g. "Your plan is ready."), a preceding icon is redundant noise — remove it.
+
+**Button vocabulary**
+- Valid classes: `btn-primary`, `btn-secondary`, `btn-danger` + modifiers `btn-sm`, `btn-full`. Nothing else.
+- NEVER create a custom button class for a one-off variant (e.g. `.withdraw-preset`, `.section-cta`, anything pill-shaped for an action trigger).
+- `btn-secondary` is only valid alongside a `btn-primary` on the same surface. If `btn-secondary` would be the only interactive element on a section, use `btn-primary` instead.
+- Selection chips (`.goal-chip`, `.sub-chip`, `.suggestion-chip`) are intentionally pill-shaped. Pill shape on action buttons (triggers, CTAs, navigation) is a violation.
+
+**Section CTAs**
+- Navigational links in section header rows (e.g. "My goals ›", "My money ›") must use `<a class="btn-secondary btn-sm">`. Never a custom class, never plain anchor text.
+- These are always right-aligned beside the section label: `display: flex; justify-content: space-between; align-items: center;` on the header row.
+
+**Affordance — interactive list homogeneity**
+- Lists must be all-tappable or all-non-tappable. Never mix tappable and non-tappable rows in the same list — on mobile (no hover state), users cannot distinguish them.
+- If only some items in a list are actionable, either: (a) remove the non-actionable items from that list, or (b) move them to a separate, clearly non-interactive section.
+- Tappable rows: `display: block`, chevron icon right-aligned, `color: var(--text-primary)`, `text-decoration: none`.
+
+**Centering islands**
+- No `max-width + margin: 0 auto` wrapper on full-width page content. This creates a centered layout island inconsistent with all other pages.
+- Run `grep -rn "margin: 0 auto" templates/` to catch violations. Exceptions: form wrappers on desktop-only utility pages (factfind, upload) where the form is genuinely narrow.
+
+**Colour — hardcoded rgba**
+- All gold values must use CSS variables, never hardcoded `rgba(197,163,93,...)` — this breaks theme switching.
+- Required `:root` variables for gold: `--roman-gold`, `--roman-gold-dim`, `--roman-gold-glow`, `--gold-whisper-bg`, `--gold-whisper-border`.
+- When adding a new CSS variable, always add it to `:root` in `main.css` first, then add theme overrides in `themes.css` for ivory and cobalt.
+
+**Empty and unreachable states**
+- All empty, error, and unreachable states follow the same pattern: heading (`0.95rem`, `var(--text-primary)`, `font-weight: 500`) + subtitle (`0.82rem`, `var(--text-secondary)`) + `btn-primary btn-sm`. No exceptions.
+- "Unreachable" states (goal has no contribution set, feature locked, etc.) are not exempt from this pattern.
+
+**Audit scope**
+- When a violation is found, fix it everywhere in the app — not just on the one page that prompted the audit. Run a grep and check all templates.
+- Do not ask for direction on violations with established fixes. Hardcoded rgba, text-align center, missing btn class — these have clear, documented fixes. Apply them.
 
 ---
 

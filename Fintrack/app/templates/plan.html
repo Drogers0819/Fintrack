@@ -51,7 +51,7 @@
     <div style="padding: 10px 0;">
         <div style="display: flex; justify-content: space-between; align-items: center;">
             <div>
-                <span style="font-size: 0.85rem; color: var(--text-primary);">{{ pot.name }}</span>
+                <span style="font-size: 0.85rem; color: var(--text-primary);">{{ pot.name | replace(' (must-hit)', '') }}</span>
                 {% if pot.completed %}
                 <span style="font-size: 0.65rem; padding: 2px 8px; border-radius: 4px; background: rgba(72,187,120,0.1); color: rgba(72,187,120,0.8); margin-left: 6px;">done</span>
                 {% endif %}
@@ -112,7 +112,7 @@
 {% endif %}
 
 <!-- Can I afford this? -->
-<div style="margin-bottom: 32px; padding-top: 20px; border-top: 0.5px solid var(--glass-border);">
+<div style="padding-top: 20px; border-top: 0.5px solid var(--glass-border);">
     <div style="font-size: 0.9rem; color: var(--text-primary); font-weight: 500; margin-bottom: 4px;">Can I afford this?</div>
     <p style="font-size: 0.78rem; color: var(--text-tertiary); margin-bottom: 14px;">Check a one-off expense against your plan.</p>
     <form method="POST" action="{{ url_for('pages.plan') }}">
@@ -132,7 +132,7 @@
 </div>
 
 {% if afford_result %}
-<div class="gold-card" style="margin-bottom: 28px;">
+<div class="gold-card" style="margin-top: 16px; margin-bottom: 0;">
     <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 10px;">
         <span class="ai-pulse"></span>
         <span style="font-size: 0.65rem; color: var(--roman-gold); text-transform: uppercase; letter-spacing: 0.06em;">Claro</span>
@@ -151,7 +151,7 @@
 {% endif %}
 
 <!-- Habit cost calculator -->
-<div style="padding-top: 20px; margin-top: 8px; border-top: 0.5px solid var(--glass-border);">
+<div style="padding-top: 20px; margin-top: 20px; border-top: 0.5px solid var(--glass-border);">
     <div style="font-size: 0.9rem; color: var(--text-primary); font-weight: 500; margin-bottom: 4px;">Habit cost</div>
     <p style="font-size: 0.78rem; color: var(--text-tertiary); margin-bottom: 14px;">See what a daily or monthly habit really costs over time.</p>
     <form method="POST" action="{{ url_for('pages.plan') }}">
@@ -159,8 +159,9 @@
         <div class="grid-2">
             <div class="form-group" style="margin-bottom: 0;">
                 <label class="form-label">Monthly amount (£)</label>
-                <input type="number" name="habit_amount" class="form-input" step="0.01" min="0.01"
-                       placeholder="e.g. 50" value="{{ '%g' | format(habit_amount) if habit_amount else '' }}" required>
+                <input type="number" name="habit_amount" class="form-input" step="0.01" min="0.01" max="100000"
+                       placeholder="e.g. 50" value="{{ '%g' | format(habit_amount) if habit_amount else '' }}" required
+                       data-error-msg="Enter a monthly spend amount">
             </div>
             <div class="form-group" style="margin-bottom: 0;">
                 <label class="form-label">What's the spend?</label>
@@ -201,11 +202,20 @@
 {% endif %}
 
 <!-- Scenario link -->
-<div style="padding-top: 20px; margin-top: 8px; border-top: 0.5px solid var(--glass-border);">
+<div style="padding-top: 20px; margin-top: 20px; border-top: 0.5px solid var(--glass-border);">
     <div style="font-size: 0.9rem; color: var(--text-primary); font-weight: 500; margin-bottom: 4px;">What if?</div>
     <p style="font-size: 0.78rem; color: var(--text-tertiary); margin-bottom: 14px;">Change your income, rent, or goal contributions and see the exact impact.</p>
     <a href="{{ url_for('pages.scenario_page') }}" class="btn-secondary btn-sm">
         Run a scenario <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>
+    </a>
+</div>
+
+<!-- I need money -->
+<div style="padding-top: 20px; margin-top: 20px; border-top: 0.5px solid var(--glass-border);">
+    <div style="font-size: 0.9rem; color: var(--text-primary); font-weight: 500; margin-bottom: 4px;">Need to access money?</div>
+    <p style="font-size: 0.78rem; color: var(--text-tertiary); margin-bottom: 14px;">Claro will find the least-damaging way to get it from your plan, so your goals stay on track.</p>
+    <a href="{{ url_for('pages.withdraw') }}" class="btn-secondary btn-sm">
+        I need money <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>
     </a>
 </div>
 {% endblock %}

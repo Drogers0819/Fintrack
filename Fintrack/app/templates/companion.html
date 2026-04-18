@@ -11,14 +11,46 @@
     {% endif %}
 </div>
 
-<div style="max-width: 560px; display: flex; flex-direction: column; {% if tier != 'free' %}height: calc(100vh - 160px);{% endif %}">
+<div style="max-width: 560px; display: flex; flex-direction: column; {% if tier != 'free' %}height: calc(100dvh - 220px);{% endif %}">
 
     {% if tier == "free" %}
     <!-- Paywall -->
     <div style="padding: 4px 0 32px;">
-        <p style="font-size: 0.9rem; color: var(--text-secondary); line-height: 1.6; margin-bottom: 6px;">Ask about your plan, run what-if scenarios, or get help understanding your finances.</p>
-        <p style="font-size: 0.8rem; color: var(--text-tertiary); margin-bottom: 24px;">Available on Pro and above.</p>
-        <a href="#" class="btn-primary btn-full" style="text-decoration: none;">Upgrade to Pro · £7.99/month</a>
+        <p style="font-size: 0.9rem; color: var(--text-secondary); line-height: 1.6; margin-bottom: 20px;">A financial advisor that knows your plan inside out. Ask anything, any time.</p>
+
+        <div style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 28px;">
+            <div style="display: flex; align-items: flex-start; gap: 12px;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--roman-gold)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0; margin-top: 2px;"><polyline points="20 6 9 17 4 12"/></svg>
+                <div>
+                    <div style="font-size: 0.82rem; color: var(--text-primary);">Ask about your goals</div>
+                    <div style="font-size: 0.75rem; color: var(--text-tertiary); margin-top: 1px;">When will my holiday fund complete? Can I afford to pause a pot?</div>
+                </div>
+            </div>
+            <div style="display: flex; align-items: flex-start; gap: 12px;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--roman-gold)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0; margin-top: 2px;"><polyline points="20 6 9 17 4 12"/></svg>
+                <div>
+                    <div style="font-size: 0.82rem; color: var(--text-primary);">Run what-if scenarios</div>
+                    <div style="font-size: 0.75rem; color: var(--text-tertiary); margin-top: 1px;">What if I got a pay rise? What if I moved to a cheaper flat?</div>
+                </div>
+            </div>
+            <div style="display: flex; align-items: flex-start; gap: 12px;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--roman-gold)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0; margin-top: 2px;"><polyline points="20 6 9 17 4 12"/></svg>
+                <div>
+                    <div style="font-size: 0.82rem; color: var(--text-primary);">Understand your spending</div>
+                    <div style="font-size: 0.75rem; color: var(--text-tertiary); margin-top: 1px;">Where's my money going? Am I on track this month?</div>
+                </div>
+            </div>
+            <div style="display: flex; align-items: flex-start; gap: 12px;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--roman-gold)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0; margin-top: 2px;"><polyline points="20 6 9 17 4 12"/></svg>
+                <div>
+                    <div style="font-size: 0.82rem; color: var(--text-primary);">Get plan recommendations</div>
+                    <div style="font-size: 0.75rem; color: var(--text-tertiary); margin-top: 1px;">I have £200 spare this month. Where should it go?</div>
+                </div>
+            </div>
+        </div>
+
+        <a href="#" class="btn-primary btn-full" style="text-decoration: none;">Upgrade to Pro · £9.99/month</a>
+        <p style="font-size: 0.72rem; color: var(--text-tertiary); margin-top: 12px; margin-bottom: 0;">Cancel any time. No commitment.</p>
     </div>
 
     {% else %}
@@ -52,7 +84,7 @@
     <!-- Input area -->
     <div style="flex-shrink: 0; padding: 12px 0; border-top: 0.5px solid var(--glass-border);">
         {% if messages_used >= daily_limit %}
-        <div style="text-align: center; padding: 12px; font-size: 0.8rem; color: var(--text-tertiary);">
+        <div style="padding: 12px; font-size: 0.8rem; color: var(--text-tertiary);">
             You've used all {{ daily_limit }} messages for today. They reset at midnight.
         </div>
         {% else %}

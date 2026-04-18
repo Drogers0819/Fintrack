@@ -1,0 +1,203 @@
+{% extends "base.html" %}
+{% block title %}Life check-in – Claro{% endblock %}
+
+{% block content %}
+<a href="{{ url_for('pages.overview') }}" style="display: inline-flex; align-items: center; gap: 6px; font-size: 0.75rem; color: var(--text-tertiary); text-decoration: none; margin-bottom: 16px;">
+    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+    Overview
+</a>
+<div class="page-header">
+    <h1>Life check-in</h1>
+    <p>Anything changed this month? Quick updates keep your plan accurate.</p>
+</div>
+
+<form method="POST" action="{{ url_for('pages.life_checkin') }}" id="life-checkin-form">
+
+    <!-- Type selection -->
+    <div style="margin-bottom: 24px;">
+        <div style="display: grid; gap: 8px;">
+
+            <label class="choice-card" for="type-all-good">
+                <input type="radio" name="checkin_type" id="type-all-good" value="all_good" checked style="display:none;">
+                <div class="choice-card-inner">
+                    <div style="display: flex; align-items: center; gap: 12px;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0; color: var(--text-tertiary);"><polyline points="20 6 9 17 4 12"/></svg>
+                        <div>
+                            <div style="font-size: 0.85rem; color: var(--text-primary);">All good, nothing to report</div>
+                            <div style="font-size: 0.72rem; color: var(--text-tertiary); margin-top: 2px;">Plan stays on track</div>
+                        </div>
+                    </div>
+                </div>
+            </label>
+
+            <label class="choice-card" for="type-birthday">
+                <input type="radio" name="checkin_type" id="type-birthday" value="birthday" style="display:none;">
+                <div class="choice-card-inner">
+                    <div style="display: flex; align-items: center; gap: 12px;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0; color: var(--text-tertiary);"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                        <div>
+                            <div style="font-size: 0.85rem; color: var(--text-primary);">Birthday or upcoming event</div>
+                            <div style="font-size: 0.72rem; color: var(--text-tertiary); margin-top: 2px;">We'll add a short-term savings goal</div>
+                        </div>
+                    </div>
+                </div>
+            </label>
+
+            <label class="choice-card" for="type-unexpected">
+                <input type="radio" name="checkin_type" id="type-unexpected" value="unexpected_expense" style="display:none;">
+                <div class="choice-card-inner">
+                    <div style="display: flex; align-items: center; gap: 12px;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0; color: var(--text-tertiary);"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                        <div>
+                            <div style="font-size: 0.85rem; color: var(--text-primary);">Unexpected bill or expense</div>
+                            <div style="font-size: 0.72rem; color: var(--text-tertiary); margin-top: 2px;">Companion can help you cover it</div>
+                        </div>
+                    </div>
+                </div>
+            </label>
+
+            <label class="choice-card" for="type-income">
+                <input type="radio" name="checkin_type" id="type-income" value="income_changed" style="display:none;">
+                <div class="choice-card-inner">
+                    <div style="display: flex; align-items: center; gap: 12px;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0; color: var(--text-tertiary);"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+                        <div>
+                            <div style="font-size: 0.85rem; color: var(--text-primary);">My income has changed</div>
+                            <div style="font-size: 0.72rem; color: var(--text-tertiary); margin-top: 2px;">Plan recalculates automatically</div>
+                        </div>
+                    </div>
+                </div>
+            </label>
+
+            <label class="choice-card" for="type-new-goal">
+                <input type="radio" name="checkin_type" id="type-new-goal" value="new_goal" style="display:none;">
+                <div class="choice-card-inner">
+                    <div style="display: flex; align-items: center; gap: 12px;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0; color: var(--text-tertiary);"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>
+                        <div>
+                            <div style="font-size: 0.85rem; color: var(--text-primary);">I want to add a new goal</div>
+                            <div style="font-size: 0.72rem; color: var(--text-tertiary); margin-top: 2px;">Takes you to goal selection</div>
+                        </div>
+                    </div>
+                </div>
+            </label>
+
+            <label class="choice-card" for="type-bills">
+                <input type="radio" name="checkin_type" id="type-bills" value="bill_changed" style="display:none;">
+                <div class="choice-card-inner">
+                    <div style="display: flex; align-items: center; gap: 12px;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0; color: var(--text-tertiary);"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+                        <div>
+                            <div style="font-size: 0.85rem; color: var(--text-primary);">My rent or bills have changed</div>
+                            <div style="font-size: 0.72rem; color: var(--text-tertiary); margin-top: 2px;">Update your financial profile</div>
+                        </div>
+                    </div>
+                </div>
+            </label>
+
+            <label class="choice-card" for="type-later">
+                <input type="radio" name="checkin_type" id="type-later" value="ask_later" style="display:none;">
+                <div class="choice-card-inner">
+                    <div style="display: flex; align-items: center; gap: 12px;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0; color: var(--text-tertiary);"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                        <div>
+                            <div style="font-size: 0.85rem; color: var(--text-primary);">Ask me later</div>
+                        </div>
+                    </div>
+                </div>
+            </label>
+
+        </div>
+    </div>
+
+    <!-- Conditional detail fields -->
+    <div id="detail-fields" style="display: none; margin-bottom: 24px;">
+
+        <!-- Birthday: event name + amount -->
+        <div id="field-birthday" style="display: none;">
+            <div class="form-group">
+                <label class="form-label">What's the occasion?</label>
+                <input type="text" name="details" class="form-input" placeholder="e.g. Tom's birthday, weekend away">
+            </div>
+            <div class="form-group">
+                <label class="form-label">How much do you need? (£)</label>
+                <input type="number" name="amount" class="form-input" step="1" min="1" placeholder="e.g. 150">
+            </div>
+        </div>
+
+        <!-- Unexpected expense: amount only -->
+        <div id="field-unexpected" style="display: none;">
+            <div class="form-group">
+                <label class="form-label">How much was it? (£)</label>
+                <input type="number" name="amount" class="form-input" step="1" min="1" placeholder="e.g. 300">
+            </div>
+        </div>
+
+        <!-- Income changed: new amount -->
+        <div id="field-income" style="display: none;">
+            <div class="form-group">
+                <label class="form-label">New monthly take-home (£)</label>
+                <input type="number" name="amount" class="form-input" step="1" min="1" placeholder="e.g. 3200"
+                       value="{{ current_user.monthly_income | int if current_user.monthly_income else '' }}">
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Submit -->
+    <div style="display: flex; flex-direction: column; gap: 10px;">
+        <button type="submit" class="btn-primary btn-full">Save</button>
+        <a href="{{ url_for('pages.overview') }}" style="text-align: center; font-size: 0.82rem; color: var(--text-tertiary); text-decoration: none;">Cancel</a>
+    </div>
+
+</form>
+
+<style>
+.choice-card { display: block; cursor: pointer; }
+.choice-card-inner {
+    padding: 12px 14px;
+    border-radius: 10px;
+    border: 0.5px solid var(--glass-border);
+    background: rgba(255,255,255,0.02);
+    transition: border-color 0.15s ease, background 0.15s ease;
+}
+.choice-card:has(input:checked) .choice-card-inner {
+    border-color: var(--roman-gold);
+    background: var(--gold-whisper-bg);
+}
+.choice-card:has(input:checked) svg {
+    color: var(--roman-gold) !important;
+}
+</style>
+
+<script>
+(function () {
+    var needsAmount = ['birthday', 'unexpected_expense', 'income_changed'];
+    var fieldMap = {
+        'birthday': 'field-birthday',
+        'unexpected_expense': 'field-unexpected',
+        'income_changed': 'field-income'
+    };
+
+    function updateFields() {
+        var selected = document.querySelector('input[name="checkin_type"]:checked');
+        if (!selected) return;
+        var val = selected.value;
+
+        var detailSection = document.getElementById('detail-fields');
+        detailSection.style.display = needsAmount.indexOf(val) > -1 ? 'block' : 'none';
+
+        Object.keys(fieldMap).forEach(function (type) {
+            var el = document.getElementById(fieldMap[type]);
+            if (el) el.style.display = (val === type) ? 'block' : 'none';
+        });
+    }
+
+    document.querySelectorAll('input[name="checkin_type"]').forEach(function (radio) {
+        radio.addEventListener('change', updateFields);
+    });
+
+    updateFields();
+})();
+</script>
+{% endblock %}

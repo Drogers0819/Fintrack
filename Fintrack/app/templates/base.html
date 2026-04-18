@@ -7,13 +7,13 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="theme-color" content="#020408">
     <meta name="mobile-web-app-capable" content="yes">
-    <meta name="description" content="Claro helps you build a real financial plan — clear goals, honest tracking, and a smart monthly check-in that keeps your plan on track.">
-    <meta property="og:title" content="Claro — your financial plan, made clear">
+    <meta name="description" content="Claro helps you build a real financial plan. Clear goals, honest tracking, and a smart monthly check-in that keeps your plan on track.">
+    <meta property="og:title" content="Claro. Your financial plan, made clear">
     <meta property="og:description" content="Clear goals. Honest tracking. A monthly check-in that keeps your plan on track.">
     <meta property="og:type" content="website">
     <meta property="og:image" content="{{ url_for('static', filename='images/logo.png', _external=True) }}">
     <meta name="twitter:card" content="summary">
-    <meta name="twitter:title" content="Claro — your financial plan, made clear">
+    <meta name="twitter:title" content="Claro. Your financial plan, made clear">
     <meta name="twitter:description" content="Clear goals. Honest tracking. A monthly check-in that keeps your plan on track.">
     <title>{% block title %}Claro{% endblock %}</title>
     <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='favicon.ico') }}">
@@ -177,6 +177,14 @@
                     var firstError = null;
 
                     form.querySelectorAll('[required]').forEach(function (el) {
+                        // Clear error state when user types
+                        el.addEventListener('input', function () {
+                            el.classList.remove('field-invalid');
+                            var grp = el.closest('.form-group') || el.parentNode;
+                            var errMsg = grp.querySelector('.field-error-msg');
+                            if (errMsg) errMsg.remove();
+                        }, { once: false });
+
                         var isEmpty = el.type === 'file'
                             ? (!el.files || el.files.length === 0)
                             : !el.value || !el.value.trim();

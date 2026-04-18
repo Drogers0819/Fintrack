@@ -295,6 +295,25 @@ Never use `var(--text-primary)` on gold-card body text. The italic + gold border
 
 **If two primary actions exist on the same page:** one of them is wrong. Make the less critical one `.btn-secondary` or remove it.
 
+**`btn-secondary` is ONLY valid alongside a primary action.** If it would be the sole interactive element on the page or in a state, it must be `btn-primary` instead. A lone secondary button communicates "this matters less than something else" — but if there's nothing else, that signal is wrong.
+
+**NEVER create a custom button class.** The vocabulary is exactly `btn-primary`, `btn-secondary`, `btn-danger` plus `btn-sm`/`btn-full` modifiers. There are no other button styles. If none of these fit, that is a design system question — raise it and define it here before implementing anything. Do not solve it inline with a `<style>` block.
+
+### 4.5 Section CTAs — navigational links in section headers
+
+Section CTAs are small navigation links that appear at the top-right of a section header row (e.g. "My goals ›", "My money ›" next to a "YOUR POTS" or "THIS MONTH" label).
+
+**Pattern:** `class="btn-secondary btn-sm"` with `text-decoration: none`. No custom class, no pill shape.
+
+```html
+<div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 14px;">
+    <span class="section-label">Your pots</span>
+    <a href="..." class="btn-secondary btn-sm">My goals <svg ...chevron-right.../></a>
+</div>
+```
+
+This is the only approved pattern. The gold border + gold text of `btn-secondary` provides clear interactive affordance next to a muted section label.
+
 ### 4.2 Which button size?
 
 **Decision rule:** Where is this button sitting?
@@ -615,9 +634,22 @@ Both require:
 - CTA: `.btn-primary.btn-sm`
 - No card wrapper
 
+**This pattern also applies to error and unreachable states** — not just "nothing here yet" states. If a goal has no contribution set, a plan has an error, or a feature is unavailable, the state still needs: a heading naming the problem + a subtext explaining it + a primary CTA to fix it. A bare paragraph + btn-secondary is never correct for a sole-action state.
+
 ---
 
 ## 12. Interactive States
+
+### 12.0 List affordance — homogenous lists only
+
+**Rule:** A list must be homogenous in its interactivity. Either every row navigates, or no row navigates. Never mix tappable and non-tappable rows in the same visual list.
+
+**Decision rule:** Do some items in this list have detail pages and others don't?
+- **All items navigable** → all rows are `<a>` tags with a chevron, text-primary, separator borders
+- **No items navigable** → all rows are `<div>` tags, no chevrons, text-secondary
+- **Mixed** → wrong. Split into two sections with different visual treatments, or remove the non-navigable items from this view and show them elsewhere
+
+**Why:** On mobile there are no hover states. A user who taps a non-interactive row and gets no response concludes the whole section is broken. The cost of mixing is confusion; the fix is separation.
 
 ### 12.1 Every interactive element must have:
 
@@ -737,12 +769,16 @@ The logo PNG is landscape (636×334). Always set `height` explicitly and let `wi
 ## 18. Compliance Checks — Run These Before Marking Any UI Done
 
 1. **Playwright verify** — screenshot at 375px and 1440px
-2. **Gold grep** — `grep -r "rgba(197,163,93" templates/` → should return zero results
+2. **Gold grep** — `grep -rn "rgba(197,163,93" templates/` → should return zero results
 3. **Em dash grep** — `grep -rn "—" templates/ app/services/` → should return zero results
 4. **Emoji grep** — `grep -Pn "[\x{1F300}-\x{1FFFF}]" templates/` → should return zero results
-5. **Centering check** — `grep -n "text-align: center" templates/` → only valid in footer notes
-6. **Double primary CTA check** — search for `btn-primary` count per template → max 1
-7. **Hardcoded inline uppercase check** — `grep -n "text-transform: uppercase" templates/` → must also use `.section-label` class, not raw inline
+5. **Text-align center** — `grep -rn "text-align: center" templates/` → only valid inside `<td>`/`<th>` table cells and footer disclaimer `<p>` notes below CTAs. Every other hit is a violation.
+6. **Centering island** — `grep -rn "margin: 0 auto" templates/` → outer page-wrapper divs with `max-width + margin: 0 auto` are violations. Only valid on narrow inner elements (e.g. a chart container, not a page wrapper).
+7. **Double primary CTA** — `grep -c "btn-primary" templates/<file>` → max 1 per template
+8. **Lone secondary CTA** — any `btn-secondary` that appears WITHOUT a `btn-primary` on the same page is a violation. Lone actions are always primary.
+9. **Custom button class** — `grep -rn "border-radius: 50px\|border-radius: 100px" templates/` → only valid inside `.goal-chip`, `.sub-chip`, `.suggestion-chip` (selection chips). Any other element with pill radius is a violation.
+10. **Hardcoded inline uppercase** — `grep -rn "text-transform: uppercase" templates/` → must also have `.section-label` class, not raw inline
+11. **When fixing a violation on one page** — always grep the entire templates directory for the same pattern before marking it done. One page fixed ≠ fixed everywhere.
 
 ---
 

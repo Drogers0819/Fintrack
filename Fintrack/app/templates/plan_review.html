@@ -2,7 +2,6 @@
 {% block title %}Your plan explained – Claro{% endblock %}
 
 {% block content %}
-<div style="max-width: 560px; margin: 0 auto;">
 
     <a href="{{ url_for('pages.plan_reveal') }}" style="display: inline-flex; align-items: center; gap: 6px; font-size: 0.75rem; color: var(--text-tertiary); text-decoration: none; margin-bottom: 16px;">
         <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
@@ -43,7 +42,7 @@
 
         <!-- Surplus — the answer, displayed as a hero -->
         <div style="padding-top: 16px;">
-            <div style="font-size: 0.65rem; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 6px;">Available for your goals</div>
+            <div class="section-label" style="margin-top: 0; margin-bottom: 6px;">Available for your goals</div>
             <div style="display: flex; align-items: baseline; gap: 4px;">
                 <span style="font-size: 2rem; font-weight: 600; color: var(--text-primary); font-variant-numeric: tabular-nums; line-height: 1;">£{{ "{:,.0f}".format(plan.surplus) }}</span>
                 <span style="font-size: 0.8rem; color: var(--text-tertiary); font-weight: 400;">/mo</span>
@@ -74,7 +73,7 @@
                 {% else %}
                 <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;opacity:0.5;"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>
                 {% endif %}
-                <span style="font-size: 0.85rem; color: var(--text-primary); font-weight: 500;">{{ item.name }}</span>
+                <span style="font-size: 0.85rem; color: var(--text-primary); font-weight: 500;">{{ item.name | replace(' (must-hit)', '') }}</span>
             </div>
             <span style="font-size: 0.9rem; font-weight: 600; color: var(--text-primary); font-variant-numeric: tabular-nums;">£{{ "{:,.0f}".format(item.monthly) }}/mo</span>
         </div>
@@ -126,7 +125,7 @@
     </a>
 
     <!-- Guidance note — footer treatment -->
-    <p style="font-size: 0.7rem; color: var(--text-tertiary); text-align: center; margin-top: 16px; line-height: 1.6; padding: 0 8px;">
+    <p style="font-size: 0.7rem; color: var(--text-tertiary); margin-top: 16px; line-height: 1.6; padding: 0 8px;">
         Guidance only, not financial advice. Based on the information you've provided. Adjusts automatically as your circumstances change.
     </p>
 
@@ -138,5 +137,4 @@
     </a>
     {% endif %}
 
-</div>
 {% endblock %}

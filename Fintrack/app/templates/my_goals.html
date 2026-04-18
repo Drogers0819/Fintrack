@@ -18,7 +18,7 @@
         <!-- Name + actions -->
         <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 14px;">
             <div>
-                <div style="font-size: 1rem; color: var(--text-primary); font-weight: 500; margin-bottom: 2px;">{{ g.name }}</div>
+                <div style="font-size: 1rem; color: var(--text-primary); font-weight: 500; margin-bottom: 2px;">{{ g.name | replace(' (must-hit)', '') }}</div>
                 <div style="font-size: 0.72rem; color: var(--text-tertiary);">
                     {% if g.type == "savings_target" %}Saving toward a target
                     {% elif g.type == "spending_allocation" %}Monthly spending budget
@@ -68,9 +68,9 @@
         {% if g.target_amount and g.monthly_allocation %}
         <div style="padding-top: 10px; border-top: 0.5px solid var(--glass-border);">
             <a href="{{ url_for('pages.goal_detail', goal_id=g.id) }}"
-               style="display: inline-flex; align-items: center; gap: 5px; font-size: 0.75rem; color: var(--text-secondary); text-decoration: none;">
+               style="display: inline-flex; align-items: center; gap: 5px; font-size: 0.75rem; color: var(--text-primary); text-decoration: none;">
                 See your projection
-                <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>
+                <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>
             </a>
         </div>
         {% endif %}
@@ -80,9 +80,9 @@
 </div>
 
 {% else %}
-<div class="empty-page-center">
-    <p style="font-size: 0.95rem; color: var(--text-primary); font-weight: 500; margin-bottom: 8px; max-width: 280px;">What are you saving for?</p>
-    <p style="font-size: 0.8rem; color: var(--text-tertiary); line-height: 1.6; margin-bottom: 20px; max-width: 280px;">A house deposit, emergency fund, holiday. Add a goal and Claro will show you exactly when you'll get there.</p>
+<div style="padding-top: 8px;">
+    <p style="font-size: 0.95rem; color: var(--text-primary); font-weight: 500; margin-bottom: 8px;">What are you saving for?</p>
+    <p style="font-size: 0.8rem; color: var(--text-tertiary); line-height: 1.6; margin-bottom: 20px;">A house deposit, emergency fund, holiday. Add a goal and Claro will show you exactly when you'll get there.</p>
     <a href="{{ url_for('pages.add_goal') }}" class="btn-primary btn-sm">Set your first goal</a>
 </div>
 {% endif %}

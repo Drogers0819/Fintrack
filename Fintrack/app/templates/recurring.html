@@ -86,9 +86,9 @@
 </div>
 
 {% else %}
-<div class="empty-page-center">
-    <p style="font-size: 0.95rem; color: var(--text-primary); font-weight: 500; margin-bottom: 8px; max-width: 280px;">No patterns found yet</p>
-    <p style="font-size: 0.8rem; color: var(--text-tertiary); line-height: 1.6; margin-bottom: 20px; max-width: 280px;">Upload at least 2 months of bank statements and Claro will automatically detect your subscriptions, bills, and regular outgoings.</p>
+<div style="padding-top: 8px;">
+    <p style="font-size: 0.95rem; color: var(--text-primary); font-weight: 500; margin-bottom: 8px;">No patterns found yet</p>
+    <p style="font-size: 0.8rem; color: var(--text-tertiary); line-height: 1.6; margin-bottom: 20px;">Upload at least 2 months of bank statements and Claro will automatically detect your subscriptions, bills, and regular outgoings.</p>
     <a href="{{ url_for('pages.upload_statement') }}" class="btn-primary btn-sm">Upload a statement</a>
 </div>
 {% endif %}

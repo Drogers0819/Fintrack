@@ -2,39 +2,38 @@
 {% block title %}I Need Money – Claro{% endblock %}
 
 {% block content %}
-<div style="max-width: 560px; margin: 0 auto;">
-    <div class="page-header">
-        <h1>I need money</h1>
-        <p style="font-size: 0.8rem; color: var(--text-tertiary); margin-top: 4px; line-height: 1.6;">Tell us how much and we'll show you the least damaging way to get it from your plan.</p>
+<a href="{{ url_for('pages.plan') }}" style="display: inline-flex; align-items: center; gap: 6px; font-size: 0.75rem; color: var(--text-tertiary); text-decoration: none; margin-bottom: 16px;">
+    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+    Plan
+</a>
+<div class="page-header">
+    <h1>I need money</h1>
+    <p style="font-size: 0.8rem; color: var(--text-tertiary); margin-top: 4px; line-height: 1.6;">Enter an amount and we'll show you the least damaging way to access it from your plan.</p>
+</div>
+
+<!-- Amount input -->
+<form method="POST" style="margin-bottom: 28px;">
+    <div class="form-group" style="margin-bottom: 10px;">
+        <label class="form-label">How much do you need? (£)</label>
+        <input type="number" name="amount" class="form-input" id="amount-input" placeholder="500" step="50" min="10" required>
     </div>
 
-    <!-- Amount input -->
-    <form method="POST" style="margin-bottom: 28px;">
-        <div style="display: flex; gap: 10px; align-items: flex-end;">
-            <div style="flex: 1;">
-                <label style="font-size: 0.75rem; color: var(--text-tertiary); display: block; margin-bottom: 6px;">How much do you need?</label>
-                <div style="display: flex; align-items: center; gap: 0;">
-                    <span style="font-size: 1rem; color: var(--text-tertiary); padding: 10px 0 10px 14px; background: var(--glass-bg); border: 0.5px solid var(--glass-border); border-right: none; border-radius: 10px 0 0 10px;">£</span>
-                    <input type="number" name="amount" class="form-input" placeholder="500" step="50" min="10" required style="border-radius: 0 10px 10px 0; border-left: none; flex: 1;">
-                </div>
-            </div>
-            <button type="submit" class="btn-primary" style="padding: 11px 22px; height: 42px;">Show me</button>
-        </div>
+    <!-- Quick amounts -->
+    <div style="display: flex; gap: 6px; margin-bottom: 16px;">
+        {% for amt in [100, 250, 500, 1000] %}
+        <button type="button" onclick="document.getElementById('amount-input').value={{ amt }}" class="btn-secondary btn-sm">£{{ amt }}</button>
+        {% endfor %}
+    </div>
 
-        <!-- Quick amounts -->
-        <div style="display: flex; gap: 6px; margin-top: 10px;">
-            {% for amt in [100, 250, 500, 1000] %}
-            <button type="button" onclick="document.querySelector('input[name=amount]').value={{ amt }}" style="padding: 6px 14px; border-radius: 50px; border: 0.5px solid var(--glass-border); background: rgba(255,255,255,0.02); font-size: 0.75rem; color: var(--text-tertiary); cursor: pointer; font-family: inherit; transition: all 0.2s ease;" onmouseover="this.style.borderColor='rgba(197,163,93,0.3)';this.style.color='var(--roman-gold)'" onmouseout="this.style.borderColor='var(--glass-border)';this.style.color='var(--text-tertiary)'">£{{ amt }}</button>
-            {% endfor %}
-        </div>
-    </form>
+    <button type="submit" class="btn-primary btn-full">Show me</button>
+</form>
 
     {% if result %}
     <!-- Results -->
     <div style="margin-bottom: 28px;">
 
         <!-- Summary -->
-        <div class="glass-card" style="padding: 16px 20px; margin-bottom: 16px; border-color: rgba(197,163,93,0.15);">
+        <div class="glass-card" style="padding: 16px 20px; margin-bottom: 16px; border-color: var(--roman-gold-dim);">
             <p style="font-size: 0.85rem; color: var(--text-secondary); line-height: 1.7;">{{ result.plan_impact_summary }}</p>
         </div>
 
@@ -74,8 +73,4 @@
     </div>
     {% endif %}
 
-    <div style="margin-top: 12px;">
-        <a href="{{ url_for('pages.overview') }}" style="font-size: 0.8rem; color: var(--text-tertiary); text-decoration: none;">← Back to overview</a>
-    </div>
-</div>
 {% endblock %}

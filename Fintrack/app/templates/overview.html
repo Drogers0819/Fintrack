@@ -55,7 +55,7 @@
         <span class="ai-pulse"></span>
         <span style="font-size: 0.65rem; color: var(--roman-gold); text-transform: uppercase; letter-spacing: 0.06em;">Your plan</span>
     </div>
-    <p style="font-size: 0.95rem; color: var(--text-primary); line-height: 1.7;">{{ plan_summary }}</p>
+    <p style="font-size: 0.9rem; color: var(--text-secondary); line-height: 1.7; font-style: italic;">{{ plan_summary }}</p>
 
     <div style="display: flex; gap: 12px; margin-top: 14px; padding-top: 12px; border-top: 0.5px solid var(--glass-border);">
         <div style="flex: 1;">
@@ -72,14 +72,14 @@
         </div>
     </div>
 
-    <div style="margin-top: 20px; padding-top: 14px; border-top: 0.5px solid rgba(197,163,93,0.12);">
+    <div style="margin-top: 20px; padding-top: 14px; border-top: 0.5px solid var(--glass-border);">
         <a href="{{ url_for('pages.plan') }}" class="btn-secondary btn-sm">View full plan</a>
     </div>
 </div>
 
 {% if action_whisper %}
 <!-- ACTION WHISPER -->
-<div style="display: flex; align-items: flex-start; gap: 12px; padding: 14px 16px; border-radius: 12px; background: rgba(197,163,93,0.04); border: 0.5px solid rgba(197,163,93,0.08); margin-bottom: 24px;">
+<div style="display: flex; align-items: flex-start; gap: 12px; padding: 14px 16px; border-radius: 12px; background: var(--gold-whisper-bg); border: 0.5px solid var(--gold-whisper-border); margin-bottom: 24px;">
     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--roman-gold)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0; margin-top:1px; opacity:0.7;">
         {% set ic = action_whisper.icon %}
         {% if ic == 'bank' %}<path d="M12 2l10 5H2l10-5z"/><line x1="2" y1="7" x2="22" y2="7"/><line x1="6" y1="7" x2="6" y2="18"/><line x1="10" y1="7" x2="10" y2="18"/><line x1="14" y1="7" x2="14" y2="18"/><line x1="18" y1="7" x2="18" y2="18"/><line x1="3" y1="22" x2="21" y2="22"/>
@@ -110,38 +110,39 @@
 </div>
 {% endif %}
 
-<!-- Quick actions -->
-<div style="display: flex; gap: 8px; margin-bottom: 24px;">
-    <a href="{{ url_for('pages.withdraw') }}" style="display: flex; align-items: center; gap: 8px; padding: 10px 16px; border-radius: 10px; border: 0.5px solid var(--glass-border); background: rgba(255,255,255,0.02); text-decoration: none; font-size: 0.78rem; color: var(--text-tertiary); transition: all 0.2s ease;" onmouseover="this.style.borderColor='rgba(197,163,93,0.3)';this.style.color='var(--roman-gold)'" onmouseout="this.style.borderColor='var(--glass-border)';this.style.color='var(--text-tertiary)'"><svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg> I need money</a>
-    <a href="{{ url_for('pages.life_checkin') }}" style="display: flex; align-items: center; gap: 8px; padding: 10px 16px; border-radius: 10px; border: 0.5px solid var(--glass-border); background: rgba(255,255,255,0.02); text-decoration: none; font-size: 0.78rem; color: var(--text-tertiary); transition: all 0.2s ease;" onmouseover="this.style.borderColor='rgba(197,163,93,0.3)';this.style.color='var(--roman-gold)'" onmouseout="this.style.borderColor='var(--glass-border)';this.style.color='var(--text-tertiary)'"><svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg> Life check-in</a>
-</div>
+<!-- Life check-in nudge — only shown when Claro decides it's time (Dan wires show_life_checkin_nudge) -->
+{% if show_life_checkin_nudge %}
+<a href="{{ url_for('pages.life_checkin') }}" style="display: flex; align-items: center; gap: 10px; padding: 11px 14px; border-radius: 10px; border: 0.5px solid var(--glass-border); background: transparent; text-decoration: none; margin-bottom: 20px;">
+    <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--text-tertiary)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0;"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+    <span style="flex: 1; font-size: 0.78rem; color: var(--text-tertiary);">Anything coming up this month we should plan around?</span>
+    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--text-tertiary)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0; opacity: 0.5;"><path d="M9 18l6-6-6-6"/></svg>
+</a>
+{% endif %}
 
 <!-- ════ ACTIVE POTS — compact progress ════ -->
 {% set goal_pots = smart_plan.pots %}
 {% if goal_pots %}
 <div style="margin-bottom: 24px; padding-top: 20px; border-top: 0.5px solid var(--glass-border);">
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
-        <span class="section-label" style="margin-bottom: 0;">Your pots</span>
-        <a href="{{ url_for('pages.my_goals') }}" style="font-size: 0.75rem; color: var(--text-secondary); text-decoration: none; display: inline-flex; align-items: center; gap: 3px; flex-shrink: 0;">My goals <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg></a>
+    <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 14px;">
+        <span class="section-label" style="margin-top: 0; margin-bottom: 0;">Your pots</span>
+        <a href="{{ url_for('pages.my_goals') }}" class="btn-secondary btn-sm">
+            My goals <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>
+        </a>
     </div>
 
     {% for pot in goal_pots %}
-    {% if pot.monthly_amount > 0 %}
-    {% if pot.goal_id %}
-    <a href="{{ url_for('pages.goal_detail', goal_id=pot.goal_id) }}" style="display: block; padding: 12px 0; text-decoration: none;">
-    {% else %}
-    <div style="padding: 12px 0;">
-    {% endif %}
+    {% if pot.monthly_amount > 0 and pot.goal_id %}
+    <a href="{{ url_for('pages.goal_detail', goal_id=pot.goal_id) }}" style="display: block; padding: 12px 0; text-decoration: none; {% if not loop.last %}border-bottom: 0.5px solid var(--glass-border);{% endif %}">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
             <div style="display: flex; align-items: center; gap: 6px;">
-                <span style="font-size: 0.85rem; color: var(--text-primary);">{{ pot.name }}</span>
+                <span style="font-size: 0.85rem; color: var(--text-primary);">{{ pot.name | replace(' (must-hit)', '') }}</span>
                 {% if pot.completed %}
                 <span style="font-size: 0.6rem; padding: 1px 6px; border-radius: 4px; background: rgba(72,187,120,0.1); color: rgba(72,187,120,0.8);">done</span>
                 {% endif %}
             </div>
             <div style="display: flex; align-items: center; gap: 6px;">
                 <span style="font-size: 0.8rem; color: var(--text-primary);">£{{ "{:,.2f}".format(pot.monthly_amount) }}/mo</span>
-                {% if pot.goal_id %}<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="var(--text-tertiary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>{% endif %}
+                <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="var(--text-secondary)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>
             </div>
         </div>
         {% if pot.target and not pot.completed %}
@@ -155,7 +156,7 @@
             {% endif %}
         </div>
         {% endif %}
-    {% if pot.goal_id %}</a>{% else %}</div>{% endif %}
+    </a>
     {% endif %}
     {% endfor %}
 </div>
@@ -175,9 +176,9 @@
 <!-- ════ SPENDING SNAPSHOT — secondary ════ -->
 {% if has_data %}
 <div style="margin-bottom: 24px; padding-top: 20px; border-top: 0.5px solid var(--glass-border);">
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
-        <span class="section-label" style="margin-bottom: 0;">This month</span>
-        <a href="{{ url_for('pages.my_money') }}" style="font-size: 0.75rem; color: var(--text-secondary); text-decoration: none; display: inline-flex; align-items: center; gap: 3px; flex-shrink: 0;">My money <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg></a>
+    <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 14px;">
+        <span class="section-label" style="margin-top: 0; margin-bottom: 0;">This month</span>
+        <a href="{{ url_for('pages.my_money') }}" class="btn-secondary btn-sm">My money <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg></a>
     </div>
 
     <div style="display: flex; gap: 12px; margin-bottom: 14px;">

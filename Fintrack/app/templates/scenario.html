@@ -36,7 +36,7 @@
             {% for g in goals %}
             <div class="form-group" style="{% if not loop.last %}margin-bottom: 16px;{% else %}margin-bottom: 0;{% endif %}">
                 <label class="form-label" style="display: flex; justify-content: space-between;">
-                    <span>{{ g.name }}</span>
+                    <span>{{ g.name | replace(' (must-hit)', '') }}</span>
                     <span style="color: var(--text-tertiary); font-weight: 400;">currently £{{ "{:,.2f}".format(g.monthly_allocation) }}/mo</span>
                 </label>
                 <input type="number" name="goal_{{ g.id }}" class="form-input" step="1" min="0"

@@ -288,6 +288,37 @@ This document tracks my learning journey building FinTrack from the ground up. U
 
 ---
 
+## Session — Affordance Audit, Trial Gate Fixes, Doc System Hardening
+
+**Date:** 18 Apr 2026
+
+### What was done
+
+Third audit pass focused on interactive affordance, button vocabulary enforcement, centering island removal, and CSS variable scoping. Identified and fixed a class of issues that wouldn't show in static analysis: mixed tappable/non-tappable lists, invisible section CTAs, custom pill button classes, lone btn-secondary CTAs, and rgba values hardcoded outside the CSS token system.
+
+### Fixes shipped
+
+- **trial_gate.html:** Removed decorative circular icon above h1, removed all `text-align: center` (header, value framing, CTA card title, fine print, trust signals), fixed CTA card to use CSS variables, changed button to `btn-primary btn-full`, removed centering island wrapper, removed orphaned `</div>`.
+- **CSS variables:** Added `--gold-whisper-bg` and `--gold-whisper-border` to `:root` in `main.css` so all themes inherit them. Added ivory and cobalt overrides to `themes.css`. Previously only existed on `body.theme-racing-green` — other themes got `undefined`.
+- **Section CTAs (overview.html):** "My goals" and "My money" section CTAs changed from invisible plain-text links → custom pill class (wrong) → `btn-secondary btn-sm` with Lucide chevron-right. Now have clear interactive affordance.
+- **Overview pots list:** Removed Lifestyle & Buffer allocation rows — they have no detail pages and were mixing non-tappable rows into a tappable list. All remaining pot rows navigate to goal detail. List is now homogenous.
+- **goal_detail.html unreachable state:** Added "No contribution set" heading, changed `btn-secondary` → `btn-primary btn-sm`, changed label from "Adjust this goal" → "Edit this goal", fixed link target (was incorrectly pointing to `my_goals`, now points to `edit_goal`).
+- **withdraw.html:** Replaced custom `.withdraw-preset` pill-shaped class with `btn-secondary btn-sm`. Deleted the entire `<style>` block defining it.
+- **Centering islands removed:** `surplus_reveal.html`, `plan_reveal.html`, `plan_review.html`, `goal_chips.html` — outer `max-width: 560px; margin: 0 auto` wrappers removed from all four.
+- **companion.html:** Removed `text-align: center` from daily limit reached message.
+- **plan_review.html:** Removed `text-align: center` from guidance footer paragraph.
+- **budgets.html:** Fixed hardcoded `rgba(197,163,93,0.2)` → `var(--roman-gold-glow)`.
+- **DESIGN-SYSTEM.md:** Added §4.5 Section CTAs, §12.0 List affordance rule, 4 new compliance checks (centering island, lone secondary CTA, custom pill button, fix-everywhere rule).
+- **AGENTS.md:** Added full UI audit subsections — Button vocabulary, Section CTAs, Affordance (list homogeneity), Centering islands, Colour hardcoded rgba, Empty/unreachable states, Audit scope.
+- **lessons.md:** 8 new entries added. Duplicate "mixed tappable/non-tappable" entry merged into one with the correct final rule.
+
+### Outstanding
+
+- Playwright stress test blocked by MCP server disconnect — prompt ready for next session to resume immediately
+- Backend: wire `show_life_checkin_nudge` variable in overview route (Dan's task, unchanged)
+
+---
+
 ## Session — Onboarding UX Audit: Chip States, CTA Patterns, Wizard Flow, AI Whisper Placement
 
 **Date:** 18 Apr 2026

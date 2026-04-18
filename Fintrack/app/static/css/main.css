@@ -6,6 +6,8 @@
     --roman-gold: #C5A35D;
     --roman-gold-dim: rgba(197, 163, 93, 0.15);
     --roman-gold-glow: rgba(197, 163, 93, 0.3);
+    --gold-whisper-bg: rgba(197, 163, 93, 0.05);
+    --gold-whisper-border: rgba(197, 163, 93, 0.08);
     --glass: rgba(255, 255, 255, 0.03);
     --glass-border: rgba(197, 163, 93, 0.12);
     --text-primary: rgba(255, 255, 255, 0.9);
@@ -1121,6 +1123,14 @@ input[type="number"] {
     align-items: center;
     gap: 12px;
     margin-bottom: 16px;
+}
+
+@media (max-width: 480px) {
+    .tx-section-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 6px;
+    }
 }
 
 .tx-section-header .metric-label {
