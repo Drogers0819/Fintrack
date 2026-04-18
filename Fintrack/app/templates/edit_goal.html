@@ -52,7 +52,7 @@
             <label class="form-label">Priority (1 = most important)</label>
             <input type="number" name="priority_rank" class="form-input" min="1"
                    value="{{ goal.priority_rank }}" required
-                   oninvalid="this.setCustomValidity('Please enter a priority rank — 1 means this goal comes first')"
+                   oninvalid="this.setCustomValidity('Please enter a priority rank. 1 means this goal comes first.')"
                    oninput="this.setCustomValidity('')">
         </div>
 

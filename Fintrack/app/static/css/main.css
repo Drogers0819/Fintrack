@@ -1648,12 +1648,12 @@ input[type="range"] {
 input[type="range"]::-webkit-slider-thumb {
     -webkit-appearance: none;
     appearance: none;
-    width: 22px;
-    height: 22px;
+    width: 18px;
+    height: 18px;
     border-radius: 50%;
     background: var(--roman-gold);
     cursor: pointer;
-    box-shadow: 0 0 14px rgba(197, 163, 93, 0.4);
+    box-shadow: 0 0 10px rgba(197, 163, 93, 0.4);
     transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
@@ -1668,13 +1668,13 @@ input[type="range"]::-webkit-slider-thumb:active {
 }
 
 input[type="range"]::-moz-range-thumb {
-    width: 22px;
-    height: 22px;
+    width: 18px;
+    height: 18px;
     border-radius: 50%;
     background: var(--roman-gold);
     cursor: pointer;
     border: none;
-    box-shadow: 0 0 14px rgba(197, 163, 93, 0.4);
+    box-shadow: 0 0 10px rgba(197, 163, 93, 0.4);
 }
 
 input[type="range"]::-moz-range-thumb:hover {
@@ -2112,13 +2112,13 @@ body.theme-mist .budget-row-danger {
     }
 
     input[type="range"]::-webkit-slider-thumb {
-        width: 28px;
-        height: 28px;
+        width: 22px;
+        height: 22px;
     }
 
     input[type="range"]::-moz-range-thumb {
-        width: 28px;
-        height: 28px;
+        width: 22px;
+        height: 22px;
     }
 
     /* Chart container */

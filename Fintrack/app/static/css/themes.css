@@ -564,3 +564,52 @@ body.theme-mist .mobile-settings-btn.active {
     color: #63B3ED;
     border-color: #63B3ED;
 }
+
+/* ===== LIGHT THEME GLASS-LAYER TOKEN OVERRIDES ===== */
+/* White rgba overlays have zero contrast on light backgrounds.
+   Override with dark rgba overlays for all 6 light themes. */
+
+body.theme-ivory,
+body.theme-pearl,
+body.theme-sandstone,
+body.theme-sage,
+body.theme-lavender,
+body.theme-mist {
+    --glass-chip: rgba(0, 0, 0, 0.06);
+    --glass-divider: rgba(0, 0, 0, 0.07);
+    --glass-border-subtle: rgba(0, 0, 0, 0.04);
+    --success-bg: rgba(39, 103, 73, 0.1);
+    --success-text: rgba(39, 103, 73, 0.85);
+    --danger-bg: rgba(197, 48, 48, 0.08);
+    --danger-border: rgba(197, 48, 48, 0.2);
+}
+
+/* Step bars use hardcoded rgba white — override per light theme */
+body.theme-ivory .step-bar,
+body.theme-pearl .step-bar,
+body.theme-sandstone .step-bar,
+body.theme-sage .step-bar,
+body.theme-lavender .step-bar,
+body.theme-mist .step-bar {
+    background: rgba(0, 0, 0, 0.1);
+}
+
+body.theme-ivory .step-bar--complete,
+body.theme-pearl .step-bar--complete,
+body.theme-sandstone .step-bar--complete,
+body.theme-sage .step-bar--complete,
+body.theme-lavender .step-bar--complete,
+body.theme-mist .step-bar--complete {
+    background: rgba(0, 0, 0, 0.45);
+}
+
+/* Suggestion chips and lifestyle budget chips on light themes */
+body.theme-ivory .suggestion-chip,
+body.theme-pearl .suggestion-chip,
+body.theme-sandstone .suggestion-chip,
+body.theme-sage .suggestion-chip,
+body.theme-lavender .suggestion-chip,
+body.theme-mist .suggestion-chip {
+    border-color: rgba(0, 0, 0, 0.12);
+    background: rgba(0, 0, 0, 0.02);
+}

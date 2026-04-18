@@ -55,7 +55,7 @@
 
     {% else %}
     {% if not current_user.factfind_completed %}
-    <div style="padding: 10px 14px; margin-bottom: 16px; border-radius: 8px; background: var(--glass-chip); border: 0.5px solid var(--glass-border);">
+    <div style="padding: 0 0 14px; margin-bottom: 14px; border-bottom: 0.5px solid var(--glass-border);">
         <p style="font-size: 0.8rem; color: var(--text-secondary); line-height: 1.5; margin: 0 0 6px;">Complete your financial profile to get personalised answers.</p>
         <a href="{{ url_for('pages.factfind') }}" style="font-size: 0.75rem; color: var(--text-tertiary); text-decoration: underline; text-underline-offset: 2px;">Set up profile</a>
     </div>
@@ -102,7 +102,7 @@
                 Send
             </button>
         </div>
-        <p style="font-size: 0.68rem; color: var(--text-tertiary); text-align: center; margin-top: 8px; line-height: 1.4;">Guidance only — not regulated financial advice.</p>
+        <p style="font-size: 0.68rem; color: var(--text-tertiary); text-align: center; margin-top: 8px; line-height: 1.4;">Guidance only. Not regulated financial advice.</p>
         {% endif %}
     </div>
     {% endif %}

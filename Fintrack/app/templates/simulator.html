@@ -19,7 +19,7 @@
     <div class="glass-card">
         <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px;">
             <div>
-                <div style="font-size: 0.65rem; color: var(--roman-gold); font-weight: 500; margin-bottom: 4px;">
+                <div style="font-size: 0.65rem; color: var(--text-tertiary); font-weight: 500; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.04em;">
                     {{ p.goal_type | default("savings_target") | replace("_", " ") | title }}
                 </div>
                 <div style="font-size: 1.1rem; color: var(--text-primary);">{{ p.goal_name }}</div>
@@ -40,21 +40,21 @@
             </div>
             <div>
                 <div class="metric-label">You'll contribute</div>
-                <div class="metric-value xs">£{{ "%.2f" | format(p.total_contributed) }}</div>
+                <div class="metric-value xs">£{{ "{:,.2f}".format(p.total_contributed) }}</div>
             </div>
             <div>
                 <div class="metric-label">Growth earns you</div>
-                <div class="metric-value xs success">+£{{ "%.2f" | format(p.total_interest_earned) }}</div>
+                <div class="metric-value xs success">+£{{ "{:,.2f}".format(p.total_interest_earned) }}</div>
             </div>
         </div>
 
         {% if p.milestones %}
-        <div style="padding-top: 16px; border-top: 0.5px solid rgba(255,255,255,0.05);">
+        <div style="padding-top: 16px; border-top: 0.5px solid var(--glass-border-subtle);">
             <div class="metric-label" style="margin-bottom: 8px;">Milestones</div>
             <div style="display: flex; gap: 16px; flex-wrap: wrap;">
                 {% for m in p.milestones %}
                 <div style="font-size: 0.75rem; color: var(--text-secondary);">
-                    <span style="color: var(--roman-gold); font-weight: 600;">{{ m.percent }}%</span> · {{ m.date }}
+                    <span style="color: var(--text-tertiary); font-weight: 600;">{{ m.percent }}%</span> · {{ m.date }}
                 </div>
                 {% endfor %}
             </div>
@@ -112,7 +112,7 @@
     <p style="font-size: 0.85rem; color: var(--text-secondary); line-height: 1.7;">
         {{ habit_result.insight.detail }}
     </p>
-    <p style="font-size: 0.85rem; color: var(--roman-gold); font-style: italic; margin-top: 12px;">
+    <p style="font-size: 0.85rem; color: var(--text-secondary); font-style: italic; margin-top: 12px;">
         {{ habit_result.insight.reframe }}
     </p>
 </div>
@@ -137,7 +137,7 @@
         <div style="font-size: 0.7rem; color: var(--text-tertiary); margin-bottom: 8px;">
             what you give up
         </div>
-        <div style="padding-top: 8px; border-top: 0.5px solid rgba(255,255,255,0.05);">
+        <div style="padding-top: 8px; border-top: 0.5px solid var(--glass-border-subtle);">
             <div style="font-size: 0.75rem; color: var(--text-secondary);">
                 Spent: £{{ "{:,.0f}".format(h.simple_cost) }}
             </div>

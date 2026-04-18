@@ -147,9 +147,10 @@ function initProjectionChart(canvasId, targetAmount, currentAmount, currentContr
                     labels: {
                         color: textSecondary,
                         font: { family: 'Inter, sans-serif', size: 11 },
-                        boxWidth: 20,
+                        boxWidth: 12,
                         padding: 16
-                    }
+                    },
+                    afterFit(legend) { legend.height += 12; }
                 },
                 tooltip: {
                     backgroundColor: 'rgba(2, 4, 8, 0.9)',
@@ -308,9 +309,10 @@ function initHabitChart(canvasId, horizons) {
                     labels: {
                         color: textSecondary,
                         font: { family: 'Inter, sans-serif', size: 11 },
-                        boxWidth: 16,
+                        boxWidth: 12,
                         padding: 16
-                    }
+                    },
+                    afterFit(legend) { legend.height += 12; }
                 },
                 tooltip: {
                     backgroundColor: 'rgba(2, 4, 8, 0.9)',

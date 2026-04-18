@@ -6,8 +6,9 @@
     <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
     Goals
 </a>
-<div class="page-header" style="margin-bottom: 16px;">
+<div class="page-header" style="margin-bottom: 16px; display: flex; align-items: flex-start; justify-content: space-between; gap: 16px;">
     <h1>{{ goal.name | replace(' (must-hit)', '') }}</h1>
+    <a href="{{ url_for('pages.edit_goal', goal_id=goal.id) }}" class="btn-secondary btn-sm" style="flex-shrink: 0; margin-top: 4px;">Edit goal</a>
 </div>
 
 {% if projection.reachable %}
@@ -29,10 +30,7 @@
 
 <!-- The slider — THE moment -->
 <div class="glass-card" style="margin-bottom: 32px;">
-    <div style="font-size: 0.72rem; color: var(--text-tertiary); margin-bottom: 8px;">What if you changed your contribution?</div>
-    <p style="font-size: 0.8rem; color: var(--text-tertiary); margin-bottom: 16px;">
-        Move the slider to see your future change in real time.
-    </p>
+    <p style="font-size: 0.8rem; color: var(--text-tertiary); margin-bottom: 16px;">Move the slider to see how changing your contribution shifts the timeline.</p>
 
     <div style="display: flex; justify-content: space-between; font-size: 0.7rem; color: var(--text-tertiary); margin-bottom: 4px;">
         <span>£0</span>
@@ -42,12 +40,10 @@
     <input type="range" id="contribution-slider"
            min="0" max="{{ max_contribution }}" step="10"
            value="{{ projection.monthly_contribution }}"
-           style="width: 100%; height: 6px; -webkit-appearance: none; appearance: none;
-                  background: linear-gradient(to right, var(--roman-gold) 0%, var(--roman-gold) {{ slider_percent }}%, rgba(255,255,255,0.08) {{ slider_percent }}%, rgba(255,255,255,0.08) 100%);
-                  border-radius: 3px; outline: none; cursor: pointer;">
+           style="background: linear-gradient(to right, var(--roman-gold) 0%, var(--roman-gold) {{ slider_percent }}%, var(--glass-chip) {{ slider_percent }}%, var(--glass-chip) 100%);">
 
     <div style="text-align: center; margin-top: 12px;">
-        <span class="metric-value md gold" id="slider-amount">
+        <span class="metric-value sm" id="slider-amount">
             £{{ "{:,.2f}".format(projection.monthly_contribution) }}/month
         </span>
     </div>
@@ -89,7 +85,7 @@
     <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px 0;
         {% if not loop.last %}border-bottom: 0.5px solid var(--glass-border);{% endif %}">
         <div style="display: flex; align-items: center; gap: 10px;">
-            <span style="font-size: 0.7rem; font-weight: 600; {% if m.percent == 100 %}color: var(--roman-gold);{% else %}color: var(--text-tertiary);{% endif %}">{{ m.percent }}%</span>
+            <span style="font-size: 0.7rem; font-weight: 600; {% if m.percent == 100 %}color: var(--success-text);{% else %}color: var(--text-tertiary);{% endif %}">{{ m.percent }}%</span>
             <span style="font-size: 0.85rem; color: var(--text-primary);">£{{ "{:,.0f}".format(m.balance) }}</span>
         </div>
         <span style="font-size: 0.8rem; color: var(--text-tertiary);">{{ m.date }}</span>
@@ -107,12 +103,6 @@
 </div>
 {% endif %}
 
-{% if projection.reachable %}
-<!-- Edit goal — bottom of page, after content -->
-<div style="padding-top: 20px; margin-top: 8px; border-top: 0.5px solid var(--glass-border);">
-    <a href="{{ url_for('pages.edit_goal', goal_id=goal.id) }}" class="btn-secondary btn-sm">Edit goal</a>
-</div>
-{% endif %}
 
 
 {% if projection.reachable %}
@@ -143,7 +133,7 @@
             // Update slider background gradient on input
             function updateSliderBackground() {
                 const percent = ((slider.value - slider.min) / (slider.max - slider.min)) * 100;
-                slider.style.background = `linear-gradient(to right, var(--roman-gold) 0%, var(--roman-gold) ${percent}%, rgba(255,255,255,0.08) ${percent}%, rgba(255,255,255,0.08) 100%)`;
+                slider.style.background = `linear-gradient(to right, var(--roman-gold) 0%, var(--roman-gold) ${percent}%, var(--glass-chip) ${percent}%, var(--glass-chip) 100%)`;
             }
 
             slider.addEventListener('input', function() {
