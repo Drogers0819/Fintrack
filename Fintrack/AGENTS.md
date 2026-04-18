@@ -51,17 +51,18 @@ Active templates: `overview`, `my_money`, `my_goals`, `plan`, `my_budgets`, `set
 ## Navigation active states
 
 - The Settings tab active state must only match `pages.settings`. **Never include `pages.factfind`** — factfind is a standalone onboarding flow, not a Settings sub-page. Including it causes the Settings tab to illuminate when users are on factfind.
-- Bottom nav has 6 tabs: Overview, Money, Check-in, Goals, Companion, Plan.
+- Bottom nav has 5 tabs: Overview, Check-in, Goals, Companion, Plan.
 
 ---
 
-## Mobile avatar (`.mobile-settings-btn`)
+## Mobile header bar
 
-- Defined in `base.html` as a global fixed element: `position: fixed; top: max(14px, calc(env(safe-area-inset-top) + 8px)); right: 16px; z-index: 500`.
-- `viewport-fit=cover` is set in the viewport meta, so `env(safe-area-inset-top)` is non-zero on notched iPhones (typically 47–59px). The avatar and main-content top padding both use the same safe-area-aware calc so they stay aligned on notched and non-notched devices.
+- **Layout**: `.mobile-header-bar` is a fixed bar at the top on mobile, `justify-content: space-between`, `padding: 0 16px`. Logo (36×36) on the LEFT, avatar (36×36) on the RIGHT — equal physical footprint, equal edge padding.
+- **Logo**: `<a class="mobile-logo">` wrapping `<img src="logo.png" style="width:36px;height:36px;object-fit:contain;">`. Use `object-fit: contain` — the logo PNG has internal transparent space; matching container dimensions keeps visual balance consistent with the avatar.
+- **Avatar** (`.mobile-settings-btn`): `position: static` inside the bar on mobile. `viewport-fit=cover` is set in the viewport meta — use `env(safe-area-inset-top)` aware positioning for the bar itself.
 - Main content top padding: `max(16px, calc(env(safe-area-inset-top) + 10px))`. Do not add `padding-top` to page-header or this alignment breaks.
 - Avatar bottom edge: ~50px (no notch) / ~77px (notch). To push a sub-row (count + CTA) below the avatar zone: increase `margin-bottom` on the page-header. Never use `padding-top` on the header (breaks alignment) or `padding-right` on the sub-row (misaligns right edge with surrounding content).
-- Pages with a back-link (`← Money`, `← Goals`) above the header get natural clearance automatically.
+- Pages with a back-link (`← Goals` etc.) above the header get natural clearance automatically.
 
 ---
 
@@ -155,7 +156,7 @@ Active templates: `overview`, `my_money`, `my_goals`, `plan`, `my_budgets`, `set
 ## Button icon rule
 
 - All CTA buttons and links use **Lucide SVG icons** inline — never Unicode characters (`→`, `←`, `▶`).
-- Forward CTAs: Lucide `arrow-right` (`<path d="M5 12h14"/><path d="m12 5 7 7-7 7"/>`) at `width="14" height="14"`.
+- Forward CTAs: Lucide `chevron-right` (`<path d="M9 18l6-6-6-6"/>`) at `width="14" height="14"`.
 - Back links: Lucide `chevron-left` (`<path d="m15 18-6-6 6-6"/>`) at `width="10" height="10"`.
 - Button layout: `display: flex; align-items: center; justify-content: center; gap: 8px;` — icon is the last child.
 - JS-generated button icons: use `document.createElementNS('http://www.w3.org/2000/svg', 'svg')` — never `innerHTML` or `textContent` with SVG strings.
@@ -183,7 +184,7 @@ Active templates: `overview`, `my_money`, `my_goals`, `plan`, `my_budgets`, `set
 
 ## Bottom nav (mobile)
 
-- **6 tabs**: Overview, Money, Check-in, Goals, Companion, Plan.
+- **5 tabs**: Overview, Check-in, Goals, Companion, Plan. (Money tab was removed in the nav restructure.)
 
 ---
 

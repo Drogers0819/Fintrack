@@ -351,6 +351,8 @@ Never use standard size for decorative or trivial fields. Never use small for re
 
 No "large" variant exists — if a field feels small, use standard. If standard looks huge for context, use sm.
 
+**Mobile font-size rule (iOS Safari):** Any `<input>` or `<select>` with `font-size < 16px` triggers automatic page zoom on iOS Safari when focused. Both `form-input` and `form-input-sm` must override to `font-size: 16px` inside the `@media (max-width: 768px)` breakpoint — visual compactness is achieved through padding reduction, not font-size reduction.
+
 ### 5.4 Should this form be in a card?
 
 **Decision rule:** Does this page have app chrome (sidebar, bottom nav)?
@@ -482,7 +484,7 @@ Default size `width="14" height="14"` unless noted. Whisper icons use `width="16
 
 | Meaning | Name | SVG paths |
 |---|---|---|
-| Bank account / savings | `bank` (landmark) | `<polyline points="12 2 2 7 22 7"/><line x1="6" y1="18" x2="6" y2="7"/><line x1="10" y1="18" x2="10" y2="7"/><line x1="14" y1="18" x2="14" y2="7"/><line x1="18" y1="18" x2="18" y2="7"/><line x1="3" y1="22" x2="21" y2="22"/>` — columns connect to roof at y=7, not y=11 (prevents floating-stroke appearance at small sizes) |
+| Bank account / savings | `bank` (landmark) | `<path d="M12 2l10 5H2l10-5z"/><line x1="2" y1="7" x2="22" y2="7"/><line x1="6" y1="7" x2="6" y2="18"/><line x1="10" y1="7" x2="10" y2="18"/><line x1="14" y1="7" x2="14" y2="18"/><line x1="18" y1="7" x2="18" y2="18"/><line x1="3" y1="22" x2="21" y2="22"/>` — use `<path>` with `z` close for the roof triangle (draws all three edges); `<polyline>` only draws left slope + base, missing the right slope |
 | Goal / target | `target` | `<circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/>` |
 | Money / income / growth | `trending-up` | `<polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/>` |
 | Recurring / scheduled | `repeat` | `<polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/>` |
@@ -679,7 +681,28 @@ Always comma-separated thousands: `"{:,.0f}".format(value)`. Negative amounts: U
 
 ---
 
-## 17. Compliance Checks — Run These Before Marking Any UI Done
+## 17. Logo & Mobile Header
+
+### 17.1 Logo sizing
+
+| Context | Size | Rule |
+|---|---|---|
+| Desktop sidebar | 40×40px | `object-fit: contain` — compact mark only, no text |
+| Mobile header | 36×36px | `object-fit: contain` — matches avatar footprint exactly |
+
+Use `object-fit: contain` on all logo `<img>` elements. The PNG has internal transparent space — matching container dimensions to the avatar (both 36×36 on mobile) keeps visual balance equal on both edges.
+
+### 17.2 Mobile header bar layout
+
+- **Structure**: `.mobile-header-bar` — fixed bar, `justify-content: space-between`, `padding: 0 16px`.
+- **Left**: `<a class="mobile-logo">` with the 36×36 logo image — links to overview.
+- **Right**: `.mobile-settings-btn` avatar circle — links to settings.
+- Both elements occupy the same physical footprint so edge spacing is visually equal without needing asymmetric padding.
+- The bar is hidden on desktop (`display: none` above 768px breakpoint).
+
+---
+
+## 18. Compliance Checks — Run These Before Marking Any UI Done
 
 1. **Playwright verify** — screenshot at 375px and 1440px
 2. **Gold grep** — `grep -r "rgba(197,163,93" templates/` → should return zero results

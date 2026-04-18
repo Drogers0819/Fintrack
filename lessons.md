@@ -15,6 +15,16 @@
 
 <!-- Entries go below this line, newest first -->
 
+## 2026-04-18 — SVG `<polyline>` missing right slope on landmark/bank icon (persisted two sessions)
+**Mistake**: The bank icon used `<polyline points="12 2 2 7 22 7"/>` for the roof. A polyline draws segments between points in order but does NOT close back to the start — this draws only the LEFT slope (12,2)→(2,7) and the BASE (2,7)→(22,7). The right slope (12,2)→(22,7) was never drawn. A partial fix in a previous session corrected column y-positions but left the polyline intact, so the roof line remained visually broken.
+**Fix**: Replaced with `<path d="M12 2l10 5H2l10-5z"/>` — the `z` command closes the path back to (12,2), ensuring all three roof edges are drawn. Added explicit `<line x1="2" y1="7" x2="22" y2="7"/>` for the eave.
+**Rule**: Never use `<polyline>` for a closed shape (triangle, rectangle, arrowhead). Use `<path>` with `z` to close. If any edge of a shape is missing at render time, check whether the path closes with `z`.
+
+## 2026-04-18 — Logo PNG internal transparent space causing unequal visual padding
+**Mistake**: The mobile header had `justify-content: space-between; padding: 0 16px` — equal CSS padding on both sides. But the logo PNG has significant internal transparent space, so the visible mark appeared further from the left edge than the avatar from the right, creating an illusion of unequal margins.
+**Fix**: Set both logo and avatar to identical container dimensions (36×36, `object-fit: contain`). Matching physical footprint makes the flex spacing visually equal without asymmetric padding.
+**Rule**: When an image asset has internal transparent space, the visible mark occupies a smaller area than the container. Balance it by matching the container dimensions to the paired element — never compensate with asymmetric padding.
+
 ## 2026-04-18 — Centered h1 left as-is on "reveal" page
 **Mistake**: plan_reveal.html had `text-align: center` on the page-header and h1 ("Here's your plan."). The assumption was that a dramatic reveal moment warranted centering — treating it as a theatrical exception to the left-align rule.
 **Fix**: Removed `text-align: center` and the inline `font-size: 1.6rem` override. Left-aligned header, standard size.
