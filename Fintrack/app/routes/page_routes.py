@@ -1575,9 +1575,12 @@ def goal_detail(goal_id):
     max_contribution = round(max_contribution / 10) * 10
     slider_percent = round((contribution / max_contribution * 100), 1) if max_contribution > 0 else 50
 
+    from_page = request.args.get("from")
+
     return render_template("goal_detail.html",
         goal=goal, projection=projection, multi_horizon=multi_horizon,
-        max_contribution=max_contribution, slider_percent=slider_percent
+        max_contribution=max_contribution, slider_percent=slider_percent,
+        from_page=from_page
     )
 
 

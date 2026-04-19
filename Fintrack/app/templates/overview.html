@@ -100,7 +100,7 @@
 {% if goal_pots %}
 <div style="margin-bottom: 24px; padding-top: 20px; border-top: 0.5px solid var(--glass-border);">
     <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 14px;">
-        <span class="section-label" style="margin-top: 0; margin-bottom: 0;">Your pots</span>
+        <span class="section-label" style="margin-top: 0; margin-bottom: 0;">Your goals</span>
         <a href="{{ url_for('pages.my_goals') }}" class="btn-secondary btn-sm">
             My goals <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>
         </a>
@@ -108,7 +108,7 @@
 
     {% for pot in goal_pots %}
     {% if pot.monthly_amount > 0 and pot.goal_id %}
-    <a href="{{ url_for('pages.goal_detail', goal_id=pot.goal_id) }}" style="display: block; padding: 12px 0; text-decoration: none; {% if not loop.last %}border-bottom: 0.5px solid var(--glass-border);{% endif %}">
+    <a href="{{ url_for('pages.goal_detail', goal_id=pot.goal_id) }}?from=overview" style="display: block; padding: 12px 0; text-decoration: none; {% if not loop.last %}border-bottom: 0.5px solid var(--glass-border);{% endif %}">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
             <div style="display: flex; align-items: center; gap: 6px;">
                 <span style="font-size: 0.85rem; color: var(--text-primary);">{{ pot.name | replace(' (must-hit)', '') }}</span>
