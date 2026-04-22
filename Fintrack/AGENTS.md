@@ -69,13 +69,13 @@ Steps:
 4. Fix anything that looks wrong
 5. Then mark done
 
-The server runs on **port 5002**. Log in via Playwright browser (separate cookie jar from host browser).
+The server runs on **port 5001**. Log in via Playwright browser (separate cookie jar from host browser).
 
 ---
 
 ## Dev environment
 
-- Flask runs on **port 5002** (not the default 5000). Always use `http://localhost:5002`.
+- Flask runs on **port 5001** (not the default 5000). Always use `http://localhost:5001`.
 - Playwright screenshots use a separate cookie jar — log in via the browser tool, not the host browser session.
 
 ---
@@ -98,6 +98,16 @@ Active templates: `overview`, `my_money`, `my_goals`, `plan`, `my_budgets`, `set
 
 - The Settings tab active state must only match `pages.settings`. **Never include `pages.factfind`** — factfind is a standalone onboarding flow, not a Settings sub-page. Including it causes the Settings tab to illuminate when users are on factfind.
 - Bottom nav has 5 tabs: Overview, Check-in, Goals, Companion, Plan.
+
+**`?from=` context — bilateral rule.** When a sub-page carries `?from=X`, the nav active state must reflect X, not the endpoint's natural parent. Changes are always bilateral: (a) remove the arrival page from the "natural parent" condition, AND (b) add it explicitly to the "source" tab. Doing only one side leaves no tab active.
+
+| `?from=` value | Active tab | Applies to |
+|---|---|---|
+| `?from=plan` | Plan | `goal_detail`, `edit_goal` |
+| `?from=overview` | Overview | `goal_detail` |
+| anything else | Goals | `goal_detail`, `my_goals`, `add_goal`, `edit_goal` |
+
+The `base.html` Goals condition must include `and request.args.get('from') != 'overview'`. The Overview condition must include `or (request.endpoint == 'pages.goal_detail' and request.args.get('from') == 'overview')`.
 
 ---
 
@@ -127,6 +137,7 @@ Active templates: `overview`, `my_money`, `my_goals`, `plan`, `my_budgets`, `set
 
 ## CSS rules — forbidden patterns
 
+- **Spacing token system**: The canonical scale is `--sp-xs: 4px; --sp-sm: 8px; --sp-md: 16px; --sp-lg: 24px; --sp-xl: 32px; --sp-2xl: 48px;`. The old `--space-*` system was removed. Always use `--sp-*` for new spacing declarations. Never reintroduce `--space-*`.
 - **`[style*="..."]` attribute substring selectors**: never use. They silently match every element with that inline style fragment across the entire codebase. Example of what broke: `[style*="display: flex"][style*="gap: 12px"] { flex-direction: column }` forced column layout on every flex row with gap:12px, including the My Money sub-nav. Use CSS classes or explicit inline styles instead.
 - **Duplicate CSS class definitions**: if a class is defined twice in main.css, the second wins and silently overrides the first. Before adding a new class block, grep first. Root cause of all empty-state centering inconsistencies was a second `.empty-state` definition with `text-align: center; padding: 40px 20px` overriding the correct first definition.
 
@@ -175,7 +186,7 @@ Active templates: `overview`, `my_money`, `my_goals`, `plan`, `my_budgets`, `set
 
 ## Theme-aware CSS tokens
 
-- **`--progress-track`**: dark fallback defined in `:root` as `rgba(255,255,255,0.1)`. Light themes override in `body.theme-*` selector in `themes.css` as `rgba(0,0,0,0.08)`.
+- **`--progress-track`**: dark fallback defined in `:root` as `rgba(255,255,255,0.1)`. Light themes override in `body.theme-*` selector in `themes.css`. **Minimum opacity on light themes is `rgba(0,0,0,0.12)`** — `0.08` is optically invisible on white cards and looks like a render glitch. All 4 light themes (Paper, Ivory, Pearl, Sage) must use `0.12` or higher.
 - **`--shadow-float`**, **`--shadow-float-lg`**, **`--shadow-toast`**: shadow tokens for floating surfaces (popover, custom select dropdown, flatpickr calendar, toast). Dark default in `:root` uses `rgba(0,0,0,0.45+)` for depth. All 6 light themes override in a single grouped selector in `themes.css` to `rgba(0,0,0,0.08–0.10)` — soft, not harsh. Always use these tokens; never hardcode shadow rgba values on floating components.
 - Pattern for any luminance-dependent value: `:root` = dark default, `body.theme-*` = light override. Never hardcode `rgba(255,255,255,0.1)` directly in templates or component CSS.
 - When a new floating component is added, use `box-shadow: var(--shadow-float)` (or `--shadow-float-lg` for larger surfaces like datepickers). The token automatically adjusts for all 9 themes.

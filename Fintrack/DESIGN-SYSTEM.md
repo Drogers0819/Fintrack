@@ -443,6 +443,8 @@ Every `required` field must have a custom `oninvalid` message that explains what
 - **Month/time progress** → Progress bar, fill = `rgba(255,255,255,0.18)` (neutral, just shows time)
 - **Category breakdown** → Progress bar, fill = category's assigned colour
 
+**Empty track (0% fill) rule — goal rows:** An empty progress track on a goal savings row is a VALID, intentional state. It communicates "this goal exists, nothing saved yet" via the `£0.00 of £target` labels below. **Never suppress the track or replace with "Not started" text.** The empty grey track is the correct design — it shows the user there is space to fill. Victoria confirmed this explicitly.
+
 ### 7.2 Which height?
 
 | Height | Decision: use when... |
@@ -785,7 +787,7 @@ The logo PNG is landscape (636×334). Always set `height` explicitly and let `wi
 
 1. **Playwright verify** — screenshot at 375px and 1440px
 2. **Gold grep** — `grep -rn "rgba(197,163,93" templates/` → should return zero results
-3. **Em dash grep** — `grep -rn "—" templates/ app/services/` → should return zero results
+3. **Em dash grep** — `grep -rn "—" templates/ app/services/ app/routes/` → should return zero results. Flash messages in route handlers are user-facing copy — zero tolerance applies there too.
 4. **Emoji grep** — `grep -Pn "[\x{1F300}-\x{1FFFF}]" templates/` → should return zero results
 5. **Text-align center** — `grep -rn "text-align: center" templates/` → only valid inside `<td>`/`<th>` table cells and footer disclaimer `<p>` notes below CTAs. Every other hit is a violation.
 6. **Centering island** — `grep -rn "margin: 0 auto" templates/` → outer page-wrapper divs with `max-width + margin: 0 auto` are violations. Only valid on narrow inner elements (e.g. a chart container, not a page wrapper).
