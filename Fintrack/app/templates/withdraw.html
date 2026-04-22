@@ -1,11 +1,15 @@
 {% extends "base.html" %}
 {% block title %}I Need Money – Claro{% endblock %}
 
+{% block header_content %}
+<nav class="app-breadcrumb" aria-label="Breadcrumb">
+    <a href="{{ url_for('pages.plan') }}">Plan</a>
+    <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>
+    <span>Need cash</span>
+</nav>
+{% endblock %}
+
 {% block content %}
-<a href="{{ url_for('pages.plan') }}" style="display: inline-flex; align-items: center; gap: 6px; font-size: 0.75rem; color: var(--text-tertiary); text-decoration: none; margin-bottom: 16px;">
-    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
-    Plan
-</a>
 <div class="page-header">
     <h1>I need money</h1>
     <p style="font-size: 0.8rem; color: var(--text-tertiary); margin-top: 4px; line-height: 1.6;">Enter an amount and we'll show you the least damaging way to access it from your plan.</p>
@@ -19,9 +23,12 @@
     </div>
 
     <!-- Quick amounts -->
-    <div style="display: flex; gap: 6px; margin-bottom: 16px;">
+    <div style="display: flex; gap: 6px; margin-bottom: 16px; flex-wrap: wrap;">
         {% for amt in [100, 250, 500, 1000] %}
-        <button type="button" onclick="document.getElementById('amount-input').value={{ amt }}" class="btn-secondary btn-sm">£{{ amt }}</button>
+        <button type="button" onclick="document.getElementById('amount-input').value={{ amt }}"
+            style="padding: 6px 14px; border-radius: 50px; border: 0.5px solid var(--glass-border); background: var(--glass-bg); font-size: 0.75rem; color: var(--text-tertiary); cursor: pointer; transition: border-color 0.2s, color 0.2s;"
+            onmouseover="this.style.borderColor='rgba(255,255,255,0.2)';this.style.color='var(--text-secondary)'"
+            onmouseout="this.style.borderColor='var(--glass-border)';this.style.color='var(--text-tertiary)'">£{{ amt }}</button>
         {% endfor %}
     </div>
 
@@ -69,7 +76,7 @@
     </div>
 
     <div style="font-size: 0.75rem; color: var(--text-tertiary); line-height: 1.6; padding: 12px 0;">
-        This is a suggestion for how to manage your own savings pots — it's guidance to help you decide, not financial advice. You're always in control of where your money goes.
+        This is a suggestion for how to manage your own savings pots. It's guidance to help you decide, not financial advice. You're always in control of where your money goes.
     </div>
     {% endif %}
 

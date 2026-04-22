@@ -1,11 +1,15 @@
 {% extends "base.html" %}
 {% block title %}{{ goal.name | replace(' (must-hit)', '') }} – Claro{% endblock %}
 
+{% block header_content %}
+<nav class="app-breadcrumb" aria-label="Breadcrumb">
+    <a href="{{ url_for('pages.my_goals') }}">Goals</a>
+    <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>
+    <span>{{ goal.name | replace(' (must-hit)', '') }}</span>
+</nav>
+{% endblock %}
+
 {% block content %}
-<a href="{{ url_for('pages.overview') if from_page == 'overview' else url_for('pages.my_goals') }}" style="display: inline-flex; align-items: center; gap: 6px; font-size: 0.75rem; color: var(--text-tertiary); text-decoration: none; margin-bottom: 16px;">
-    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
-    {{ 'Overview' if from_page == 'overview' else 'Goals' }}
-</a>
 <div class="page-header" style="margin-bottom: 16px; display: flex; align-items: flex-start; justify-content: space-between; gap: 16px;">
     <h1>{{ goal.name | replace(' (must-hit)', '') }}</h1>
     <a href="{{ url_for('pages.edit_goal', goal_id=goal.id) }}" class="btn-secondary btn-sm" style="flex-shrink: 0; margin-top: 4px;">Edit goal</a>

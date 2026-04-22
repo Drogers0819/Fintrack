@@ -1,6 +1,8 @@
 {% extends "base.html" %}
 {% block title %}Companion – Claro{% endblock %}
 
+{% block header_content %}<span class="app-header-title">Companion</span>{% endblock %}
+
 {% block content %}
 <div class="page-header">
     <h1>Your companion</h1>
@@ -11,7 +13,7 @@
     {% endif %}
 </div>
 
-<div style="max-width: 560px; display: flex; flex-direction: column; {% if tier != 'free' %}height: calc(100dvh - 220px);{% endif %}">
+<div style="max-width: 560px; display: flex; flex-direction: column; {% if tier != 'free' %}height: calc(100dvh - 220px - 88px);{% endif %}">
 
     {% if tier == "free" %}
     <!-- Paywall -->
@@ -49,7 +51,7 @@
             </div>
         </div>
 
-        <a href="{{ url_for('pages.trial_gate') }}" class="btn-primary btn-full" style="text-decoration: none;">Upgrade to Pro · £9.99/month</a>
+        <a href="{{ url_for('pages.upgrade', **{'from': 'companion'}) }}" class="btn-primary btn-full" style="text-decoration: none;">Start 14-day free trial</a>
         <p style="font-size: 0.72rem; color: var(--text-tertiary); margin-top: 12px; margin-bottom: 0;">Cancel any time. No commitment.</p>
     </div>
 
@@ -77,6 +79,8 @@
             <button class="suggestion-chip" onclick="sendSuggestion(this)">What completes first?</button>
             <button class="suggestion-chip" onclick="sendSuggestion(this)">Can I afford a holiday?</button>
             <button class="suggestion-chip" onclick="sendSuggestion(this)">What if I got a raise?</button>
+            <button class="suggestion-chip" onclick="sendSuggestion(this)">Can I afford something?</button>
+            <button class="suggestion-chip" onclick="sendSuggestion(this)">What does a habit really cost?</button>
         </div>
         {% endif %}
 
@@ -87,10 +91,15 @@
         {% endfor %}
     </div>
 
-    <!-- Input area -->
-    <div style="flex-shrink: 0; padding: 12px 0; border-top: 0.5px solid var(--glass-border);">
+    {% endif %}
+</div>
+
+{% if tier != "free" %}
+<!-- Full-bleed fixed input zone — breaks out of content column -->
+<div class="companion-input-zone">
+    <div class="companion-input-inner">
         {% if messages_used >= daily_limit %}
-        <div style="padding: 12px; font-size: 0.8rem; color: var(--text-tertiary);">
+        <div style="padding: 12px 0; font-size: 0.8rem; color: var(--text-tertiary);">
             You've used all {{ daily_limit }} messages for today. They reset at midnight.
         </div>
         {% else %}
@@ -105,8 +114,8 @@
         <p style="font-size: 0.68rem; color: var(--text-tertiary); text-align: center; margin-top: 8px; line-height: 1.4;">Guidance only. Not regulated financial advice.</p>
         {% endif %}
     </div>
-    {% endif %}
 </div>
+{% endif %}
 
 <style>
 .chat-msg{display:flex;}
@@ -130,6 +139,12 @@
 var sending = false;
 var messagesUsed = {{ messages_used }};
 var dailyLimit = {{ daily_limit }};
+
+// Scroll chat to bottom on load (history starts from bottom)
+document.addEventListener('DOMContentLoaded', function() {
+    var container = document.getElementById('chat-messages');
+    if (container) container.scrollTop = container.scrollHeight;
+});
 
 function autoResize(el) {
     el.style.height = 'auto';

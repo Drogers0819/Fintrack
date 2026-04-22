@@ -1,9 +1,11 @@
 {% extends "base.html" %}
 {% block title %}My Goals – Claro{% endblock %}
 
+{% block header_content %}<span class="app-header-title">Goals</span>{% endblock %}
+
 {% block content %}
 <div class="page-header" style="margin-bottom: 24px;">
-    <h1>My Goals</h1>
+    <h1>Goals</h1>
 </div>
 
 {% if goals | length > 0 %}

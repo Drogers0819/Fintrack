@@ -1,11 +1,9 @@
 {% extends "base.html" %}
 {% block title %}Plan – Claro{% endblock %}
 
+{% block header_content %}<span class="app-header-title">Plan</span>{% endblock %}
+
 {% block content %}
-<a href="{{ url_for('pages.overview') }}" style="display: inline-flex; align-items: center; gap: 6px; font-size: 0.75rem; color: var(--text-tertiary); text-decoration: none; margin-bottom: 16px;">
-    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
-    Overview
-</a>
 <div class="page-header">
     <h1>Your plan</h1>
 </div>
@@ -25,7 +23,6 @@
 
 <!-- Monthly breakdown -->
 <div style="margin-bottom: 32px;">
-    <div class="section-label" style="margin-bottom: 14px;">Monthly breakdown</div>
 
     <!-- Fixed costs -->
     <div style="padding: 14px 0 12px 0; border-bottom: 0.5px solid var(--glass-border);">
@@ -112,7 +109,7 @@
 {% endif %}
 
 <!-- Can I afford this? -->
-<div style="padding-top: 20px; border-top: 0.5px solid var(--glass-border);">
+<div id="afford" style="padding-top: 20px; border-top: 0.5px solid var(--glass-border);">
     <div style="font-size: 0.9rem; color: var(--text-primary); font-weight: 500; margin-bottom: 4px;">Can I afford this?</div>
     <p style="font-size: 0.78rem; color: var(--text-tertiary); margin-bottom: 14px;">Check a one-off expense against your plan.</p>
     <form method="POST" action="{{ url_for('pages.plan') }}">
@@ -151,7 +148,7 @@
 {% endif %}
 
 <!-- Habit cost calculator -->
-<div style="padding-top: 20px; margin-top: 20px; border-top: 0.5px solid var(--glass-border);">
+<div id="habit" style="padding-top: 20px; margin-top: 20px; border-top: 0.5px solid var(--glass-border);">
     <div style="font-size: 0.9rem; color: var(--text-primary); font-weight: 500; margin-bottom: 4px;">Habit cost</div>
     <p style="font-size: 0.78rem; color: var(--text-tertiary); margin-bottom: 14px;">See what a daily or monthly habit really costs over time.</p>
     <form method="POST" action="{{ url_for('pages.plan') }}">

@@ -677,7 +677,24 @@ def checkin():
                         "paused": pot["monthly_amount"] == 0
                     })
 
-    if request.method == "POST" and not existing:
+    # Edit mode: allow re-submission by deleting the existing record first
+    edit_mode = request.args.get("edit") == "1"
+    if edit_mode and existing:
+        # Pre-fill pots with existing actual amounts so the form shows what was entered
+        actual_map = {e["pot_name"]: e["actual_amount"] for e in (existing.to_dict().get("entries") or [])}
+        for pot in pots_for_checkin:
+            if pot["name"] in actual_map:
+                pot["planned"] = actual_map[pot["name"]]
+
+    if request.method == "POST":
+        # Delete existing record if re-submitting (edit mode)
+        if existing:
+            from app.models.checkin import CheckInEntry as CIEntry
+            CIEntry.query.filter_by(checkin_id=existing.id).delete()
+            CheckIn.query.filter_by(id=existing.id).delete()
+            db.session.flush()
+            existing = None
+
         checkin_record = CheckIn(
             user_id=current_user.id,
             month=checkin_month,
@@ -725,8 +742,8 @@ def checkin():
 
     return render_template("checkin.html",
         checkin_month=checkin_month_name,
-        already_done=existing is not None,
-        existing=existing.to_dict() if existing else None,
+        already_done=(existing is not None) and not edit_mode,
+        existing=existing.to_dict() if (existing and not edit_mode) else None,
         pots=pots_for_checkin,
         smart_plan=smart_plan,
         past_checkins=[c.to_dict() for c in past_checkins]
@@ -760,7 +777,8 @@ def surplus_reveal():
         profile=profile,
         income=round(income, 2),
         essentials=round(essentials, 2),
-        surplus=surplus
+        surplus=surplus,
+        show_sidebar=False
     )
 
 # ─── GOAL CHIPS (Onboarding) ─────────────────────────────────
@@ -899,7 +917,7 @@ def goal_chips():
 
         return redirect(url_for("pages.plan_reveal"))
 
-    return render_template("goal_chips.html")
+    return render_template("goal_chips.html", show_sidebar=False)
 
 
 # ─── PLAN REVEAL (Onboarding) ────────────────────────────────
@@ -932,7 +950,8 @@ def plan_reveal():
 
     return render_template("plan_reveal.html",
         plan=plan,
-        summary=summary
+        summary=summary,
+        show_sidebar=False
     )
 
 # ─── PLAN REVIEW (Onboarding) ────────────────────────────────
@@ -1002,7 +1021,8 @@ def plan_review():
         plan=plan,
         reasoning=reasoning,
         profile=user_profile,
-        summary=summary
+        summary=summary,
+        show_sidebar=False
     )
 
 # ─── WITHDRAWAL ───────────────────────────────────────────
@@ -1112,6 +1132,11 @@ def life_checkin():
             flash("Update your bills in your financial profile.", "success")
             return redirect(url_for("pages.factfind"))
 
+        elif checkin_type == "other":
+            note = details or "something changed"
+            flash(f"Noted: {note}. Your companion can help you work out what to do next.", "success")
+            return redirect(url_for("pages.companion"))
+
         elif checkin_type == "ask_later":
             flash("No problem — we'll check in again soon.", "success")
             return redirect(url_for("pages.overview"))
@@ -1119,6 +1144,14 @@ def life_checkin():
         return redirect(url_for("pages.overview"))
 
     return render_template("life_checkin.html")
+
+# ─── UPGRADE PAGE — shown when in-app users hit paywalled features ───────────
+
+@page_bp.route("/upgrade")
+@login_required
+def upgrade():
+    from_page = request.args.get("from", "overview")
+    return render_template("upgrade.html", from_page=from_page)
 
 # ─── TRIAL GATE ───────────────────────────────────────────
 
@@ -1141,7 +1174,8 @@ def trial_gate():
 
     return render_template("trial_gate.html",
         plan=plan,
-        trial_end_date=trial_end
+        trial_end_date=trial_end,
+        show_sidebar=False
     )
 
 
@@ -1245,7 +1279,10 @@ def factfind():
             return redirect(url_for("pages.settings"))
         return redirect(url_for("pages.surplus_reveal"))
 
-    return render_template("factfind.html", profile=current_user.profile_dict())
+    return render_template("factfind.html",
+        profile=current_user.profile_dict(),
+        show_sidebar=current_user.factfind_completed
+    )
 
 
 # ─── UPLOAD & ADD ────────────────────────────────────────
@@ -1897,7 +1934,8 @@ def welcome():
         greeting=greeting,
         profile_done=current_user.factfind_completed,
         goals_done=has_goals,
-        steps_done=steps_done
+        steps_done=steps_done,
+        show_sidebar=False
     )
 
 @page_bp.route("/unsubscribe")

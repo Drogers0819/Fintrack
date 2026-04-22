@@ -112,58 +112,103 @@ a:hover {
     background: var(--bg-primary);
 }
 
+/* ===== APP HEADER — fixed full-width chrome bar above sidebar + content ===== */
+.app-header {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 64px;
+    z-index: 200;
+    display: flex;
+    align-items: center;
+    background: var(--sidebar-bg);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border-bottom: 0.5px solid var(--glass-border);
+}
+
+/* Wordmark zone — matches sidebar width exactly */
+.app-header-brand {
+    width: 260px;
+    flex-shrink: 0;
+    padding: 0 24px;
+    font-family: var(--font-sans);
+    font-size: 1rem;
+    font-weight: 500;
+    letter-spacing: 0;
+    color: var(--text-primary);
+    line-height: 1;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* Breadcrumb / page title zone — right of wordmark, aligns with content area */
+.app-header-content {
+    flex: 1;
+    padding: 0 40px;
+    display: flex;
+    align-items: center;
+    border-left: 0.5px solid var(--glass-border);
+    height: 100%;
+}
+
+/* Breadcrumb component */
+.app-breadcrumb {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.75rem;
+    color: var(--text-tertiary);
+    text-decoration: none;
+}
+
+.app-breadcrumb a {
+    color: var(--text-tertiary);
+    text-decoration: none;
+    transition: color 0.15s;
+}
+
+.app-breadcrumb a:hover {
+    color: var(--text-secondary);
+}
+
+.app-breadcrumb svg {
+    opacity: 0.35;
+    flex-shrink: 0;
+}
+
+.app-breadcrumb span {
+    color: var(--text-secondary);
+}
+
+/* Plain page title in header — top-level nav pages only */
+.app-header-title {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+}
+
 .sidebar {
     width: 260px;
-    padding: 40px 24px;
+    padding: 0;
     border-right: 0.5px solid var(--sidebar-border, var(--glass-border, rgba(255, 255, 255, 0.08)));
     background: var(--sidebar-bg);
     backdrop-filter: blur(10px);
     position: fixed;
-    top: 0;
+    top: 64px;
     left: 0;
-    height: 100vh;
+    height: calc(100vh - 64px);
     display: flex;
     flex-direction: column;
-}
-
-/* Fix 1 — Sidebar brand: icon mark + CSS wordmark */
-.sidebar-brand {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-}
-
-.sidebar-brand-mark {
-    width: 24px;
-    height: 24px;
-    object-fit: contain;
-    flex-shrink: 0;
-}
-
-.sidebar-brand-name {
-    font-family: var(--font-serif);
-    font-style: italic;
-    font-size: 1.35rem;
-    font-weight: 300;
-    color: var(--text-primary);
-    letter-spacing: -0.01em;
-    line-height: 1;
-}
-
-/* Fix 2 — Reduce logo→nav dead space */
-.sidebar-nav {
-    margin-top: 32px;
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-    flex: 1;
+    z-index: 199;
 }
 
 .nav-link {
     display: flex;
     align-items: center;
     gap: 12px;
-    padding: 12px 16px;
+    padding: 9px 12px;
     border-radius: 10px;
     color: var(--text-secondary);
     font-size: 0.85rem;
@@ -200,7 +245,7 @@ a:hover {
 }
 
 .sidebar-footer {
-    padding-top: 24px;
+    padding: 12px 12px 24px;
     border-top: 0.5px solid var(--glass-border);
 }
 
@@ -477,9 +522,17 @@ a:hover {
 
 .main-content {
     margin-left: 260px;
-    padding: 40px;
+    padding: 84px 40px 40px;
     flex: 1;
     max-width: 1100px;
+    background: var(--bg-primary);
+}
+
+/* Onboarding layout — no sidebar, centered content */
+.main-content--solo {
+    margin-left: 0;
+    padding: 84px 40px 40px;
+    flex: 1;
     background: var(--bg-primary);
 }
 
@@ -494,13 +547,6 @@ a:hover {
 
 .glass-card:hover {
     border-color: var(--roman-gold-glow);
-}
-
-.gold-card {
-    background: rgba(197, 163, 93, 0.05);
-    border: 0.5px solid rgba(197, 163, 93, 0.2);
-    border-radius: 16px;
-    padding: 28px;
 }
 
 .metric-label {
@@ -1527,14 +1573,16 @@ input[type="number"] {
     100% { opacity: 0.3; transform: scale(1); }
 }
 
+/* Fix 2 — Definitive sidebar-nav: no top margin (brand zone handles spacing via fixed height) */
 .sidebar-nav {
-    margin-top: 48px;
+    margin-top: 0;
     display: flex;
     flex-direction: column;
-    gap: 4px;
+    gap: 2px;
     flex: 1;
     overflow-y: auto;
     min-height: 0;
+    padding: 16px 12px 8px;
 }
 
 .sidebar-nav::-webkit-scrollbar {
@@ -1892,12 +1940,36 @@ body.theme-mist .budget-row-danger {
     justify-content: flex-end;
 }
 
+/* ===== COMPANION FULL-BLEED INPUT ZONE ===== */
+.companion-input-zone {
+    position: fixed;
+    bottom: 0;
+    left: 260px; /* sidebar width */
+    right: 0;
+    background: var(--bg-primary);
+    border-top: 0.5px solid var(--glass-border);
+    padding: 12px 40px 20px;
+    z-index: 50;
+}
+
+.companion-input-inner {
+    max-width: 560px;
+}
+
+@media (max-width: 768px) {
+    .companion-input-zone {
+        left: 0;
+        bottom: 60px; /* mobile bottom nav height */
+        padding: 10px 16px 14px;
+    }
+}
+
 /* ===== GOLD CARD ===== */
 .gold-card {
     padding: 20px 24px;
     border-radius: 16px;
     background: var(--roman-gold-dim, rgba(197, 163, 93, 0.05));
-    border: 0.5px solid rgba(197, 163, 93, 0.15);
+    border: 0.5px solid var(--roman-gold-glow, rgba(197, 163, 93, 0.3));
 }
 
 /* ===== MOBILE — NATIVE APP FEEL ===== */
@@ -1908,6 +1980,10 @@ body.theme-mist .budget-row-danger {
     .app-layout {
         flex-direction: column;
         min-height: 100dvh;
+    }
+
+    .app-header {
+        display: none; /* mobile uses .mobile-header-bar */
     }
 
     .sidebar {
@@ -1983,8 +2059,9 @@ body.theme-mist .budget-row-danger {
         margin: 0;
     }
 
-    /* Main content: starts below the fixed header bar */
-    .main-content {
+    /* Main content: starts below the fixed mobile header bar */
+    .main-content,
+    .main-content--solo {
         padding: calc(52px + env(safe-area-inset-top) + 16px) 16px 96px;
         margin-left: 0;
         width: 100%;
@@ -2253,12 +2330,16 @@ body.theme-mist .budget-row-danger {
 /* ===== TABLET ===== */
 
 @media (min-width: 769px) and (max-width: 1024px) {
+    .app-header-brand {
+        width: 200px;
+    }
+
     .sidebar {
         width: 200px;
     }
 
     .main-content {
-        padding: 28px 24px;
+        padding: 84px 24px 28px;
         margin-left: 200px;
     }
 

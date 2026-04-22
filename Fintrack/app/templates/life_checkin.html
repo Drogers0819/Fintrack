@@ -1,11 +1,15 @@
 {% extends "base.html" %}
 {% block title %}Life check-in – Claro{% endblock %}
 
+{% block header_content %}
+<nav class="app-breadcrumb" aria-label="Breadcrumb">
+    <a href="{{ url_for('pages.checkin') }}">Check-in</a>
+    <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>
+    <span>Life check-in</span>
+</nav>
+{% endblock %}
+
 {% block content %}
-<a href="{{ url_for('pages.overview') }}" style="display: inline-flex; align-items: center; gap: 6px; font-size: 0.75rem; color: var(--text-tertiary); text-decoration: none; margin-bottom: 16px;">
-    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
-    Overview
-</a>
 <div class="page-header">
     <h1>Life check-in</h1>
     <p>Anything changed this month? Quick updates keep your plan accurate.</p>
@@ -95,6 +99,19 @@
                 </div>
             </label>
 
+            <label class="choice-card" for="type-other">
+                <input type="radio" name="checkin_type" id="type-other" value="other" style="display:none;">
+                <div class="choice-card-inner">
+                    <div style="display: flex; align-items: center; gap: 12px;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0; color: var(--text-tertiary);"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg>
+                        <div>
+                            <div style="font-size: 0.85rem; color: var(--text-primary);">Something else</div>
+                            <div style="font-size: 0.72rem; color: var(--text-tertiary); margin-top: 2px;">Tell us what's changed</div>
+                        </div>
+                    </div>
+                </div>
+            </label>
+
             <label class="choice-card" for="type-later">
                 <input type="radio" name="checkin_type" id="type-later" value="ask_later" style="display:none;">
                 <div class="choice-card-inner">
@@ -142,6 +159,14 @@
             </div>
         </div>
 
+        <!-- Other: free text -->
+        <div id="field-other" style="display: none;">
+            <div class="form-group">
+                <label class="form-label">What's changed?</label>
+                <textarea name="details" class="form-input" rows="3" placeholder="Describe what's changed and we'll note it on your plan" style="resize: none; line-height: 1.6;"></textarea>
+            </div>
+        </div>
+
     </div>
 
     <!-- Submit -->
@@ -172,11 +197,12 @@
 
 <script>
 (function () {
-    var needsAmount = ['birthday', 'unexpected_expense', 'income_changed'];
+    var needsAmount = ['birthday', 'unexpected_expense', 'income_changed', 'other'];
     var fieldMap = {
         'birthday': 'field-birthday',
         'unexpected_expense': 'field-unexpected',
-        'income_changed': 'field-income'
+        'income_changed': 'field-income',
+        'other': 'field-other'
     };
 
     function updateFields() {
