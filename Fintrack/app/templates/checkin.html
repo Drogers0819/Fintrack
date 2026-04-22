@@ -2,7 +2,17 @@
 {% block title %}Check-in – Claro{% endblock %}
 
 
-{% block header_content %}<span class="app-header-title">Check-in</span>{% endblock %}
+{% block header_content %}
+{% if request.args.get('edit') == '1' %}
+<nav class="app-breadcrumb" aria-label="Breadcrumb">
+    <a href="{{ url_for('pages.checkin') }}">Check-in</a>
+    <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>
+    <span>Edit</span>
+</nav>
+{% else %}
+<span class="app-header-title">Check-in</span>
+{% endif %}
+{% endblock %}
 
 {% block content %}
 <div class="page-header">
@@ -84,9 +94,7 @@
 
         <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 20px;">
             <button type="submit" class="btn-primary btn-full">Confirm check-in</button>
-            {% if request.args.get('edit') == '1' %}
-            <a href="{{ url_for('pages.checkin') }}" style="text-align: center; font-size: 0.82rem; color: var(--text-tertiary); text-decoration: none;">Cancel</a>
-            {% else %}
+            {% if request.args.get('edit') != '1' %}
             <a href="{{ url_for('pages.overview') }}" style="text-align: center; font-size: 0.82rem; color: var(--text-tertiary); text-decoration: none;">Cancel</a>
             {% endif %}
         </div>
