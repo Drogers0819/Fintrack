@@ -198,6 +198,19 @@ Active templates: `overview`, `my_money`, `my_goals`, `plan`, `my_budgets`, `set
 
 ---
 
+## USER MENTAL MODEL
+
+Run these checks before calling any page done.
+
+- Before calling any page done, ask: does the user know what they're looking at?
+- Does every label match the user's mental model, not the developer's model? ("Your goals" not "From your surplus", "Your timeline" not "Plan phases")
+- Is every piece of information useful or is it creating cognitive overhead?
+- Is the hierarchy obvious: primary action, secondary info, supporting detail?
+- Could a user unfamiliar with the product understand this page in 10 seconds?
+- Does the empty state tell the user WHAT the page will look like when populated?
+
+---
+
 ## UI audit — what to check on every page
 
 Run these checks before marking any UI change done. Static analysis is not enough — use Playwright for visual verification.

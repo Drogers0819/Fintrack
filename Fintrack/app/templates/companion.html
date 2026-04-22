@@ -3,17 +3,25 @@
 
 {% block header_content %}<span class="app-header-title">Companion</span>{% endblock %}
 
+{% block main_class %}main-content--companion{% endblock %}
+
 {% block content %}
 <div class="page-header">
     <h1>Your companion</h1>
     {% if tier != "free" %}
-    <p style="font-size: 0.75rem; color: var(--text-tertiary); margin-top: 4px;">
-        {{ messages_used }}/{{ daily_limit }} messages today
+    <p style="font-size: 0.75rem; color: var(--text-tertiary); margin-top: 4px; display: flex; align-items: center; gap: 8px;">
+        <span id="msg-counter">{{ messages_used }}/{{ daily_limit }} messages today</span>
+        {% if chat_history %}
+        <span style="opacity: 0.35;">·</span>
+        <button id="clear-chat-btn" onclick="openClearModal()" title="Clear conversation" style="background: none; border: none; cursor: pointer; padding: 2px; color: var(--text-tertiary); opacity: 0.6; display: flex; align-items: center; transition: opacity 0.15s;" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.6'">
+            <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+        </button>
+        {% endif %}
     </p>
     {% endif %}
 </div>
 
-<div style="max-width: 560px; display: flex; flex-direction: column; {% if tier != 'free' %}height: calc(100dvh - 220px - 88px);{% endif %}">
+<div style="max-width: 640px; display: flex; flex-direction: column; {% if tier != 'free' %}height: calc(100dvh - 220px - 88px);{% endif %}">
 
     {% if tier == "free" %}
     <!-- Paywall -->
@@ -66,9 +74,9 @@
     <div id="chat-messages" style="flex: 1; overflow-y: auto; padding: 8px 0; display: flex; flex-direction: column; gap: 12px;">
 
         {% if not chat_history %}
-        <!-- Welcome message -->
-        <div style="padding: 14px 16px; border-radius: 12px; background: var(--glass-bg); border: 0.5px solid var(--glass-border);">
-            <div style="font-size: 0.82rem; color: var(--text-secondary); line-height: 1.6;">
+        <!-- Welcome message — rendered as an assistant bubble, not a card -->
+        <div class="chat-msg chat-assistant">
+            <div class="chat-bubble assistant-bubble">
                 Hi {{ current_user.name.split(' ')[0] }}! I'm your Claro companion. I know your plan inside out. Ask me anything about your goals, run what-if scenarios, or just check how things are going.
             </div>
         </div>
@@ -86,6 +94,11 @@
 
         {% for msg in chat_history %}
         <div class="chat-msg chat-{{ msg.role }}">
+            {% if msg.role == 'user' %}
+            <button class="msg-resend-btn" data-msg="{{ msg.content | e }}" onclick="resendMessage(this.dataset.msg)" title="Resend">
+                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+            </button>
+            {% endif %}
             <div class="chat-bubble {{ msg.role }}-bubble">{{ msg.content }}</div>
         </div>
         {% endfor %}
@@ -117,6 +130,18 @@
 </div>
 {% endif %}
 
+<!-- Clear conversation modal -->
+<div id="clear-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.6); z-index:200; align-items:center; justify-content:center; padding:24px;">
+    <div style="background:var(--bg-secondary,var(--bg-primary)); border:0.5px solid var(--glass-border); border-radius:16px; padding:28px 24px; max-width:340px; width:100%;">
+        <div style="font-size:0.92rem; color:var(--text-primary); font-weight:500; margin-bottom:8px;">Clear conversation?</div>
+        <div style="font-size:0.8rem; color:var(--text-tertiary); line-height:1.5; margin-bottom:24px;">This deletes all messages and can't be undone.</div>
+        <div style="display:flex; gap:10px;">
+            <button onclick="closeClearModal()" style="flex:1; padding:10px; border-radius:10px; border:0.5px solid var(--glass-border); background:none; color:var(--text-secondary); font-size:0.82rem; cursor:pointer;">Keep chat</button>
+            <button onclick="executeClearChat()" style="flex:1; padding:10px; border-radius:10px; border:none; background:rgba(220,60,60,0.15); color:rgba(220,80,80,0.9); font-size:0.82rem; font-weight:500; cursor:pointer;">Clear all</button>
+        </div>
+    </div>
+</div>
+
 <style>
 .chat-msg{display:flex;}
 .chat-user{justify-content:flex-end;}
@@ -133,6 +158,11 @@
 @keyframes blink{0%,80%,100%{opacity:0.3;}40%{opacity:1;}}
 #chat-input:focus{outline:none;border-color:rgba(255,255,255,0.2);}
 #send-btn:disabled{opacity:0.38;cursor:not-allowed;}
+.msg-resend-btn{background:none;border:none;cursor:pointer;opacity:0;padding:4px;margin-right:8px;align-self:center;transition:opacity 0.15s;color:var(--text-tertiary);flex-shrink:0;}
+.chat-user:hover .msg-resend-btn{opacity:0.7;}
+.msg-resend-btn:hover{opacity:1 !important;}
+@media(hover:none){.msg-resend-btn{opacity:0.45;}}
+#clear-modal.open{display:flex;}
 </style>
 
 <script>
@@ -140,10 +170,14 @@ var sending = false;
 var messagesUsed = {{ messages_used }};
 var dailyLimit = {{ daily_limit }};
 
-// Scroll chat to bottom on load (history starts from bottom)
+// Scroll chat to bottom on load
 document.addEventListener('DOMContentLoaded', function() {
     var container = document.getElementById('chat-messages');
     if (container) container.scrollTop = container.scrollHeight;
+    // Close modal on Escape
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') closeClearModal();
+    });
 });
 
 function autoResize(el) {
@@ -168,9 +202,59 @@ function addMessage(role, content) {
     var container = document.getElementById('chat-messages');
     var div = document.createElement('div');
     div.className = 'chat-msg chat-' + role;
-    div.innerHTML = '<div class="chat-bubble ' + role + '-bubble">' + escapeHtml(content) + '</div>';
+
+    if (role === 'user') {
+        var resendBtn = document.createElement('button');
+        resendBtn.className = 'msg-resend-btn';
+        resendBtn.title = 'Resend';
+        var svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+        svg.setAttribute('width', '12');
+        svg.setAttribute('height', '12');
+        svg.setAttribute('viewBox', '0 0 24 24');
+        svg.setAttribute('fill', 'none');
+        svg.setAttribute('stroke', 'currentColor');
+        svg.setAttribute('stroke-width', '2');
+        svg.setAttribute('stroke-linecap', 'round');
+        svg.setAttribute('stroke-linejoin', 'round');
+        var p1 = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        p1.setAttribute('d', 'M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8');
+        var p2 = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        p2.setAttribute('d', 'M3 3v5h5');
+        svg.appendChild(p1);
+        svg.appendChild(p2);
+        resendBtn.appendChild(svg);
+        (function(c) { resendBtn.addEventListener('click', function() { resendMessage(c); }); })(content);
+        div.appendChild(resendBtn);
+    }
+
+    var bubble = document.createElement('div');
+    bubble.className = 'chat-bubble ' + role + '-bubble';
+    bubble.textContent = content;
+    div.appendChild(bubble);
+
     container.appendChild(div);
     container.scrollTop = container.scrollHeight;
+}
+
+function resendMessage(text) {
+    var input = document.getElementById('chat-input');
+    input.value = text;
+    input.focus();
+    autoResize(input);
+}
+
+function openClearModal() {
+    document.getElementById('clear-modal').classList.add('open');
+}
+
+function closeClearModal() {
+    document.getElementById('clear-modal').classList.remove('open');
+}
+
+function executeClearChat() {
+    fetch('/api/companion/clear', { method: 'POST', headers: { 'Content-Type': 'application/json' } })
+    .then(function(res) { return res.json(); })
+    .then(function(data) { if (data.success) window.location.reload(); });
 }
 
 function showTyping() {
@@ -178,7 +262,15 @@ function showTyping() {
     var div = document.createElement('div');
     div.className = 'chat-msg chat-assistant';
     div.id = 'typing-indicator';
-    div.innerHTML = '<div class="chat-bubble assistant-bubble"><div class="typing-dots"><span></span><span></span><span></span></div></div>';
+    var bubble = document.createElement('div');
+    bubble.className = 'chat-bubble assistant-bubble';
+    var dots = document.createElement('div');
+    dots.className = 'typing-dots';
+    for (var i = 0; i < 3; i++) {
+        dots.appendChild(document.createElement('span'));
+    }
+    bubble.appendChild(dots);
+    div.appendChild(bubble);
     container.appendChild(div);
     container.scrollTop = container.scrollHeight;
 }
@@ -188,15 +280,9 @@ function hideTyping() {
     if (el) el.remove();
 }
 
-function escapeHtml(text) {
-    var div = document.createElement('div');
-    div.textContent = text;
-    return div.innerHTML;
-}
-
 function updateCounter() {
     messagesUsed++;
-    var counter = document.querySelector('.page-header p');
+    var counter = document.getElementById('msg-counter');
     if (counter) counter.textContent = messagesUsed + '/' + dailyLimit + ' messages today';
 }
 
@@ -235,7 +321,7 @@ function sendMessage() {
             updateCounter();
         }
     })
-    .catch(function(err) {
+    .catch(function() {
         hideTyping();
         addMessage('assistant', 'Something went wrong. Please try again.');
     })

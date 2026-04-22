@@ -15,6 +15,26 @@
 
 <!-- Entries go below this line, newest first -->
 
+## 2026-04-22 — Breadcrumb reflects IA, not navigation history
+**Mistake**: goal_detail.html conditionally showed "Overview" or "Goals" as breadcrumb parent based on a `from_page` URL param (tracking where the user came from). Check-in showed "Overview › Monthly check-in" even though Check-in is a top-level nav item. Plan showed "Overview › Your plan" for the same reason.
+**Fix**: Breadcrumbs always reflect Information Architecture — where the page lives in the nav hierarchy. Top-level nav pages (Overview, Check-in, Goals, Companion, Plan) show only their own name in the header. Sub-pages always show the matching sidebar section as parent (e.g. "Goals › goal name", "Check-in › Life check-in", "Plan › Need cash"). No `from_page` conditionals.
+**Rule**: Breadcrumbs show IA position, not navigation history. The parent in the breadcrumb is always the sidebar section that owns this page — never the page the user came from. Sidebar active state and breadcrumb parent must always match.
+
+## 2026-04-22 — Duplicate CSS definition causes confusion and cascade bugs
+**Mistake**: `.gold-card` was defined twice in main.css — an older definition at line ~549 with hardcoded `rgba(197,163,93,0.05)` background and `rgba(197,163,93,0.2)` border, and the canonical definition at ~1948 with the correct token-aware values. The cascade meant the second definition won, but the first created confusion and overrode inherited values unexpectedly on some selectors.
+**Fix**: Removed the earlier duplicate block entirely. Kept only the canonical definition. Changed its border from hardcoded `rgba(197,163,93,0.15)` to `var(--roman-gold-glow)` so it adapts across all 9 themes.
+**Rule**: Before adding any new CSS rule, grep for existing definitions of the same selector. Duplicates always create cascade confusion. One canonical definition per component.
+
+## 2026-04-22 — Fixed input zone on companion needs sidebar-aware left offset
+**Mistake**: Companion's full-bleed fixed input zone needed to account for the 260px sidebar on desktop. Setting `left: 0` would put it behind the sidebar. Using `position: static` kept it inside the 560px column and not full-bleed.
+**Fix**: `.companion-input-zone { position: fixed; bottom: 0; left: 260px; right: 0; }` on desktop. `@media (max-width: 768px) { left: 0; bottom: 60px; }` to clear the mobile bottom nav. Inner div has `max-width: 560px` to align text with the column above.
+**Rule**: Full-bleed fixed zones on pages with a sidebar must use `left: [sidebar-width]px` to avoid overlapping the sidebar. The inner content container constrains the max-width. Mobile override resets left to 0 and adjusts bottom to clear the nav bar.
+
+## 2026-04-22 — Glass chip style vs btn-secondary for quick-select inputs
+**Mistake**: Quick-amount preset buttons on withdraw.html used `btn-secondary btn-sm` — the gold-bordered secondary button — to fill in an amount field. These are not action buttons; they're quick-fill shortcuts. Using a gold-bordered button for this misrepresents the action and overloads the gold semantic.
+**Fix**: Inline glass chip style: `border: 0.5px solid var(--glass-border); background: var(--glass-bg); color: var(--text-tertiary); border-radius: 50px`. These are neutral selection indicators, not actions.
+**Rule**: Quick-fill preset chips that populate a field are NOT buttons — they're selection shortcuts. Use glass chip styling (neutral border, no gold). Only the form's actual submit button is the action and earns btn-primary.
+
 ## 2026-04-18 — Mixed tappable/non-tappable rows in the same list (affordance failure)
 **Mistake**: Overview pots section showed goal rows (tappable, with chevron) and allocation rows (Lifestyle & family, Buffer — not tappable) in the same visual list. Tried visual differentiation (text-primary+chevron vs text-secondary+no chevron) as a middle ground — this was wrong. On mobile with no hover states, users default to "nothing navigates" and miss the tappable rows entirely regardless of styling.
 **Fix**: Removed Lifestyle & Buffer from the overview pots section entirely. They're allocation categories, not goals — they have no detail pages. The Plan page shows full allocation breakdown. Now every row in "Your pots" is a goal row and every row has a chevron and navigates.

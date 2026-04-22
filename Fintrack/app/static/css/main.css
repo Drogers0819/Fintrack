@@ -147,7 +147,7 @@ a:hover {
 /* Breadcrumb / page title zone — right of wordmark, aligns with content area */
 .app-header-content {
     flex: 1;
-    padding: 0 40px;
+    padding: 0 24px;
     display: flex;
     align-items: center;
     border-left: 0.5px solid var(--glass-border);
@@ -1948,19 +1948,40 @@ body.theme-mist .budget-row-danger {
     right: 0;
     background: var(--bg-primary);
     border-top: 0.5px solid var(--glass-border);
-    padding: 12px 40px 20px;
+    padding: 12px 24px 16px; /* 24px matches companion content padding; 16px bottom aligns border-top with sidebar footer */
     z-index: 50;
 }
 
 .companion-input-inner {
-    max-width: 560px;
+    max-width: 640px;
+}
+
+/* Companion page uses tighter horizontal padding so chat feels native */
+.main-content--companion {
+    padding-left: 24px;
+    padding-right: 24px;
 }
 
 @media (max-width: 768px) {
     .companion-input-zone {
         left: 0;
         bottom: 60px; /* mobile bottom nav height */
-        padding: 10px 16px 14px;
+        padding: 10px 24px 14px; /* 24px matches main-content--companion padding-left */
+    }
+}
+
+/* Small phones — match 12px content padding at ≤375px */
+@media (max-width: 375px) {
+    .companion-input-zone {
+        padding: 10px 12px 14px;
+    }
+}
+
+/* Tablet — sidebar shrinks to 200px; input zone must follow */
+@media (min-width: 769px) and (max-width: 1024px) {
+    .companion-input-zone {
+        left: 200px;
+        padding-left: 24px; /* matches tablet main-content padding */
     }
 }
 

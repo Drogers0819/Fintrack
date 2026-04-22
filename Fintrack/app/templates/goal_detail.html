@@ -3,7 +3,11 @@
 
 {% block header_content %}
 <nav class="app-breadcrumb" aria-label="Breadcrumb">
+    {% if request.args.get('from') == 'plan' %}
+    <a href="{{ url_for('pages.plan') }}">Plan</a>
+    {% else %}
     <a href="{{ url_for('pages.my_goals') }}">Goals</a>
+    {% endif %}
     <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>
     <span>{{ goal.name | replace(' (must-hit)', '') }}</span>
 </nav>
@@ -102,8 +106,7 @@
 {% elif projection.reachable is defined and not projection.reachable %}
 <div style="margin-bottom: 24px; padding-top: 8px;">
     <p style="font-size: 0.95rem; color: var(--text-primary); font-weight: 500; margin-bottom: 8px;">No contribution set</p>
-    <p style="font-size: 0.82rem; color: var(--text-secondary); line-height: 1.6; margin-bottom: 20px;">{{ projection.message }}</p>
-    <a href="{{ url_for('pages.edit_goal', goal_id=goal.id) }}" class="btn-primary btn-sm">Edit this goal</a>
+    <p style="font-size: 0.82rem; color: var(--text-secondary); line-height: 1.6;">{{ projection.message }}</p>
 </div>
 {% endif %}
 

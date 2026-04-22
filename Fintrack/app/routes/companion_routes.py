@@ -33,6 +33,15 @@ def companion_page():
     )
 
 
+@companion_bp.route("/api/companion/clear", methods=["POST"])
+@login_required
+def clear_chat():
+    """Delete all chat history for the current user."""
+    ChatMessage.query.filter_by(user_id=current_user.id).delete()
+    db.session.commit()
+    return jsonify({"success": True})
+
+
 @companion_bp.route("/api/companion/chat", methods=["POST"])
 @login_required
 def companion_chat():
