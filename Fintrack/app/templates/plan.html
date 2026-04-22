@@ -8,6 +8,14 @@
     <h1>Your plan</h1>
 </div>
 
+{% if is_frozen %}
+<div style="margin-bottom: 24px; padding: 16px 18px; border-radius: 12px; border: 1px solid var(--roman-gold); background: var(--glass-bg);">
+    <div style="font-size: 0.72rem; color: var(--roman-gold); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 6px;">Trial ended</div>
+    <p style="font-size: 0.85rem; color: var(--text-primary); line-height: 1.6; margin: 0 0 12px;">Your trial has ended. Your plan and data are safe — pick a plan to reactivate.</p>
+    <a href="{{ url_for('pages.trial_gate') }}" class="btn-primary btn-sm" style="text-decoration: none;">Reactivate</a>
+</div>
+{% endif %}
+
 {% if smart_plan and not smart_plan.error %}
 
 <!-- Plan summary whisper -->
@@ -128,6 +136,7 @@
 </div>
 {% endif %}
 
+{% if not is_frozen %}
 <!-- Tools section -->
 <div style="max-width: 560px;">
 <div class="section-label" style="margin-top: 32px; margin-bottom: 0;">Tools</div>
@@ -211,6 +220,7 @@
         </div>
     </div>
 </div>
+{% endif %}
 {% endif %}
 
 </div><!-- /max-width tools -->

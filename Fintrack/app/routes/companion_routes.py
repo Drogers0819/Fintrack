@@ -5,12 +5,14 @@ from app.models.chat import ChatMessage
 from app.models.goal import Goal
 from app.services.companion_service import chat, check_rate_limit, increment_message_count
 from app.services.planner_service import generate_financial_plan
+from app.utils.auth import requires_subscription
 
 companion_bp = Blueprint("companion", __name__)
 
 
 @companion_bp.route("/companion")
 @login_required
+@requires_subscription
 def companion_page():
     """Render the companion chat UI."""
     allowed, reason = check_rate_limit(current_user)
@@ -118,6 +120,7 @@ def clear_chat():
 
 @companion_bp.route("/api/companion/chat", methods=["POST"])
 @login_required
+@requires_subscription
 def companion_chat():
     """Handle a chat message to the companion."""
     # Rate limit check

@@ -26,6 +26,7 @@ from app.services.planner_service import generate_financial_plan, get_plan_summa
 from app.services.whisper_service import generate_action_whisper
 from app.services.withdrawal_service import get_withdrawal_options
 from app.models.life_checkin import LifeCheckIn
+from app.utils.auth import is_subscription_active, requires_subscription
 page_bp = Blueprint("pages", __name__)
 
 
@@ -493,6 +494,12 @@ def overview():
         if days_since_signup >= 14 and 13 <= day_of_month <= 16 and not already_checked_in:
             show_life_checkin_nudge = True
 
+    is_frozen = (
+        bool(current_user.factfind_completed)
+        and (data["active_goals"] or 0) > 0
+        and not is_subscription_active(current_user)
+    )
+
     return render_template("overview.html",
         greeting=greeting,
         smart_plan=smart_plan,
@@ -510,6 +517,7 @@ def overview():
         nearest_milestone=nearest_milestone,
         total_saved_toward_goals=total_saved_toward_goals,
         show_life_checkin_nudge=show_life_checkin_nudge,
+        is_frozen=is_frozen,
     )
 
 
@@ -628,6 +636,12 @@ def plan():
             except (ValueError, TypeError):
                 flash("Invalid amount", "error")
 
+    is_frozen = (
+        bool(current_user.factfind_completed)
+        and (data["active_goals"] or 0) > 0
+        and not is_subscription_active(current_user)
+    )
+
     return render_template("plan.html",
         waterfall=data["waterfall"],
         projections=data["projections"],
@@ -636,7 +650,8 @@ def plan():
         afford_result=afford_result,
         habit_result=habit_result,
         habit_amount=habit_amount,
-        habit_description=habit_description
+        habit_description=habit_description,
+        is_frozen=is_frozen,
     )
 
 
@@ -1071,6 +1086,7 @@ def plan_review():
 
 @page_bp.route("/withdraw", methods=["GET", "POST"])
 @login_required
+@requires_subscription
 def withdraw():
     if not current_user.factfind_completed or not current_user.monthly_income:
         flash("Complete your financial profile first.", "error")
@@ -1675,6 +1691,7 @@ def goal_detail(goal_id):
 
 @page_bp.route("/scenario", methods=["GET", "POST"])
 @login_required
+@requires_subscription
 def scenario_page():
     if not current_user.factfind_completed:
         flash("Complete your financial profile first", "error")
