@@ -166,6 +166,12 @@
 .chat-user:hover .msg-edit-btn{opacity:0.7;}
 .msg-edit-btn:hover{opacity:1 !important;}
 @media(hover:none){.msg-edit-btn{opacity:0.5;}}
+/* Light theme chat contrast overrides */
+body.theme-ivory .user-bubble,body.theme-pearl .user-bubble,body.theme-sage .user-bubble,body.theme-paper .user-bubble{background:rgba(0,0,0,0.08);}
+body.theme-ivory .assistant-bubble,body.theme-pearl .assistant-bubble,body.theme-sage .assistant-bubble,body.theme-paper .assistant-bubble{background:rgba(0,0,0,0.04);border-color:rgba(0,0,0,0.12);}
+body.theme-ivory #chat-input:focus,body.theme-pearl #chat-input:focus,body.theme-sage #chat-input:focus,body.theme-paper #chat-input:focus{border-color:rgba(0,0,0,0.22);}
+body.theme-ivory #send-btn,body.theme-pearl #send-btn,body.theme-sage #send-btn,body.theme-paper #send-btn{color:#fff;}
+body.theme-ivory #send-btn:disabled,body.theme-pearl #send-btn:disabled,body.theme-sage #send-btn:disabled,body.theme-paper #send-btn:disabled{opacity:1;background:rgba(0,0,0,0.10)!important;color:rgba(0,0,0,0.28)!important;}
 </style>
 
 <script>

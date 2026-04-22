@@ -45,7 +45,7 @@
 
 {% elif not _g %}
 <!-- Profile done, no goals yet — continue wizard -->
-<a href="{{ url_for('pages.goal_chips') }}" style="display: flex; align-items: center; gap: 10px; padding: 11px 16px; border-radius: 10px; background: rgba(255,255,255,0.02); border: 0.5px solid var(--glass-border); margin-bottom: 24px; text-decoration: none;">
+<a href="{{ url_for('pages.goal_chips') }}" style="display: flex; align-items: center; gap: 10px; padding: 11px 16px; border-radius: 10px; background: var(--surface-subtle); border: 0.5px solid var(--glass-border); margin-bottom: 24px; text-decoration: none;">
     <span style="flex: 1; font-size: 0.8rem; color: var(--text-secondary);">One step left. Choose your goals to finish building your plan.</span>
     <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0; color: var(--text-tertiary);"><path d="M9 18l6-6-6-6"/></svg>
 </a>
@@ -57,7 +57,7 @@
         <span class="ai-pulse"></span>
         <span style="font-size: 0.65rem; color: var(--roman-gold); text-transform: uppercase; letter-spacing: 0.06em;">Your plan</span>
     </div>
-    <p style="font-size: 0.82rem; color: var(--text-secondary); line-height: 1.7; font-style: italic;">{{ plan_summary }}</p>
+    <p style="font-size: 0.82rem; color: var(--ai-whisper); line-height: 1.7; font-style: italic;">{{ plan_summary }}</p>
 
     <div style="display: flex; gap: 12px; margin-top: 14px; padding-top: 12px; border-top: 0.5px solid var(--glass-border);">
         <div style="flex: 1;">
@@ -130,7 +130,7 @@
         <div style="display: flex; justify-content: space-between; margin-top: 3px;">
             <span style="font-size: 0.65rem; color: var(--text-tertiary);">£{{ "{:,.2f}".format(pot.current) }} of £{{ "{:,.2f}".format(pot.target) }}</span>
             {% if pot.months_to_target is defined %}
-            <span style="font-size: 0.65rem; color: var(--text-tertiary);">{{ pot.months_to_target }} months</span>
+            <span style="font-size: 0.65rem; color: var(--text-tertiary);">{{ pot.months_to_target }} month{% if pot.months_to_target != 1 %}s{% endif %}</span>
             {% endif %}
         </div>
         {% endif %}

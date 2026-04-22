@@ -1204,7 +1204,7 @@ def settings():
 def update_theme():
     theme = request.form.get("theme", "racing-green")
     valid = ["racing-green", "midnight-navy", "oxford-saddle", "amethyst",
-             "rosso", "cobalt", "ivory", "pearl", "sandstone", "sage", "lavender", "mist"]
+             "rosso", "cobalt", "obsidian", "ivory", "pearl", "sage", "paper"]
     if theme not in valid:
         theme = "racing-green"
 

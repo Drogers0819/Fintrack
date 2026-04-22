@@ -27,7 +27,7 @@
         {% for amt in [100, 250, 500, 1000] %}
         <button type="button" onclick="document.getElementById('amount-input').value={{ amt }}"
             style="padding: 6px 14px; border-radius: 50px; border: 0.5px solid var(--glass-border); background: var(--glass-bg); font-size: 0.75rem; color: var(--text-tertiary); cursor: pointer; transition: border-color 0.2s, color 0.2s;"
-            onmouseover="this.style.borderColor='rgba(255,255,255,0.2)';this.style.color='var(--text-secondary)'"
+            onmouseover="this.style.borderColor=getComputedStyle(document.body).getPropertyValue('--roman-gold');this.style.color='var(--text-secondary)'"
             onmouseout="this.style.borderColor='var(--glass-border)';this.style.color='var(--text-tertiary)'">£{{ amt }}</button>
         {% endfor %}
     </div>

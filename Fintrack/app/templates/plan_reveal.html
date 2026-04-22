@@ -48,7 +48,7 @@
                 <span style="font-size: 0.6rem; padding: 1px 6px; border-radius: 4px; background: var(--glass-divider); color: var(--text-tertiary); margin-left: 6px;">priority</span>
                 {% endif %}
                 {% if pot.months_to_target is defined and pot.months_to_target %}
-                <span style="font-size: 0.7rem; color: var(--text-tertiary); margin-left: 6px;">~{{ pot.months_to_target }} months</span>
+                <span style="font-size: 0.7rem; color: var(--text-tertiary); margin-left: 6px;">~{{ pot.months_to_target }} month{{ 's' if pot.months_to_target != 1 else '' }}</span>
                 {% endif %}
             </div>
             <span style="font-size: 0.9rem; color: var(--text-primary); font-weight: 500;">£{{ "{:,.0f}".format(pot.monthly_amount) }}<span style="font-size: 0.7rem; font-weight: 400; color: var(--text-tertiary);">/mo</span></span>
@@ -63,7 +63,7 @@
             {% endif %}
         {% endfor %}
         {% if paused %}
-        <div style="margin-top: 12px; padding: 10px 14px; border-radius: 8px; background: rgba(255,255,255,0.02); border: 0.5px solid var(--glass-border-subtle);">
+        <div style="margin-top: 12px; padding: 10px 14px; border-radius: 8px; background: var(--surface-subtle); border: 0.5px solid var(--glass-border-subtle);">
             <span style="font-size: 0.75rem; color: var(--text-tertiary);">
                 {{ paused|map(attribute='name')|join(', ') }} · starts after higher priorities are cleared
             </span>

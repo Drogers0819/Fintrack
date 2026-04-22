@@ -1,11 +1,15 @@
 {% extends "base.html" %}
 {% block title %}My Budgets – Claro{% endblock %}
 
+{% block header_content %}
+<nav class="app-breadcrumb" aria-label="Breadcrumb">
+    <a href="{{ url_for('pages.my_money') }}">Money</a>
+    <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>
+    <span>Budgets</span>
+</nav>
+{% endblock %}
+
 {% block content %}
-<a href="{{ url_for('pages.my_money') }}" style="display: inline-flex; align-items: center; gap: 6px; font-size: 0.75rem; color: var(--text-tertiary); text-decoration: none; margin-bottom: 16px;">
-    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
-    Money
-</a>
 <div class="page-header">
     <h1>My Budgets</h1>
 </div>
@@ -64,14 +68,14 @@
                     <button type="button" class="btn-secondary btn-sm" style="padding: 2px 8px; font-size: 0.7rem;"
                             onclick="saveBudgetLimit({{ b.budget_id }})">Save</button>
                     <button type="button" class="transaction-delete" style="opacity: 1;"
-                            onclick="cancelBudgetEdit({{ b.budget_id }})" aria-label="Cancel">
+                            onclick="cancelBudgetEdit({{ b.budget_id }})" aria-label="Cancel" data-tooltip="Cancel">
                         <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
                     </button>
                 </span>
                 <!-- Edit limit pencil -->
                 <button type="button" class="transaction-delete" style="padding: 2px;"
                         onclick="startBudgetEdit({{ b.budget_id }}, {{ b.monthly_limit }})"
-                        aria-label="Edit limit">
+                        aria-label="Edit limit" data-tooltip="Edit budget limit">
                     <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
                 </button>
                 <!-- Delete -->
@@ -80,7 +84,7 @@
                       data-confirm-title="Remove budget?"
                       data-confirm-body="This will permanently remove the {{ b.category_name }} budget. You can always set a new one."
                       data-confirm-label="Remove">
-                    <button type="submit" class="transaction-delete" aria-label="Remove budget">
+                    <button type="submit" class="transaction-delete" aria-label="Remove budget" data-tooltip="Remove budget">
                         <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
                     </button>
                 </form>

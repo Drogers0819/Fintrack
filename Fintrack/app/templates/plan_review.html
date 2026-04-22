@@ -22,7 +22,7 @@
             <span class="ai-pulse"></span>
             <span style="font-size: 0.65rem; color: var(--roman-gold); text-transform: uppercase; letter-spacing: 0.06em;">Claro</span>
         </div>
-        <p style="font-size: 0.9rem; color: var(--text-secondary); line-height: 1.7; font-style: italic;">{{ summary }}</p>
+        <p style="font-size: 0.9rem; color: var(--ai-whisper); line-height: 1.7; font-style: italic;">{{ summary }}</p>
     </div>
     {% endif %}
 
@@ -79,7 +79,7 @@
         </div>
         {% if item.target %}
         <div style="font-size: 0.72rem; color: var(--text-tertiary); margin-bottom: 4px; padding-left: 22px;">
-            £{{ "{:,.0f}".format(item.target) }} target{% if item.months %} · ~{{ item.months }} months{% endif %}
+            £{{ "{:,.0f}".format(item.target) }} target{% if item.months %} · ~{{ item.months }} month{{ 's' if item.months != 1 else '' }}{% endif %}
         </div>
         {% endif %}
         <div style="font-size: 0.78rem; color: var(--text-secondary); line-height: 1.6; padding-left: 22px;">
@@ -97,7 +97,7 @@
         <div style="font-size: 0.65rem; color: var(--text-tertiary); letter-spacing: 0.06em; white-space: nowrap; padding-top: 3px; min-width: 48px;">Phase {{ loop.index }}</div>
         <div>
             <div style="font-size: 0.82rem; color: {% if loop.first %}var(--text-primary){% else %}var(--text-secondary){% endif %}; margin-bottom: 2px; font-weight: {% if loop.first %}500{% else %}400{% endif %};">
-                {% if phase.months_in_phase %}~{{ phase.months_in_phase }} months{% endif %}
+                {% if phase.months_in_phase %}~{{ phase.months_in_phase }} month{{ 's' if phase.months_in_phase != 1 else '' }}{% endif %}
             </div>
             <div style="font-size: 0.75rem; color: var(--text-tertiary); line-height: 1.5;">
                 {{ phase.description }}
@@ -112,7 +112,7 @@
     <div class="section-label" style="margin-top: 28px; margin-bottom: 14px;">Things to note</div>
 
     {% for alert in plan.alerts %}
-    <div style="padding: 12px 14px; border-radius: 8px; background: rgba(255,255,255,0.02); border: 0.5px solid var(--glass-divider); margin-bottom: 8px;">
+    <div style="padding: 12px 14px; border-radius: 8px; background: var(--surface-subtle); border: 0.5px solid var(--glass-divider); margin-bottom: 8px;">
         <div style="font-size: 0.78rem; color: var(--text-secondary); line-height: 1.5;">{{ alert.message }}</div>
     </div>
     {% endfor %}

@@ -19,8 +19,8 @@
     <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='favicon.ico') }}">
     <link rel="icon" type="image/png" sizes="32x32" href="{{ url_for('static', filename='images/logo.png') }}">
     <link rel="apple-touch-icon" href="{{ url_for('static', filename='images/logo.png') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/themes.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}?v=20260424">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/themes.css') }}?v=20260424">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
 </head>
 <body class="{% if current_user.is_authenticated %}theme-{{ current_user.theme }}{% else %}theme-racing-green{% endif %}">
@@ -110,7 +110,7 @@
     <!-- Mobile fixed header bar — solid background prevents avatar overlapping scrolled content -->
     <div class="mobile-header-bar">
         <a href="{{ url_for('pages.overview') }}" class="mobile-logo" aria-label="Claro home">
-            <img src="{{ url_for('static', filename='images/Workmark.png') }}" alt="Claro" style="height: 22px; width: auto; display: block;">
+            <span style="font-family: var(--font-sans); font-size: 1rem; font-weight: 500; color: var(--text-primary); letter-spacing: 0; line-height: 1;">Claro</span>
         </a>
         <a href="{{ url_for('pages.settings') }}" class="mobile-settings-btn {% if request.endpoint == 'pages.settings' %}active{% endif %}" aria-label="Profile &amp; settings">
             {{ current_user.name[0] | upper }}

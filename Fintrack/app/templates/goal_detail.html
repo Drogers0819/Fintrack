@@ -18,7 +18,7 @@
 {% block content %}
 <div class="page-header" style="margin-bottom: 16px; display: flex; align-items: flex-start; justify-content: space-between; gap: 16px;">
     <h1>{{ goal.name | replace(' (must-hit)', '') }}</h1>
-    <a href="{{ url_for('pages.edit_goal', goal_id=goal.id) }}{% if request.args.get('from') %}?from={{ request.args.get('from') }}{% endif %}" class="btn-secondary btn-sm" style="flex-shrink: 0; margin-top: 4px;">Edit goal</a>
+    <a href="{{ url_for('pages.edit_goal', goal_id=goal.id) }}{% if request.args.get('from') %}?from={{ request.args.get('from') }}{% endif %}" class="btn-secondary btn-sm" style="flex-shrink: 0; margin-top: 4px;">{% if projection.reachable is defined and not projection.reachable %}Set monthly amount{% else %}Edit goal{% endif %}</a>
 </div>
 
 {% if projection.reachable %}
@@ -32,8 +32,8 @@
     <div id="arrival-date" class="metric-value gold sm" style="margin-bottom: 4px; transition: all 0.3s ease;">
         {{ projection.completion_date_human }}
     </div>
-    <p style="font-size: 0.85rem; color: var(--text-secondary); font-style: italic;">
-        <span id="months-display">{{ projection.months_to_target }} months</span> away at
+    <p style="font-size: 0.85rem; color: var(--ai-whisper); font-style: italic;">
+        <span id="months-display">{{ projection.months_to_target }} month{{ 's' if projection.months_to_target != 1 else '' }}</span> away at
         <span id="slider-value">£{{ "{:,.2f}".format(projection.monthly_contribution) }}</span>/month
     </p>
 </div>
@@ -108,8 +108,7 @@
 {% elif projection.reachable is defined and not projection.reachable %}
 <div style="margin-bottom: 24px; padding-top: 8px;">
     <p style="font-size: 0.95rem; color: var(--text-primary); font-weight: 500; margin-bottom: 8px;">Set a monthly amount to get started</p>
-    <p style="font-size: 0.82rem; color: var(--text-secondary); line-height: 1.6; margin-bottom: 16px;">Once you set a monthly saving amount, Claro will project exactly when you'll reach this goal and show you a timeline.</p>
-    <a href="{{ url_for('pages.edit_goal', goal_id=goal.id) }}{% if request.args.get('from') %}?from={{ request.args.get('from') }}{% endif %}" style="font-size: 0.82rem; color: var(--text-secondary); text-decoration: underline; text-underline-offset: 3px;">Set monthly amount in Edit goal</a>
+    <p style="font-size: 0.82rem; color: var(--text-secondary); line-height: 1.6;">Once you set a monthly saving amount, Claro will project exactly when you'll reach this goal and show you a timeline. Use the button above to set one.</p>
 </div>
 {% endif %}
 

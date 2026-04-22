@@ -17,7 +17,7 @@
         <span class="ai-pulse"></span>
         <span style="font-size: 0.65rem; color: var(--roman-gold); text-transform: uppercase; letter-spacing: 0.06em;">Plan overview</span>
     </div>
-    <p style="font-size: 0.9rem; color: var(--text-secondary); line-height: 1.7; font-style: italic;">{{ plan_summary }}</p>
+    <p style="font-size: 0.9rem; color: var(--ai-whisper); line-height: 1.7; font-style: italic;">{{ plan_summary }}</p>
 </div>
 {% endif %}
 
@@ -41,7 +41,7 @@
     {% if pot.monthly_amount > 0 %}
     {% if ns.first_shown %}
     <div style="padding: 10px 0 2px 0;">
-        <span style="font-size: 0.65rem; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.08em;">Your goals</span>
+        <span class="section-label" style="margin: 0;">Your goals</span>
     </div>
     {% set ns.first_shown = false %}
     {% endif %}
@@ -70,12 +70,12 @@
                 <div class="progress-fill" style="width: {{ [(pot.current / pot.target * 100), 100] | min | round(1) }}%; background: var(--roman-gold);"></div>
             </div>
             <div style="display: flex; justify-content: space-between; margin-top: 4px;">
-                <span style="font-size: 0.65rem; color: var(--text-secondary);">£{{ "{:,.2f}".format(pot.current) }}{% if not pot.completed and pot.months_to_target is defined %} · {{ pot.months_to_target }} months to go{% endif %}</span>
+                <span style="font-size: 0.65rem; color: var(--text-secondary);">£{{ "{:,.2f}".format(pot.current) }}{% if not pot.completed and pot.months_to_target is defined %} · {{ pot.months_to_target }} month{% if pot.months_to_target != 1 %}s{% endif %} to go{% endif %}</span>
                 <span style="font-size: 0.65rem; color: var(--text-tertiary);">£{{ "{:,.2f}".format(pot.target) }}</span>
             </div>
         </div>
         {% elif not pot.completed and pot.months_to_target is defined %}
-        <div style="font-size: 0.65rem; color: var(--text-tertiary); margin-top: 3px;">{{ pot.months_to_target }} months to go</div>
+        <div style="font-size: 0.65rem; color: var(--text-tertiary); margin-top: 3px;">{{ pot.months_to_target }} month{% if pot.months_to_target != 1 %}s{% endif %} to go</div>
         {% endif %}
     {% if pot.goal_id %}
     </a>
@@ -86,7 +86,7 @@
     {% endfor %}
 
     <!-- Ledger total -->
-    <div style="padding: 18px 0 14px 0; border-top: 1px solid rgba(255,255,255,0.14); margin-top: 6px;">
+    <div style="padding: 18px 0 14px 0; border-top: 1px solid var(--glass-border); margin-top: 6px;">
         <div style="display: flex; justify-content: space-between; align-items: baseline;">
             <span style="font-size: 0.85rem; color: var(--text-primary); font-weight: 500;">Total allocated</span>
             <span style="font-size: 1.1rem; color: var(--text-primary); font-weight: 600; font-variant-numeric: tabular-nums;">£{{ "{:,.2f}".format(smart_plan.surplus) }}/mo</span>
@@ -147,7 +147,7 @@
         <span class="ai-pulse"></span>
         <span style="font-size: 0.65rem; color: var(--roman-gold); text-transform: uppercase; letter-spacing: 0.06em;">Claro</span>
     </div>
-    <p style="font-size: 0.9rem; color: var(--text-secondary); line-height: 1.7; font-style: italic;">{{ afford_result.message }}</p>
+    <p style="font-size: 0.9rem; color: var(--ai-whisper); line-height: 1.7; font-style: italic;">{{ afford_result.message }}</p>
 </div>
 {% endif %}
 
@@ -184,7 +184,7 @@
         {{ habit_result.insight.headline }}
     </div>
     <p style="font-size: 0.8rem; color: var(--text-secondary); line-height: 1.7;">{{ habit_result.insight.detail }}</p>
-    <p style="font-size: 0.8rem; color: var(--text-secondary); font-style: italic; margin-top: 8px; padding-top: 8px; border-top: 0.5px solid var(--glass-border);">{{ habit_result.insight.reframe }}</p>
+    <p style="font-size: 0.8rem; color: var(--ai-whisper); font-style: italic; margin-top: 8px; padding-top: 8px; border-top: 0.5px solid var(--glass-border);">{{ habit_result.insight.reframe }}</p>
     <div style="margin-top: 20px; padding-top: 16px; border-top: 0.5px solid var(--glass-border);">
         <div style="font-size: 0.7rem; color: var(--text-tertiary); margin-bottom: 16px;">What it adds up to</div>
         <div style="display: flex;">
@@ -223,7 +223,7 @@
 <!-- I need money -->
 <div style="padding-top: 20px; margin-top: 20px; border-top: 0.5px solid var(--glass-border);">
     <div style="font-size: 0.9rem; color: var(--text-primary); font-weight: 500; margin-bottom: 4px;">Need to access money?</div>
-    <p style="font-size: 0.78rem; color: var(--text-tertiary); margin-bottom: 14px;">Claro will find the least-damaging way to get it from your plan, so your goals stay on track.</p>
+    <p style="font-size: 0.78rem; color: var(--text-tertiary); margin-bottom: 14px;">Claro works out the safest way to release funds from your plan without derailing your goals.</p>
     <a href="{{ url_for('pages.withdraw') }}" class="btn-secondary btn-sm">
         I need money <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>
     </a>

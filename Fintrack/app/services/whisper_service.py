@@ -227,7 +227,7 @@ def _milestone_whisper(pots, plan):
 
         elif progress >= 0.75:
             months = pot.get("months_to_target")
-            time_msg = f" ~{months} months to go." if months else ""
+            time_msg = f" ~{months} month{'s' if months != 1 else ''} to go." if months else ""
             return {
                 "message": f"Your {name} is 75% funded. \u00a3{current:,.0f} of \u00a3{target:,.0f}.{time_msg} You're in the home stretch.",
                 "action_label": None,
@@ -238,7 +238,7 @@ def _milestone_whisper(pots, plan):
 
         elif progress >= 0.5:
             months = pot.get("months_to_target")
-            time_msg = f" At this pace, it completes in ~{months} months." if months else ""
+            time_msg = f" At this pace, it completes in ~{months} month{'s' if months != 1 else ''}." if months else ""
             return {
                 "message": f"Halfway there. Your {name} is 50% funded. \u00a3{current:,.0f} of \u00a3{target:,.0f}.{time_msg}",
                 "action_label": None,
@@ -317,7 +317,7 @@ def _default_whisper(plan, active_pots):
 
     if closest:
         months = closest.get("months_to_target")
-        time_msg = f" ~{months} months to go." if months else ""
+        time_msg = f" ~{months} month{'s' if months != 1 else ''} to go." if months else ""
         return {
             "message": f"Your {closest['name']} is {closest_pct:.0%} funded.{time_msg} Your plan is working.",
             "action_label": "View plan",

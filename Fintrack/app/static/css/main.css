@@ -8,6 +8,7 @@
     --roman-gold-glow: rgba(197, 163, 93, 0.3);
     --gold-whisper-bg: rgba(197, 163, 93, 0.05);
     --gold-whisper-border: rgba(197, 163, 93, 0.08);
+    --ai-whisper: var(--roman-gold);  /* AI quote text — overridden per theme */
     --glass: rgba(255, 255, 255, 0.03);
     --glass-border: rgba(197, 163, 93, 0.12);
     --text-primary: rgba(255, 255, 255, 0.9);
@@ -24,6 +25,8 @@
     --glass-border-subtle: rgba(255, 255, 255, 0.04);
     --glass-divider: rgba(255, 255, 255, 0.06);
     --glass-chip: rgba(255, 255, 255, 0.08);
+    --glass-bg: var(--glass);
+    --surface-subtle: rgba(255, 255, 255, 0.02);
 
     /* Success color family */
     --success-bg: rgba(72, 187, 120, 0.1);
@@ -1242,7 +1245,7 @@ input[type="number"] {
 }
 
 .tx-action-sep {
-    color: rgba(255, 255, 255, 0.2);
+    color: var(--text-tertiary);
     font-size: 0.7rem;
 }
 

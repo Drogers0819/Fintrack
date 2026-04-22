@@ -137,7 +137,7 @@ def _build_plan_context(plan):
         if target:
             line += f" (target: £{target:,.0f}"
             if months:
-                line += f", ~{months} months"
+                line += f", ~{months} month{'s' if months != 1 else ''}"
             line += ")"
         parts.append(line)
 
@@ -148,7 +148,7 @@ def _build_plan_context(plan):
             completed = phase.get("completed_pots", [])
             duration = phase.get("months_in_phase", 0)
             if completed:
-                parts.append(f"Phase {i+1}: ~{duration} months, completes {', '.join(completed)}")
+                parts.append(f"Phase {i+1}: ~{duration} month{'s' if duration != 1 else ''}, completes {', '.join(completed)}")
 
     alerts = plan.get("alerts", [])
     if alerts:

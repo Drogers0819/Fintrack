@@ -5,6 +5,7 @@ class DevelopmentConfig:
     SECRET_KEY = "dev-secret-key"
     DEBUG = True
     SQLALCHEMY_DATABASE_URI = "sqlite:///dev.db"
+    SEND_FILE_MAX_AGE_DEFAULT = 0  # Disable static file caching in dev
 
 
 class TestingConfig:

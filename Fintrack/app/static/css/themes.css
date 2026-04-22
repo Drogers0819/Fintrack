@@ -66,6 +66,7 @@ body.theme-rosso {
     --roman-gold-glow: rgba(99, 179, 237, 0.25);
     --gold-whisper-bg: rgba(99, 179, 237, 0.05);
     --gold-whisper-border: rgba(99, 179, 237, 0.08);
+    --ai-whisper: var(--roman-gold); /* re-declare so it resolves to cobalt blue, not root gold */
 
     /* Glass — subtle blue tint */
     --glass-bg: rgba(99, 179, 237, 0.05);
@@ -77,18 +78,17 @@ body.theme-rosso {
     --danger: #FC8181;
     --warning: #F6AD55;
 
-    /* Sidebar */
-    --sidebar-bg: #0A0E1C;
-    --sidebar-border: rgba(99, 179, 237, 0.1);
     --popover-bg: #0c1220;
 
-      /* Transaction semantics */                    
-    --income: #48BB78;                             
-    --spending: #FC8181; 
+    /* Transaction semantics */
+    --income: #48BB78;
+    --spending: #FC8181;
 
     /* Fonts — keep Cormorant for headings (brand consistency), Inter for body */
     --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     --progress-track: rgba(255, 255, 255, 0.1);
+
+    background: radial-gradient(circle at top right, #1B2A4A, #0A0F1E);
 }
 
 /* ===== LIGHT AURAS ===== */
@@ -116,15 +116,15 @@ body.theme-ivory {
 
 body.theme-ivory {
     --popover-bg: #e8e0d0;
+    --sidebar-border: rgba(139, 115, 64, 0.18);
 }
 
 body.theme-ivory .sidebar {
-    background: rgba(228, 221, 208, 0.85);
     border-right-color: rgba(139, 115, 64, 0.18);
 }
 
 body.theme-ivory .glass-card {
-    background: rgba(255, 255, 255, 0.45);
+    background: rgba(255, 255, 255, 0.70);
     border-color: rgba(139, 115, 64, 0.14);
 }
 
@@ -166,15 +166,15 @@ body.theme-pearl {
 
 body.theme-pearl {
     --popover-bg: #d0d8e8;
+    --sidebar-border: rgba(74, 111, 165, 0.16);
 }
 
 body.theme-pearl .sidebar {
-    background: rgba(214, 220, 232, 0.85);
     border-right-color: rgba(74, 111, 165, 0.16);
 }
 
 body.theme-pearl .glass-card {
-    background: rgba(255, 255, 255, 0.45);
+    background: rgba(255, 255, 255, 0.70);
     border-color: rgba(74, 111, 165, 0.12);
 }
 
@@ -195,54 +195,57 @@ body.theme-pearl .form-select option {
     color: #1A1D24;
 }
 
-/* Sandstone — warm earth with presence */
-body.theme-sandstone {
-    --bg-primary: #ECE4D6;
-    --obsidian: #ECE4D6;
-    --racing-green: #DED4C2;
-    --roman-gold: #8B6D47;
-    --roman-gold-dim: rgba(139, 109, 71, 0.15);
-    --roman-gold-glow: rgba(139, 109, 71, 0.25);
-    --glass: rgba(255, 255, 255, 0.4);
-    --glass-border: rgba(139, 109, 71, 0.15);
-    --text-primary: #2C2418;
-    --text-secondary: rgba(44, 36, 24, 0.75);
-    --text-tertiary: rgba(44, 36, 24, 0.7);
+/* Paper — pure white, maximum clarity */
+body.theme-paper {
+    --bg-primary: #FFFFFF;
+    --obsidian: #FFFFFF;
+    --racing-green: #F2F2F0;
+    --roman-gold: #8B6B3D;
+    --roman-gold-dim: rgba(139, 107, 61, 0.12);
+    --roman-gold-glow: rgba(139, 107, 61, 0.25);
+    --gold-whisper-bg: rgba(139, 107, 61, 0.05);
+    --gold-whisper-border: rgba(139, 107, 61, 0.10);
+    --glass: rgba(0, 0, 0, 0.04);
+    --glass-border: rgba(0, 0, 0, 0.09);
+    --text-primary: #1A1A18;
+    --text-secondary: rgba(26, 26, 24, 0.70);
+    --text-tertiary: rgba(26, 26, 24, 0.48);
     --danger: #C53030;
     --success: #276749;
     --progress-track: rgba(0, 0, 0, 0.08);
-    background: linear-gradient(135deg, #ECE4D6, #DED4C2);
+    background: linear-gradient(135deg, #FFFFFF, #F5F4F1);
 }
 
-body.theme-sandstone {
-    --popover-bg: #d4c8b6;
+body.theme-paper {
+    --popover-bg: #F8F7F4;
+    --sidebar-border: rgba(0, 0, 0, 0.09);
 }
 
-body.theme-sandstone .sidebar {
-    background: rgba(222, 212, 194, 0.85);
-    border-right-color: rgba(139, 109, 71, 0.15);
+body.theme-paper .sidebar {
+    border-right-color: rgba(0, 0, 0, 0.09);
 }
 
-body.theme-sandstone .glass-card {
-    background: rgba(255, 255, 255, 0.45);
-    border-color: rgba(139, 109, 71, 0.12);
+body.theme-paper .glass-card {
+    background: rgba(255, 255, 255, 0.92);
+    border-color: rgba(0, 0, 0, 0.08);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05), 0 4px 12px rgba(0, 0, 0, 0.04);
 }
 
-body.theme-sandstone .gold-card {
-    background: rgba(139, 109, 71, 0.08);
-    border-color: rgba(139, 109, 71, 0.18);
+body.theme-paper .gold-card {
+    background: rgba(139, 107, 61, 0.06);
+    border-color: rgba(139, 107, 61, 0.20);
 }
 
-body.theme-sandstone .form-input,
-body.theme-sandstone .form-select {
-    background: rgba(255, 255, 255, 0.6);
-    border-color: rgba(139, 109, 71, 0.18);
-    color: #2C2418;
+body.theme-paper .form-input,
+body.theme-paper .form-select {
+    background: rgba(0, 0, 0, 0.02);
+    border-color: rgba(0, 0, 0, 0.12);
+    color: #1A1A18;
 }
 
-body.theme-sandstone .form-select option {
-    background: #ECE4D6;
-    color: #2C2418;
+body.theme-paper .form-select option {
+    background: #FFFFFF;
+    color: #1A1A18;
 }
 
 /* Sage — green with visible character */
@@ -266,15 +269,15 @@ body.theme-sage {
 
 body.theme-sage {
     --popover-bg: #c4d4bc;
+    --sidebar-border: rgba(74, 115, 88, 0.14);
 }
 
 body.theme-sage .sidebar {
-    background: rgba(208, 220, 200, 0.85);
     border-right-color: rgba(74, 115, 88, 0.14);
 }
 
 body.theme-sage .glass-card {
-    background: rgba(255, 255, 255, 0.45);
+    background: rgba(255, 255, 255, 0.70);
     border-color: rgba(74, 115, 88, 0.1);
 }
 
@@ -295,114 +298,15 @@ body.theme-sage .form-select option {
     color: #1A241C;
 }
 
-/* Lavender — visible lilac tint */
-body.theme-lavender {
-    --bg-primary: #E4DFF0;
-    --obsidian: #E4DFF0;
-    --racing-green: #D6CEE4;
-    --roman-gold: #6B5B8A;
-    --roman-gold-dim: rgba(107, 91, 138, 0.15);
-    --roman-gold-glow: rgba(107, 91, 138, 0.25);
-    --glass: rgba(255, 255, 255, 0.4);
-    --glass-border: rgba(107, 91, 138, 0.14);
-    --text-primary: #201C28;
-    --text-secondary: rgba(32, 28, 40, 0.75);
-    --text-tertiary: rgba(32, 28, 40, 0.7);
-    --danger: #C53030;
-    --success: #276749;
-    --progress-track: rgba(0, 0, 0, 0.08);
-    background: linear-gradient(135deg, #E4DFF0, #D6CEE4);
-}
-
-body.theme-lavender {
-    --popover-bg: #c8c0dc;
-}
-
-body.theme-lavender .sidebar {
-    background: rgba(214, 206, 228, 0.85);
-    border-right-color: rgba(107, 91, 138, 0.14);
-}
-
-body.theme-lavender .glass-card {
-    background: rgba(255, 255, 255, 0.45);
-    border-color: rgba(107, 91, 138, 0.1);
-}
-
-body.theme-lavender .gold-card {
-    background: rgba(107, 91, 138, 0.08);
-    border-color: rgba(107, 91, 138, 0.16);
-}
-
-body.theme-lavender .form-input,
-body.theme-lavender .form-select {
-    background: rgba(255, 255, 255, 0.6);
-    border-color: rgba(107, 91, 138, 0.16);
-    color: #201C28;
-}
-
-body.theme-lavender .form-select option {
-    background: #E4DFF0;
-    color: #201C28;
-}
-
-/* Mist — warm grey with substance */
-body.theme-mist {
-    --bg-primary: #E2E2DE;
-    --obsidian: #E2E2DE;
-    --racing-green: #D4D4CE;
-    --roman-gold: #6B6B65;
-    --roman-gold-dim: rgba(107, 107, 101, 0.15);
-    --roman-gold-glow: rgba(107, 107, 101, 0.25);
-    --glass: rgba(255, 255, 255, 0.4);
-    --glass-border: rgba(107, 107, 101, 0.16);
-    --text-primary: #1C1C1A;
-    --text-secondary: rgba(28, 28, 26, 0.75);
-    --text-tertiary: rgba(28, 28, 26, 0.7);
-    --danger: #C53030;
-    --success: #276749;
-    --progress-track: rgba(0, 0, 0, 0.08);
-    background: linear-gradient(135deg, #E2E2DE, #D4D4CE);
-}
-
-body.theme-mist {
-    --popover-bg: #c8c8c2;
-}
-
-body.theme-mist .sidebar {
-    background: rgba(212, 212, 206, 0.85);
-    border-right-color: rgba(107, 107, 101, 0.16);
-}
-
-body.theme-mist .glass-card {
-    background: rgba(255, 255, 255, 0.45);
-    border-color: rgba(107, 107, 101, 0.1);
-}
-
-body.theme-mist .gold-card {
-    background: rgba(107, 107, 101, 0.08);
-    border-color: rgba(107, 107, 101, 0.16);
-}
-
-body.theme-mist .form-input,
-body.theme-mist .form-select {
-    background: rgba(255, 255, 255, 0.6);
-    border-color: rgba(107, 107, 101, 0.16);
-    color: #1C1C1A;
-}
-
-body.theme-mist .form-select option {
-    background: #E2E2DE;
-    color: #1C1C1A;
-}
-
 /* ===== LIGHT THEME SHADOW TOKENS ===== */
 
 body.theme-ivory,
 body.theme-pearl,
-body.theme-sandstone,
 body.theme-sage,
-body.theme-lavender,
-body.theme-mist {
+body.theme-paper {
+    /* AI whisper quote text: use readable dark text on light backgrounds
+       (accent colors don't have sufficient contrast for body text on these themes) */
+    --ai-whisper: var(--text-secondary);
     --shadow-float: 0 4px 20px rgba(0, 0, 0, 0.08), 0 1px 6px rgba(0, 0, 0, 0.05);
     --shadow-float-lg: 0 8px 28px rgba(0, 0, 0, 0.10), 0 2px 8px rgba(0, 0, 0, 0.06);
     --shadow-toast: 0 4px 16px rgba(0, 0, 0, 0.10), 0 1px 4px rgba(0, 0, 0, 0.06);
@@ -412,29 +316,23 @@ body.theme-mist {
 
 body.theme-ivory .btn-primary,
 body.theme-pearl .btn-primary,
-body.theme-sandstone .btn-primary,
 body.theme-sage .btn-primary,
-body.theme-lavender .btn-primary,
-body.theme-mist .btn-primary {
+body.theme-paper .btn-primary {
     color: #FFFFFF;
 }
 
 body.theme-ivory .btn-secondary,
 body.theme-pearl .btn-secondary,
-body.theme-sandstone .btn-secondary,
 body.theme-sage .btn-secondary,
-body.theme-lavender .btn-secondary,
-body.theme-mist .btn-secondary {
+body.theme-paper .btn-secondary {
     border-color: var(--roman-gold);
     color: var(--roman-gold);
 }
 
 body.theme-ivory .btn-secondary:hover,
 body.theme-pearl .btn-secondary:hover,
-body.theme-sandstone .btn-secondary:hover,
 body.theme-sage .btn-secondary:hover,
-body.theme-lavender .btn-secondary:hover,
-body.theme-mist .btn-secondary:hover {
+body.theme-paper .btn-secondary:hover {
     background: var(--roman-gold-dim);
     border-color: var(--roman-gold);
     color: var(--roman-gold);
@@ -455,13 +353,6 @@ body.theme-pearl input:-webkit-autofill:active {
     -webkit-box-shadow: 0 0 0 1000px rgba(228, 232, 240, 0.95) inset !important;
     -webkit-text-fill-color: #1A1D24 !important;
 }
-body.theme-sandstone input:-webkit-autofill,
-body.theme-sandstone input:-webkit-autofill:hover,
-body.theme-sandstone input:-webkit-autofill:focus,
-body.theme-sandstone input:-webkit-autofill:active {
-    -webkit-box-shadow: 0 0 0 1000px rgba(236, 228, 214, 0.95) inset !important;
-    -webkit-text-fill-color: #2C2418 !important;
-}
 body.theme-sage input:-webkit-autofill,
 body.theme-sage input:-webkit-autofill:hover,
 body.theme-sage input:-webkit-autofill:focus,
@@ -469,28 +360,19 @@ body.theme-sage input:-webkit-autofill:active {
     -webkit-box-shadow: 0 0 0 1000px rgba(224, 232, 220, 0.95) inset !important;
     -webkit-text-fill-color: #1A241C !important;
 }
-body.theme-lavender input:-webkit-autofill,
-body.theme-lavender input:-webkit-autofill:hover,
-body.theme-lavender input:-webkit-autofill:focus,
-body.theme-lavender input:-webkit-autofill:active {
-    -webkit-box-shadow: 0 0 0 1000px rgba(228, 223, 240, 0.95) inset !important;
-    -webkit-text-fill-color: #201C28 !important;
-}
-body.theme-mist input:-webkit-autofill,
-body.theme-mist input:-webkit-autofill:hover,
-body.theme-mist input:-webkit-autofill:focus,
-body.theme-mist input:-webkit-autofill:active {
-    -webkit-box-shadow: 0 0 0 1000px rgba(226, 226, 222, 0.95) inset !important;
-    -webkit-text-fill-color: #1C1C1A !important;
+body.theme-paper input:-webkit-autofill,
+body.theme-paper input:-webkit-autofill:hover,
+body.theme-paper input:-webkit-autofill:focus,
+body.theme-paper input:-webkit-autofill:active {
+    -webkit-box-shadow: 0 0 0 1000px rgba(255, 255, 255, 0.98) inset !important;
+    -webkit-text-fill-color: #1A1A18 !important;
 }
 
 /* btn-primary disabled: opacity 0.38 makes gold invisible on light bg — override with explicit muted style */
 body.theme-ivory .btn-primary:disabled,
 body.theme-pearl .btn-primary:disabled,
-body.theme-sandstone .btn-primary:disabled,
 body.theme-sage .btn-primary:disabled,
-body.theme-lavender .btn-primary:disabled,
-body.theme-mist .btn-primary:disabled {
+body.theme-paper .btn-primary:disabled {
     opacity: 1;
     background: rgba(0, 0, 0, 0.08);
     color: rgba(0, 0, 0, 0.3);
@@ -500,10 +382,8 @@ body.theme-mist .btn-primary:disabled {
 /* Mobile header bar: make border visible on light themes */
 body.theme-ivory .mobile-header-bar,
 body.theme-pearl .mobile-header-bar,
-body.theme-sandstone .mobile-header-bar,
 body.theme-sage .mobile-header-bar,
-body.theme-lavender .mobile-header-bar,
-body.theme-mist .mobile-header-bar {
+body.theme-paper .mobile-header-bar {
     border-bottom-color: var(--glass-border);
 }
 
@@ -511,10 +391,8 @@ body.theme-mist .mobile-header-bar {
 
 body.theme-ivory .flash-success,
 body.theme-pearl .flash-success,
-body.theme-sandstone .flash-success,
 body.theme-sage .flash-success,
-body.theme-lavender .flash-success,
-body.theme-mist .flash-success {
+body.theme-paper .flash-success {
     background: #f0faf4;
     border-left-color: #27ae60;
     color: #1a6b42;
@@ -522,10 +400,8 @@ body.theme-mist .flash-success {
 
 body.theme-ivory .flash-error,
 body.theme-pearl .flash-error,
-body.theme-sandstone .flash-error,
 body.theme-sage .flash-error,
-body.theme-lavender .flash-error,
-body.theme-mist .flash-error {
+body.theme-paper .flash-error {
     background: #fdf0f0;
     border-left-color: #c53030;
     color: #9b2c2c;
@@ -533,10 +409,8 @@ body.theme-mist .flash-error {
 
 body.theme-ivory .flash-warning,
 body.theme-pearl .flash-warning,
-body.theme-sandstone .flash-warning,
 body.theme-sage .flash-warning,
-body.theme-lavender .flash-warning,
-body.theme-mist .flash-warning {
+body.theme-paper .flash-warning {
     background: #fefbf0;
     border-left-color: #d4a017;
     color: #7d5f0a;
@@ -544,10 +418,8 @@ body.theme-mist .flash-warning {
 
 body.theme-ivory .flash-info,
 body.theme-pearl .flash-info,
-body.theme-sandstone .flash-info,
 body.theme-sage .flash-info,
-body.theme-lavender .flash-info,
-body.theme-mist .flash-info {
+body.theme-paper .flash-info {
     background: rgba(0,0,0,0.04);
     border-left-color: rgba(0,0,0,0.2);
     color: var(--text-secondary);
@@ -557,20 +429,16 @@ body.theme-mist .flash-info {
 
 body.theme-ivory .user-avatar,
 body.theme-pearl .user-avatar,
-body.theme-sandstone .user-avatar,
 body.theme-sage .user-avatar,
-body.theme-lavender .user-avatar,
-body.theme-mist .user-avatar {
+body.theme-paper .user-avatar {
     background: rgba(0, 0, 0, 0.05);
     border-color: rgba(0, 0, 0, 0.1);
 }
 
 body.theme-ivory .mobile-settings-btn,
 body.theme-pearl .mobile-settings-btn,
-body.theme-sandstone .mobile-settings-btn,
 body.theme-sage .mobile-settings-btn,
-body.theme-lavender .mobile-settings-btn,
-body.theme-mist .mobile-settings-btn {
+body.theme-paper .mobile-settings-btn {
     background: rgba(0, 0, 0, 0.05);
     border-color: rgba(0, 0, 0, 0.1);
 }
@@ -579,14 +447,10 @@ body.theme-ivory .mobile-settings-btn:hover,
 body.theme-ivory .mobile-settings-btn.active,
 body.theme-pearl .mobile-settings-btn:hover,
 body.theme-pearl .mobile-settings-btn.active,
-body.theme-sandstone .mobile-settings-btn:hover,
-body.theme-sandstone .mobile-settings-btn.active,
 body.theme-sage .mobile-settings-btn:hover,
 body.theme-sage .mobile-settings-btn.active,
-body.theme-lavender .mobile-settings-btn:hover,
-body.theme-lavender .mobile-settings-btn.active,
-body.theme-mist .mobile-settings-btn:hover,
-body.theme-mist .mobile-settings-btn.active {
+body.theme-paper .mobile-settings-btn:hover,
+body.theme-paper .mobile-settings-btn.active {
     background: rgba(0, 0, 0, 0.09);
     border-color: rgba(0, 0, 0, 0.15);
 }
@@ -651,19 +515,30 @@ body.theme-mist .mobile-settings-btn.active {
     border-color: #63B3ED;
 }
 
+/* ===== OBSIDIAN — Pure Dark ===== */
+body.theme-obsidian {
+    background: radial-gradient(circle at top right, #1E1E1E, #060606);
+    --popover-bg: #181818;
+    --glass: rgba(255, 255, 255, 0.04);
+    --glass-border: rgba(255, 255, 255, 0.09);
+    --glass-border-subtle: rgba(255, 255, 255, 0.05);
+    --glass-divider: rgba(255, 255, 255, 0.07);
+}
+
 /* ===== LIGHT THEME GLASS-LAYER TOKEN OVERRIDES ===== */
 /* White rgba overlays have zero contrast on light backgrounds.
    Override with dark rgba overlays for all 6 light themes. */
 
 body.theme-ivory,
 body.theme-pearl,
-body.theme-sandstone,
 body.theme-sage,
-body.theme-lavender,
-body.theme-mist {
-    --glass-chip: rgba(0, 0, 0, 0.06);
+body.theme-paper {
+    --glass: rgba(0, 0, 0, 0.05);
+    --glass-bg: rgba(0, 0, 0, 0.04);
+    --glass-chip: rgba(0, 0, 0, 0.07);
     --glass-divider: rgba(0, 0, 0, 0.07);
     --glass-border-subtle: rgba(0, 0, 0, 0.04);
+    --surface-subtle: rgba(0, 0, 0, 0.03);
     --success-bg: rgba(39, 103, 73, 0.1);
     --success-text: rgba(39, 103, 73, 0.85);
     --danger-bg: rgba(197, 48, 48, 0.08);
@@ -673,29 +548,77 @@ body.theme-mist {
 /* Step bars use hardcoded rgba white — override per light theme */
 body.theme-ivory .step-bar,
 body.theme-pearl .step-bar,
-body.theme-sandstone .step-bar,
 body.theme-sage .step-bar,
-body.theme-lavender .step-bar,
-body.theme-mist .step-bar {
+body.theme-paper .step-bar {
     background: rgba(0, 0, 0, 0.1);
 }
 
 body.theme-ivory .step-bar--complete,
 body.theme-pearl .step-bar--complete,
-body.theme-sandstone .step-bar--complete,
 body.theme-sage .step-bar--complete,
-body.theme-lavender .step-bar--complete,
-body.theme-mist .step-bar--complete {
+body.theme-paper .step-bar--complete {
     background: rgba(0, 0, 0, 0.45);
 }
 
 /* Suggestion chips and lifestyle budget chips on light themes */
 body.theme-ivory .suggestion-chip,
 body.theme-pearl .suggestion-chip,
-body.theme-sandstone .suggestion-chip,
 body.theme-sage .suggestion-chip,
-body.theme-lavender .suggestion-chip,
-body.theme-mist .suggestion-chip {
+body.theme-paper .suggestion-chip {
     border-color: rgba(0, 0, 0, 0.12);
+    background: rgba(0, 0, 0, 0.02);
+}
+
+/* Sidebar hover/active states use hardcoded white rgba — override for light themes */
+body.theme-ivory .sidebar-profile-link:hover,
+body.theme-pearl .sidebar-profile-link:hover,
+body.theme-sage .sidebar-profile-link:hover,
+body.theme-paper .sidebar-profile-link:hover {
+    background: rgba(0, 0, 0, 0.04);
+    border-color: rgba(0, 0, 0, 0.06);
+}
+
+body.theme-ivory .sidebar-profile-link.active,
+body.theme-pearl .sidebar-profile-link.active,
+body.theme-sage .sidebar-profile-link.active,
+body.theme-paper .sidebar-profile-link.active {
+    background: rgba(0, 0, 0, 0.05);
+    border-color: rgba(0, 0, 0, 0.08);
+}
+
+body.theme-ivory .sidebar-profile-trigger:hover,
+body.theme-ivory .sidebar-profile-trigger.active,
+body.theme-pearl .sidebar-profile-trigger:hover,
+body.theme-pearl .sidebar-profile-trigger.active,
+body.theme-sage .sidebar-profile-trigger:hover,
+body.theme-sage .sidebar-profile-trigger.active,
+body.theme-paper .sidebar-profile-trigger:hover,
+body.theme-paper .sidebar-profile-trigger.active {
+    background: rgba(0, 0, 0, 0.04);
+    border-color: rgba(0, 0, 0, 0.06);
+}
+
+/* Checkbox border/bg: hardcoded white rgba invisible on light bg */
+body.theme-ivory input[type="checkbox"],
+body.theme-pearl input[type="checkbox"],
+body.theme-sage input[type="checkbox"],
+body.theme-paper input[type="checkbox"] {
+    border-color: rgba(0, 0, 0, 0.22);
+    background: rgba(0, 0, 0, 0.03);
+}
+
+/* File upload zone: dashed border invisible on light bg */
+body.theme-ivory .file-upload-zone,
+body.theme-pearl .file-upload-zone,
+body.theme-sage .file-upload-zone,
+body.theme-paper .file-upload-zone {
+    border-color: rgba(0, 0, 0, 0.18);
+}
+
+/* Custom select trigger background on light themes */
+body.theme-ivory .cs-trigger,
+body.theme-pearl .cs-trigger,
+body.theme-sage .cs-trigger,
+body.theme-paper .cs-trigger {
     background: rgba(0, 0, 0, 0.02);
 }
