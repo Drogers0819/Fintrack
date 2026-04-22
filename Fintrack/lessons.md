@@ -80,7 +80,7 @@ Rule: never rely on `--roman-gold-dim` token alone for gold card bg on themes wh
 
 A progress bar with zero fill (£0.00 of £200.00, 0% width) looks like a UI glitch, not a valid state. On goal rows where `pot.current == 0`, either suppress the progress bar entirely OR replace with a "Not started" label. Never render a completely empty track.
 
-**Not yet applied.** Flag for next UI audit pass.
+**Applied**: `plan.html` and `overview.html` — added `{% if pot.current > 0 %}` guard around progress track. Zero-current goals now show "Not started" label + target amount instead of empty bar.
 
 ---
 

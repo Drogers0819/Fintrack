@@ -156,6 +156,7 @@
             </div>
         </div>
         {% if pot.target and not pot.completed %}
+        {% if pot.current > 0 %}
         <div class="progress-track">
             <div class="progress-fill" style="width: {{ ((pot.current / pot.target) * 100) | round(1) }}%; background: var(--roman-gold);"></div>
         </div>
@@ -165,6 +166,11 @@
             <span style="font-size: 0.65rem; color: var(--text-tertiary);">{{ pot.months_to_target }} month{% if pot.months_to_target != 1 %}s{% endif %}</span>
             {% endif %}
         </div>
+        {% else %}
+        <div style="margin-top: 3px;">
+            <span style="font-size: 0.65rem; color: var(--text-tertiary);">Not started</span>
+        </div>
+        {% endif %}
         {% endif %}
     </a>
     {% endif %}

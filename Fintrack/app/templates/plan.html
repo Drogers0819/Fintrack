@@ -66,6 +66,7 @@
         </div>
         {% if pot.target %}
         <div style="margin-top: 8px;">
+            {% if pot.current > 0 %}
             <div class="progress-track">
                 <div class="progress-fill" style="width: {{ [(pot.current / pot.target * 100), 100] | min | round(1) }}%; background: var(--roman-gold);"></div>
             </div>
@@ -73,6 +74,12 @@
                 <span style="font-size: 0.65rem; color: var(--text-secondary);">£{{ "{:,.2f}".format(pot.current) }}{% if not pot.completed and pot.months_to_target is defined %} · {{ pot.months_to_target }} month{% if pot.months_to_target != 1 %}s{% endif %} to go{% endif %}</span>
                 <span style="font-size: 0.65rem; color: var(--text-tertiary);">£{{ "{:,.2f}".format(pot.target) }}</span>
             </div>
+            {% else %}
+            <div style="display: flex; justify-content: space-between; margin-top: 4px;">
+                <span style="font-size: 0.65rem; color: var(--text-tertiary);">Not started</span>
+                <span style="font-size: 0.65rem; color: var(--text-tertiary);">£{{ "{:,.2f}".format(pot.target) }}</span>
+            </div>
+            {% endif %}
         </div>
         {% elif not pot.completed and pot.months_to_target is defined %}
         <div style="font-size: 0.65rem; color: var(--text-tertiary); margin-top: 3px;">{{ pot.months_to_target }} month{% if pot.months_to_target != 1 %}s{% endif %} to go</div>
