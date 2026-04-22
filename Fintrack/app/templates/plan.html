@@ -17,7 +17,7 @@
         <span class="ai-pulse"></span>
         <span style="font-size: 0.65rem; color: var(--roman-gold); text-transform: uppercase; letter-spacing: 0.06em;">Plan overview</span>
     </div>
-    <p style="font-size: 0.9rem; color: var(--ai-whisper); line-height: 1.7; font-style: italic;">{{ plan_summary }}</p>
+    <p style="font-size: 0.9rem; color: var(--text-secondary); line-height: 1.7; font-style: italic;">{{ plan_summary }}</p>
 </div>
 {% endif %}
 
@@ -52,7 +52,7 @@
     {% endif %}
         <div style="display: flex; justify-content: space-between; align-items: center;">
             <div>
-                <span style="font-size: 0.85rem; color: var(--text-primary);">{{ pot.name | replace(' (must-hit)', '') }}</span>
+                <span style="font-size: 0.85rem; color: var(--text-primary);">{{ pot.name | replace(' (must-hit)', '') | replace('Lifestyle & family', 'Lifestyle spending') | replace('Buffer', 'Safety net') }}</span>
                 {% if pot.completed %}
                 <span style="font-size: 0.65rem; padding: 2px 8px; border-radius: 4px; background: var(--success-bg); color: var(--success-text); margin-left: 6px;">done</span>
                 {% endif %}
@@ -77,6 +77,13 @@
         {% elif not pot.completed and pot.months_to_target is defined %}
         <div style="font-size: 0.65rem; color: var(--text-tertiary); margin-top: 3px;">{{ pot.months_to_target }} month{% if pot.months_to_target != 1 %}s{% endif %} to go</div>
         {% endif %}
+    {% if not pot.goal_id %}
+    <div style="font-size: 0.7rem; color: var(--text-tertiary); margin-top: 3px;">
+        {% if 'lifestyle' in pot.name.lower() or 'family' in pot.name.lower() %}Your discretionary budget
+        {% elif 'buffer' in pot.name.lower() %}A cushion for unexpected costs
+        {% else %}Monthly allowance{% endif %}
+    </div>
+    {% endif %}
     {% if pot.goal_id %}
     </a>
     {% else %}
@@ -121,8 +128,11 @@
 </div>
 {% endif %}
 
+<!-- Tools section -->
+<div class="section-label" style="margin-top: 32px; margin-bottom: 0;">Tools</div>
+
 <!-- Can I afford this? -->
-<div id="afford" style="padding-top: 20px; margin-top: 20px; border-top: 0.5px solid var(--glass-border);">
+<div id="afford" style="padding-top: 20px; margin-top: 4px; border-top: 0.5px solid var(--glass-border);">
     <div style="font-size: 0.9rem; color: var(--text-primary); font-weight: 500; margin-bottom: 4px;">Can I afford this?</div>
     <p style="font-size: 0.78rem; color: var(--text-tertiary); margin-bottom: 14px;">Check a one-off expense against your plan.</p>
     <form method="POST" action="{{ url_for('pages.plan') }}">
@@ -147,7 +157,7 @@
         <span class="ai-pulse"></span>
         <span style="font-size: 0.65rem; color: var(--roman-gold); text-transform: uppercase; letter-spacing: 0.06em;">Claro</span>
     </div>
-    <p style="font-size: 0.9rem; color: var(--ai-whisper); line-height: 1.7; font-style: italic;">{{ afford_result.message }}</p>
+    <p style="font-size: 0.9rem; color: var(--text-secondary); line-height: 1.7; font-style: italic;">{{ afford_result.message }}</p>
 </div>
 {% endif %}
 
@@ -184,7 +194,7 @@
         {{ habit_result.insight.headline }}
     </div>
     <p style="font-size: 0.8rem; color: var(--text-secondary); line-height: 1.7;">{{ habit_result.insight.detail }}</p>
-    <p style="font-size: 0.8rem; color: var(--ai-whisper); font-style: italic; margin-top: 8px; padding-top: 8px; border-top: 0.5px solid var(--glass-border);">{{ habit_result.insight.reframe }}</p>
+    <p style="font-size: 0.8rem; color: var(--text-secondary); font-style: italic; margin-top: 8px; padding-top: 8px; border-top: 0.5px solid var(--glass-border);">{{ habit_result.insight.reframe }}</p>
     <div style="margin-top: 20px; padding-top: 16px; border-top: 0.5px solid var(--glass-border);">
         <div style="font-size: 0.7rem; color: var(--text-tertiary); margin-bottom: 16px;">What it adds up to</div>
         <div style="display: flex;">

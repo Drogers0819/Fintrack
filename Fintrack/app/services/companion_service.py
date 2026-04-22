@@ -227,7 +227,7 @@ def chat(user, message, plan=None, conversation_history=None):
     api_key = os.environ.get("ANTHROPIC_API_KEY")
     if not api_key:
         return {
-            "response": "The AI companion is being set up. Check back soon.",
+            "response": "I'm not available right now. Please try again in a moment.",
             "model_used": None,
             "tokens_in": 0,
             "tokens_out": 0,

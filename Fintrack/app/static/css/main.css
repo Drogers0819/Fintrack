@@ -8,7 +8,7 @@
     --roman-gold-glow: rgba(197, 163, 93, 0.3);
     --gold-whisper-bg: rgba(197, 163, 93, 0.05);
     --gold-whisper-border: rgba(197, 163, 93, 0.08);
-    --ai-whisper: var(--roman-gold);  /* AI quote text — overridden per theme */
+    --ai-whisper: var(--text-secondary);  /* AI card body text — same as spec: italic serif does the AI signal, not gold */
     --glass: rgba(255, 255, 255, 0.03);
     --glass-border: rgba(197, 163, 93, 0.12);
     --text-primary: rgba(255, 255, 255, 0.9);
@@ -121,7 +121,7 @@ a:hover {
     top: 0;
     left: 0;
     right: 0;
-    height: 64px;
+    height: 52px;
     z-index: 200;
     display: flex;
     align-items: center;
@@ -133,7 +133,7 @@ a:hover {
 
 /* Wordmark zone — matches sidebar width exactly */
 .app-header-brand {
-    width: 260px;
+    width: 240px;
     flex-shrink: 0;
     padding: 0 24px;
     font-family: var(--font-sans);
@@ -150,7 +150,7 @@ a:hover {
 /* Breadcrumb / page title zone — right of wordmark, aligns with content area */
 .app-header-content {
     flex: 1;
-    padding: 0 24px;
+    padding: 0 40px;
     display: flex;
     align-items: center;
     border-left: 0.5px solid var(--glass-border);
@@ -193,15 +193,15 @@ a:hover {
 }
 
 .sidebar {
-    width: 260px;
+    width: 240px;
     padding: 0;
     border-right: 0.5px solid var(--sidebar-border, var(--glass-border, rgba(255, 255, 255, 0.08)));
     background: var(--sidebar-bg);
     backdrop-filter: blur(10px);
     position: fixed;
-    top: 64px;
+    top: 52px;
     left: 0;
-    height: calc(100vh - 64px);
+    height: calc(100vh - 52px);
     display: flex;
     flex-direction: column;
     z-index: 199;
@@ -397,20 +397,18 @@ a:hover {
     align-items: center;
     gap: 10px;
     padding: 10px 12px;
-    border-radius: 10px;
     cursor: pointer;
-    border: 0.5px solid transparent;
+    border: none;
     background: none;
     width: 100%;
     text-align: left;
     font-family: var(--font-sans);
-    transition: background 0.15s, border-color 0.15s;
+    transition: opacity 0.15s;
 }
 
 .sidebar-profile-trigger:hover,
 .sidebar-profile-trigger.active {
-    background: rgba(255, 255, 255, 0.05);
-    border-color: rgba(255, 255, 255, 0.06);
+    opacity: 0.8;
 }
 
 /* ===== PROFILE POPOVER ===== */
@@ -524,8 +522,8 @@ a:hover {
 }
 
 .main-content {
-    margin-left: 260px;
-    padding: 84px 40px 40px;
+    margin-left: 240px;
+    padding: 72px 40px 40px;
     flex: 1;
     max-width: 1100px;
     background: var(--bg-primary);
@@ -534,7 +532,7 @@ a:hover {
 /* Onboarding layout — no sidebar, centered content */
 .main-content--solo {
     margin-left: 0;
-    padding: 84px 40px 40px;
+    padding: 72px 40px 40px;
     flex: 1;
     background: var(--bg-primary);
 }
@@ -1980,7 +1978,7 @@ body.theme-mist .budget-row-danger {
 .companion-input-zone {
     position: fixed;
     bottom: 0;
-    left: 260px; /* sidebar width */
+    left: 240px; /* sidebar width */
     right: 0;
     background: var(--bg-primary);
     border-top: 0.5px solid var(--glass-border);
@@ -1989,7 +1987,7 @@ body.theme-mist .budget-row-danger {
 }
 
 .companion-input-inner {
-    max-width: 640px;
+    max-width: 700px;
 }
 
 /* Companion page uses tighter horizontal padding so chat feels native */
@@ -2056,7 +2054,7 @@ body.theme-mist .budget-row-danger {
         display: flex;
         flex-direction: column;
         overflow: hidden;
-        border-top: 0.5px solid rgba(197, 163, 93, 0.12);
+        border-top: 0.5px solid var(--glass-border);
         border-right: none;
         background: var(--bg-primary, #020408);
         backdrop-filter: blur(20px);
@@ -2396,7 +2394,7 @@ body.theme-mist .budget-row-danger {
     }
 
     .main-content {
-        padding: 84px 24px 28px;
+        padding: 72px 24px 28px;
         margin-left: 200px;
     }
 

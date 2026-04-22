@@ -15,7 +15,7 @@
     <p>What are you working toward?</p>
 </div>
 
-<div style="max-width: 560px;">
+<div style="max-width: 560px; padding-bottom: 100px;">
     <form method="POST" action="{{ url_for('pages.add_goal') }}">
         <div class="form-group">
             <label class="form-label">Goal name</label>
@@ -46,7 +46,7 @@
             </div>
             <div class="form-group">
                 <label class="form-label">Already saved (£) <span style="font-size: 0.7rem; color: var(--text-tertiary); font-weight: 400;">(optional)</span></label>
-                <input type="number" name="current_amount" class="form-input" step="0.01" min="0" value="0">
+                <input type="number" name="current_amount" class="form-input" step="0.01" min="0" placeholder="0">
             </div>
         </div>
 

@@ -880,13 +880,13 @@ def get_plan_summary(plan):
         if next_pot:
             next_name = next_pot["name"]
             return (
-                f"Your {soon_name} is closest to completion (~{soon_months} months). "
+                f"Your {soon_name} is closest to completion (~{soon_months} month{'s' if soon_months != 1 else ''}). "
                 f"Once done, that £{soon_amount:,.0f}/month redirects to your {next_name}, "
                 f"accelerating it automatically."
             )
         else:
             return (
-                f"Your {soon_name} completes in ~{soon_months} months. "
+                f"Your {soon_name} completes in ~{soon_months} month{'s' if soon_months != 1 else ''}. "
                 f"After that, your £{soon_amount:,.0f}/month surplus frees up entirely."
             )
 
@@ -904,19 +904,21 @@ def get_plan_summary(plan):
 
     if underfunded:
         most_urgent = min(underfunded, key=lambda u: u["months_available"])
+        mn = most_urgent['months_needed']
+        ma = most_urgent['months_available']
         if len(underfunded) == 1:
             return (
                 f"Your {most_urgent['name']} is tight. At current pace it needs "
-                f"{most_urgent['months_needed']} months but the deadline is in "
-                f"{most_urgent['months_available']}. Consider adjusting the target or timeline."
+                f"{mn} month{'s' if mn != 1 else ''} but the deadline is in "
+                f"{ma} month{'s' if ma != 1 else ''}. Consider adjusting the target or timeline."
             )
         else:
             names = " and ".join(u["name"] for u in underfunded)
             return (
                 f"{len(underfunded)} goals are tight for their deadlines: {names}. "
                 f"The most urgent is {most_urgent['name']}: needs "
-                f"{most_urgent['months_needed']} months but deadline is in "
-                f"{most_urgent['months_available']}."
+                f"{mn} month{'s' if mn != 1 else ''} but deadline is in "
+                f"{ma} month{'s' if ma != 1 else ''}."
             )
 
     # Default: healthy plan

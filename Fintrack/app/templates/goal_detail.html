@@ -32,7 +32,7 @@
     <div id="arrival-date" class="metric-value gold sm" style="margin-bottom: 4px; transition: all 0.3s ease;">
         {{ projection.completion_date_human }}
     </div>
-    <p style="font-size: 0.85rem; color: var(--ai-whisper); font-style: italic;">
+    <p style="font-size: 0.85rem; color: var(--text-secondary); font-style: italic;">
         <span id="months-display">{{ projection.months_to_target }} month{{ 's' if projection.months_to_target != 1 else '' }}</span> away at
         <span id="slider-value">£{{ "{:,.2f}".format(projection.monthly_contribution) }}</span>/month
     </p>

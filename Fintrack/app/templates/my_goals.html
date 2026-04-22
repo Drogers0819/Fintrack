@@ -21,11 +21,12 @@
         <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 14px;">
             <div>
                 <div style="font-size: 1rem; color: var(--text-primary); font-weight: 500; margin-bottom: 2px;">{{ g.name | replace(' (must-hit)', '') }}</div>
+                {% if g.type != "savings_target" %}
                 <div style="font-size: 0.72rem; color: var(--text-tertiary);">
-                    {% if g.type == "savings_target" %}Savings goal
-                    {% elif g.type == "spending_allocation" %}Spending budget
+                    {% if g.type == "spending_allocation" %}Spending budget
                     {% else %}Open-ended saving{% endif %}
                 </div>
+                {% endif %}
             </div>
             <div style="display: flex; align-items: center; gap: 4px; flex-shrink: 0;">
                 <a href="{{ url_for('pages.edit_goal', goal_id=g.id) }}" class="transaction-delete" aria-label="Edit goal" data-tooltip="Edit goal">

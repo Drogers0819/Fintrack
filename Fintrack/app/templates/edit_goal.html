@@ -74,7 +74,7 @@
 
         <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 4px;">
             <button type="submit" class="btn-primary btn-full">Save changes</button>
-            <a href="{{ url_for('pages.my_goals') }}" style="text-align: center; font-size: 0.82rem; color: var(--text-tertiary); text-decoration: none;">Cancel</a>
+            <a href="{{ url_for('pages.goal_detail', goal_id=goal.id) }}{% if request.args.get('from') %}?from={{ request.args.get('from') }}{% endif %}" style="text-align: center; font-size: 0.82rem; color: var(--text-tertiary); text-decoration: none;">Cancel</a>
         </div>
     </form>
 </div>

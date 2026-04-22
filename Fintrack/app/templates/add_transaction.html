@@ -14,12 +14,12 @@
     <h1>Add a transaction</h1>
 </div>
 
-<div style="max-width: 560px;">
+<div style="max-width: 560px; padding-bottom: 80px;">
     <form method="POST" action="{{ url_for('pages.add_transaction') }}">
         <div class="grid-2">
             <div class="form-group">
                 <label class="form-label">Amount (£)</label>
-                <input type="number" name="amount" class="form-input" step="0.01" min="0.01" placeholder="0.00" required
+                <input type="number" name="amount" class="form-input" step="0.01" min="0.01" placeholder="e.g. 25.00" required
                     oninvalid="this.setCustomValidity('Please enter an amount greater than 0')"
                     oninput="this.setCustomValidity('')">
             </div>
@@ -43,10 +43,9 @@
             <div class="form-group">
                 <label class="form-label">Category</label>
                 <select name="category_id" class="form-select">
+                    <option value="">Choose category</option>
                     {% for cat in categories %}
-                    <option value="{{ cat.id }}" {% if cat.name == "Other" %}selected{% endif %}>
-                        {{ cat.name }}
-                    </option>
+                    <option value="{{ cat.id }}">{{ cat.name }}</option>
                     {% endfor %}
                 </select>
             </div>

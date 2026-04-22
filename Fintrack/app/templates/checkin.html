@@ -40,7 +40,7 @@
 <div style="margin-bottom: 24px; padding-bottom: 20px; border-bottom: 0.5px solid var(--glass-border);">
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
         <div class="section-label">What you reported</div>
-        <a href="{{ url_for('pages.checkin') }}?edit=1" style="font-size: 0.72rem; color: var(--text-tertiary); text-decoration: underline; text-underline-offset: 2px; text-decoration-color: rgba(255,255,255,0.2);">Edit</a>
+        <a href="{{ url_for('pages.checkin') }}?edit=1" style="font-size: 0.72rem; color: var(--text-tertiary); text-decoration: underline; text-underline-offset: 2px;">Edit</a>
     </div>
     {% for entry in existing.entries %}
     <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 0; {% if not loop.last %}border-bottom: 0.5px solid var(--glass-border-subtle);{% endif %}">
@@ -58,6 +58,10 @@
 </div>
 {% endif %}
 
+<div style="margin-top: 4px;">
+    <a href="{{ url_for('pages.overview') }}" class="btn-secondary btn-sm">Back to overview</a>
+</div>
+
 {% else %}
 <!-- Check-in form -->
 <div style="margin-bottom: 24px;">
@@ -71,7 +75,7 @@
         <div style="padding: 14px 0; {% if not loop.last %}border-bottom: 0.5px solid var(--glass-border-subtle);{% endif %}">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
                 <div>
-                    <span style="font-size: 0.9rem; color: var(--text-primary);">{{ pot.name | replace(' (must-hit)', '') }}</span>
+                    <span style="font-size: 0.9rem; color: var(--text-primary);">{{ pot.name | replace(' (must-hit)', '') | replace('Lifestyle & family', 'Lifestyle spending') | replace('Buffer', 'Safety net') }}</span>
                     {% if pot.paused %}
                     <span style="font-size: 0.6rem; padding: 1px 6px; border-radius: 4px; background: var(--glass-border-subtle); color: var(--text-tertiary); margin-left: 6px;">paused in plan</span>
                     {% endif %}

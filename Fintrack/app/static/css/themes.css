@@ -21,6 +21,8 @@ body.theme-racing-green {
 
 body.theme-midnight-navy {
     --racing-green: #0A1628;
+    --roman-gold-dim: rgba(197, 163, 93, 0.08);
+    --roman-gold-glow: rgba(197, 163, 93, 0.48);
     --glass-border: rgba(197, 163, 93, 0.12);
     --popover-bg: #0d1620;
     background: radial-gradient(circle at top right, #0A1628, #020408);
@@ -37,6 +39,12 @@ body.theme-oxford-saddle {
 /* Amethyst — more visible purple */
 body.theme-amethyst {
     --racing-green: #1A0C28;
+    --roman-gold: #9B72CF;
+    --roman-gold-dim: rgba(155, 114, 207, 0.12);
+    --roman-gold-glow: rgba(155, 114, 207, 0.28);
+    --gold-whisper-bg: rgba(155, 114, 207, 0.06);
+    --gold-whisper-border: rgba(155, 114, 207, 0.10);
+    --glass-border: rgba(155, 114, 207, 0.16);
     --popover-bg: #14091e;
     background: radial-gradient(circle at top right, #1A0C28, #060210);
 }
@@ -44,6 +52,12 @@ body.theme-amethyst {
 /* Rosso — richer red presence */
 body.theme-rosso {
     --racing-green: #3A1212;
+    --roman-gold: #E06868;
+    --roman-gold-dim: rgba(224, 104, 104, 0.12);
+    --roman-gold-glow: rgba(224, 104, 104, 0.28);
+    --gold-whisper-bg: rgba(224, 104, 104, 0.06);
+    --gold-whisper-border: rgba(224, 104, 104, 0.10);
+    --glass-border: rgba(224, 104, 104, 0.16);
     --popover-bg: #1a0808;
     background: radial-gradient(circle at top right, #3A1212, #0C0404);
 }
@@ -66,7 +80,6 @@ body.theme-rosso {
     --roman-gold-glow: rgba(99, 179, 237, 0.25);
     --gold-whisper-bg: rgba(99, 179, 237, 0.05);
     --gold-whisper-border: rgba(99, 179, 237, 0.08);
-    --ai-whisper: var(--roman-gold); /* re-declare so it resolves to cobalt blue, not root gold */
 
     /* Glass — subtle blue tint */
     --glass-bg: rgba(99, 179, 237, 0.05);
@@ -129,8 +142,8 @@ body.theme-ivory .glass-card {
 }
 
 body.theme-ivory .gold-card {
-    background: rgba(139, 115, 64, 0.08);
-    border-color: rgba(139, 115, 64, 0.2);
+    background: rgba(139, 115, 64, 0.11);
+    border-color: rgba(139, 115, 64, 0.32);
 }
 
 body.theme-ivory .form-input,
@@ -179,8 +192,8 @@ body.theme-pearl .glass-card {
 }
 
 body.theme-pearl .gold-card {
-    background: rgba(74, 111, 165, 0.08);
-    border-color: rgba(74, 111, 165, 0.18);
+    background: rgba(74, 111, 165, 0.11);
+    border-color: rgba(74, 111, 165, 0.30);
 }
 
 body.theme-pearl .form-input,
@@ -232,8 +245,8 @@ body.theme-paper .glass-card {
 }
 
 body.theme-paper .gold-card {
-    background: rgba(139, 107, 61, 0.06);
-    border-color: rgba(139, 107, 61, 0.20);
+    background: rgba(139, 107, 61, 0.10);
+    border-color: rgba(139, 107, 61, 0.32);
 }
 
 body.theme-paper .form-input,
@@ -282,8 +295,8 @@ body.theme-sage .glass-card {
 }
 
 body.theme-sage .gold-card {
-    background: rgba(74, 115, 88, 0.08);
-    border-color: rgba(74, 115, 88, 0.16);
+    background: rgba(74, 115, 88, 0.11);
+    border-color: rgba(74, 115, 88, 0.30);
 }
 
 body.theme-sage .form-input,
@@ -455,10 +468,126 @@ body.theme-paper .mobile-settings-btn.active {
     border-color: rgba(0, 0, 0, 0.15);
 }
 
+/* Racing Green: default dark — 15% bg dim is too heavy on the near-black page. Dial down. */
+body.theme-racing-green .gold-card {
+    background: rgba(197, 163, 93, 0.10);
+    border-color: rgba(197, 163, 93, 0.25);
+}
+
+/* Obsidian: pure black page — fallback is 5% which is too subtle. Set explicitly. */
+body.theme-obsidian .gold-card {
+    background: rgba(197, 163, 93, 0.10);
+    border-color: rgba(197, 163, 93, 0.25);
+}
+
+/* Oxford Saddle: warm brown page + gold card without reduction looks muddy. Dial down. */
+.theme-oxford-saddle .gold-card {
+    background: rgba(197, 163, 93, 0.09);
+    border-color: rgba(197, 163, 93, 0.22);
+}
+
+/* Midnight Navy: relies on --roman-gold-dim which is set too low (0.08). Override directly. */
+.theme-midnight-navy .gold-card {
+    background: rgba(197, 163, 93, 0.12);
+    border-color: rgba(197, 163, 93, 0.28);
+}
+
 /* Cobalt-specific component overrides */
 .theme-cobalt .gold-card {
-    background: rgba(99, 179, 237, 0.06);
-    border-color: rgba(99, 179, 237, 0.15);
+    background: rgba(99, 179, 237, 0.10);
+    border-color: rgba(99, 179, 237, 0.22);
+}
+
+/* Amethyst-specific component overrides */
+.theme-amethyst .gold-card {
+    background: rgba(155, 114, 207, 0.13);
+    border-color: rgba(155, 114, 207, 0.30);
+}
+
+.theme-amethyst .ai-pulse {
+    background: #9B72CF;
+}
+
+.theme-amethyst .btn-primary {
+    background: #6B4B9F;
+    color: #FFFFFF;
+    border-color: #6B4B9F;
+}
+
+.theme-amethyst .btn-primary:hover {
+    background: #5C3E8A;
+    border-color: #5C3E8A;
+}
+
+.theme-amethyst .btn-secondary {
+    border-color: rgba(155, 114, 207, 0.35);
+    color: #9B72CF;
+}
+
+.theme-amethyst .btn-secondary:hover {
+    background: rgba(155, 114, 207, 0.08);
+    border-color: #9B72CF;
+    color: #9B72CF;
+}
+
+.theme-amethyst input[type="range"]::-webkit-slider-thumb {
+    background: #9B72CF;
+    box-shadow: 0 0 12px rgba(155, 114, 207, 0.4);
+}
+
+.theme-amethyst input[type="range"]::-moz-range-thumb {
+    background: #9B72CF;
+}
+
+.theme-amethyst .nav-link.active {
+    color: #9B72CF;
+    border-color: #9B72CF;
+}
+
+/* Rosso-specific component overrides */
+.theme-rosso .gold-card {
+    background: rgba(224, 104, 104, 0.13);
+    border-color: rgba(224, 104, 104, 0.30);
+}
+
+.theme-rosso .ai-pulse {
+    background: #E06868;
+}
+
+.theme-rosso .btn-primary {
+    background: #B03030;
+    color: #FFFFFF;
+    border-color: #B03030;
+}
+
+.theme-rosso .btn-primary:hover {
+    background: #962A2A;
+    border-color: #962A2A;
+}
+
+.theme-rosso .btn-secondary {
+    border-color: rgba(224, 104, 104, 0.35);
+    color: #E06868;
+}
+
+.theme-rosso .btn-secondary:hover {
+    background: rgba(224, 104, 104, 0.08);
+    border-color: #E06868;
+    color: #E06868;
+}
+
+.theme-rosso input[type="range"]::-webkit-slider-thumb {
+    background: #E06868;
+    box-shadow: 0 0 12px rgba(224, 104, 104, 0.4);
+}
+
+.theme-rosso input[type="range"]::-moz-range-thumb {
+    background: #E06868;
+}
+
+.theme-rosso .nav-link.active {
+    color: #E06868;
+    border-color: #E06868;
 }
 
 .theme-cobalt .ai-pulse {
@@ -586,17 +715,6 @@ body.theme-paper .sidebar-profile-link.active {
     border-color: rgba(0, 0, 0, 0.08);
 }
 
-body.theme-ivory .sidebar-profile-trigger:hover,
-body.theme-ivory .sidebar-profile-trigger.active,
-body.theme-pearl .sidebar-profile-trigger:hover,
-body.theme-pearl .sidebar-profile-trigger.active,
-body.theme-sage .sidebar-profile-trigger:hover,
-body.theme-sage .sidebar-profile-trigger.active,
-body.theme-paper .sidebar-profile-trigger:hover,
-body.theme-paper .sidebar-profile-trigger.active {
-    background: rgba(0, 0, 0, 0.04);
-    border-color: rgba(0, 0, 0, 0.06);
-}
 
 /* Checkbox border/bg: hardcoded white rgba invisible on light bg */
 body.theme-ivory input[type="checkbox"],

@@ -413,8 +413,31 @@ def overview():
             plan_summary = get_plan_summary(smart_plan)
             # Generate action whisper
     action_whisper = None
+    plan_status = None
+    nearest_milestone = None
     if smart_plan and "error" not in smart_plan:
         action_whisper = generate_action_whisper(current_user, smart_plan, data["goals"])
+        if action_whisper:
+            if action_whisper.get("type") == "setup":
+                plan_status = "setting_up"
+            elif action_whisper.get("type") == "payday":
+                plan_status = "payday"
+        # Nearest milestone: pot with smallest months_to_target > 0 and has a goal_id
+        pots_with_timeline = [
+            p for p in (smart_plan.get("pots") or [])
+            if p.get("goal_id") and p.get("months_to_target") and p["months_to_target"] > 0 and not p.get("completed")
+        ]
+        if pots_with_timeline:
+            nearest_milestone = min(pots_with_timeline, key=lambda p: p["months_to_target"])
+
+    # Total saved toward goals (sum of current balances across all pots with a goal)
+    total_saved_toward_goals = 0.0
+    if smart_plan and "error" not in smart_plan:
+        total_saved_toward_goals = sum(
+            float(p.get("current") or 0)
+            for p in (smart_plan.get("pots") or [])
+            if p.get("goal_id")
+        )
 
     # Money left (secondary stat)
     money_left, days_remaining = _get_money_left()
@@ -456,6 +479,20 @@ def overview():
 
     has_data = last_transaction is not None
 
+    # Life check-in nudge: show mid-month (days 13-16) once user is ≥14 days old
+    # and hasn't done a life check-in this month
+    show_life_checkin_nudge = False
+    if current_user.created_at:
+        days_since_signup = (datetime.now() - current_user.created_at).days
+        day_of_month = today.day
+        already_checked_in = (
+            current_user.last_life_checkin is not None
+            and current_user.last_life_checkin.month == today.month
+            and current_user.last_life_checkin.year == today.year
+        )
+        if days_since_signup >= 14 and 13 <= day_of_month <= 16 and not already_checked_in:
+            show_life_checkin_nudge = True
+
     return render_template("overview.html",
         greeting=greeting,
         smart_plan=smart_plan,
@@ -464,10 +501,15 @@ def overview():
         days_remaining=days_remaining,
         has_data=has_data,
         monthly_spending=float(expenses),
+        monthly_income_txn=float(income),
         top_categories=categories,
         primary_goal=data["primary_goal"] if data["primary_goal"] else None,
         active_goals_count=data["active_goals"],
         action_whisper=action_whisper,
+        plan_status=plan_status,
+        nearest_milestone=nearest_milestone,
+        total_saved_toward_goals=total_saved_toward_goals,
+        show_life_checkin_nudge=show_life_checkin_nudge,
     )
 
 
@@ -1083,7 +1125,7 @@ def life_checkin():
         db.session.commit()
 
         if checkin_type == "all_good":
-            flash("Great — your plan stays on track.", "success")
+            flash("Your plan stays on track.", "success")
             return redirect(url_for("pages.overview"))
 
         elif checkin_type == "birthday":
@@ -1104,7 +1146,7 @@ def life_checkin():
                 db.session.commit()
                 flash(f"Added '{event_name}' to your goals. Your plan has adjusted.", "success")
             else:
-                flash("Got it — let us know if you need to budget for it.", "success")
+                flash("Got it. Let us know if you need to budget for it.", "success")
             return redirect(url_for("pages.overview"))
 
         elif checkin_type == "unexpected_expense":
@@ -1138,7 +1180,7 @@ def life_checkin():
             return redirect(url_for("pages.companion"))
 
         elif checkin_type == "ask_later":
-            flash("No problem — we'll check in again soon.", "success")
+            flash("No problem. We'll check in again soon.", "success")
             return redirect(url_for("pages.overview"))
 
         return redirect(url_for("pages.overview"))

@@ -53,42 +53,74 @@
 {% elif smart_plan and not smart_plan.error %}
 <!-- ════ PLAN STATUS — the hero ════ -->
 <div class="gold-card" style="margin-bottom: 24px;">
-    <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 12px;">
-        <span class="ai-pulse"></span>
-        <span style="font-size: 0.65rem; color: var(--roman-gold); text-transform: uppercase; letter-spacing: 0.06em;">Your plan</span>
+    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
+        <div style="display: flex; align-items: center; gap: 8px;">
+            <span class="ai-pulse"></span>
+            <span style="font-size: 0.65rem; color: var(--roman-gold); text-transform: uppercase; letter-spacing: 0.06em;">Your plan</span>
+        </div>
     </div>
-    <p style="font-size: 0.82rem; color: var(--ai-whisper); line-height: 1.7; font-style: italic;">{{ plan_summary }}</p>
+    <p style="font-size: 0.82rem; color: var(--text-secondary); line-height: 1.7; font-style: italic;">{{ plan_summary }}</p>
+    {% if total_saved_toward_goals > 0 %}
+    {% set ns = namespace(total_targets=0) %}
+    {% for pot in smart_plan.pots %}{% if pot.goal_id and pot.target %}{% set ns.total_targets = ns.total_targets + (pot.target | float) %}{% endif %}{% endfor %}
+    {% if ns.total_targets > 0 %}
+    {% set progress_pct = [(total_saved_toward_goals / ns.total_targets * 100) | round(0) | int, 100] | min %}
+    <div style="margin-top: 14px; padding-top: 14px; border-top: 0.5px solid var(--glass-border);">
+        <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 8px;">
+            <div style="font-size: 0.65rem; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.06em;">Overall progress</div>
+            <div style="font-size: 1rem; color: var(--text-primary); font-weight: 600; font-variant-numeric: tabular-nums;">{{ progress_pct }}%</div>
+        </div>
+        <div class="progress-track">
+            <div class="progress-fill" style="width: {{ progress_pct }}%;"></div>
+        </div>
+        <div style="font-size: 0.72rem; color: var(--text-tertiary); margin-top: 6px; font-variant-numeric: tabular-nums;">£{{ "{:,.0f}".format(total_saved_toward_goals) }} of £{{ "{:,.0f}".format(ns.total_targets) }} across your goals</div>
+    </div>
+    {% endif %}
+    {% endif %}
 
-    <div style="display: flex; gap: 12px; margin-top: 14px; padding-top: 12px; border-top: 0.5px solid var(--glass-border);">
-        <div style="flex: 1;">
-            <div style="font-size: 0.6rem; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 2px;">Income</div>
-            <div style="font-size: min(1.05rem, 3.5vw); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text-primary); font-weight: 500;">£{{ "{:,.2f}".format(smart_plan.income) }}</div>
-        </div>
-        <div style="flex: 1;">
-            <div style="font-size: 0.6rem; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 2px;">Fixed costs</div>
-            <div style="font-size: min(1.05rem, 3.5vw); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text-secondary);">£{{ "{:,.2f}".format(smart_plan.essentials) }}</div>
-        </div>
-        <div style="flex: 1;">
-            <div style="font-size: 0.6rem; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 2px;">Surplus</div>
-            <div style="font-size: min(1.05rem, 3.5vw); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text-secondary); font-weight: 500;">£{{ "{:,.2f}".format(smart_plan.surplus) }}</div>
+    {% if plan_status == 'payday' and action_whisper %}
+    <div style="margin-top: 12px; padding-top: 12px; border-top: 0.5px solid var(--glass-border); display: flex; align-items: flex-start; gap: 8px;">
+        <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--roman-gold)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0; margin-top: 2px;"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+        <div>
+            <p style="font-size: 0.78rem; color: var(--text-secondary); line-height: 1.5; margin: 0 0 4px;">{{ action_whisper.message }}</p>
+            {% if action_whisper.action_url and action_whisper.action_label %}
+            <a href="{{ action_whisper.action_url }}" style="font-size: 0.72rem; color: var(--text-secondary); text-decoration: underline; text-underline-offset: 2px;">{{ action_whisper.action_label }}</a>
+            {% endif %}
         </div>
     </div>
+    {% endif %}
+
+    {% if nearest_milestone %}
+    <div style="margin-top: 12px; padding-top: 12px; border-top: 0.5px solid var(--glass-border);">
+        <a href="{{ url_for('pages.goal_detail', goal_id=nearest_milestone.goal_id) }}?from=overview" style="display: flex; align-items: center; justify-content: space-between; text-decoration: none;">
+            <div>
+                <div style="font-size: 0.65rem; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 2px;">Nearest goal</div>
+                <div style="font-size: 0.82rem; color: var(--text-primary);">{{ nearest_milestone.name | replace(' (must-hit)', '') }} · {{ nearest_milestone.months_to_target }} month{% if nearest_milestone.months_to_target != 1 %}s{% endif %}</div>
+            </div>
+            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--text-tertiary)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0;"><path d="M9 18l6-6-6-6"/></svg>
+        </a>
+    </div>
+    {% endif %}
 
     <div style="margin-top: 14px; padding-top: 14px; border-top: 0.5px solid var(--glass-border);">
         <a href="{{ url_for('pages.plan') }}" class="btn-secondary btn-sm">View full plan</a>
     </div>
-
-    {% if action_whisper %}
-    <div style="margin-top: 10px;">
-        <p style="font-size: 0.78rem; color: var(--text-tertiary); line-height: 1.5; margin: 0 {% if action_whisper.action_url and action_whisper.action_label %}0 6px{% else %}0 0{% endif %};">{{ action_whisper.message }}</p>
-        {% if action_whisper.action_url and action_whisper.action_label %}
-        <a href="{{ action_whisper.action_url }}" style="font-size: 0.72rem; color: var(--text-tertiary); text-decoration: underline; text-underline-offset: 2px;">{{ action_whisper.action_label }}</a>
-        {% endif %}
-    </div>
-    {% endif %}
 </div>
 
-<!-- Life check-in nudge — only shown when Claro decides it's time (Dan wires show_life_checkin_nudge) -->
+<!-- Setup action row — days 1-7 only, separate from AI card -->
+{% if plan_status == 'setting_up' and action_whisper %}
+<div style="display: flex; align-items: flex-start; gap: 10px; padding: 12px 14px; border-radius: 10px; border: 0.5px solid var(--glass-border); background: var(--surface-subtle); margin-bottom: 20px;">
+    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--text-tertiary)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0; margin-top: 2px;"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+    <div style="flex: 1;">
+        <p style="font-size: 0.82rem; color: var(--text-primary); line-height: 1.5; margin: 0 0 {% if action_whisper.action_label %}4px{% else %}0{% endif %};">{{ action_whisper.message }}</p>
+        {% if action_whisper.action_label %}
+        <span style="font-size: 0.72rem; color: var(--text-tertiary);">{{ action_whisper.action_label }}</span>
+        {% endif %}
+    </div>
+</div>
+{% endif %}
+
+<!-- Life check-in nudge — shown mid-month (days 13-16) once user is ≥14 days old and hasn't checked in this month -->
 {% if show_life_checkin_nudge %}
 <a href="{{ url_for('pages.life_checkin') }}" style="display: flex; align-items: center; gap: 10px; padding: 11px 14px; border-radius: 10px; border: 0.5px solid var(--glass-border); background: transparent; text-decoration: none; margin-bottom: 20px;">
     <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--text-tertiary)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0;"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
@@ -152,13 +184,13 @@
 {% endif %}
 
 <!-- ════ SPENDING SNAPSHOT — secondary ════ -->
-{% if has_data %}
 <div style="margin-bottom: 24px; padding-top: 20px; border-top: 0.5px solid var(--glass-border);">
     <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 14px;">
         <span class="section-label" style="margin-top: 0; margin-bottom: 0;">This month</span>
         <a href="{{ url_for('pages.my_money') }}" class="btn-secondary btn-sm">My money <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg></a>
     </div>
 
+    {% if has_data and monthly_spending > 0 %}
     <div style="display: flex; gap: 12px; margin-bottom: 14px;">
         {% if money_left is not none %}
         <div style="flex: 1;">
@@ -169,6 +201,11 @@
             {% if money_left > 0 and days_remaining > 0 %}
             <div style="font-size: 0.65rem; color: var(--text-tertiary);">£{{ "{:,.2f}".format((money_left / days_remaining) | int) }}/day · {{ days_remaining }} days</div>
             {% endif %}
+        </div>
+        {% elif monthly_income_txn > 0 %}
+        <div style="flex: 1;">
+            <div style="font-size: 0.65rem; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 2px;">Income</div>
+            <div style="font-size: 1.1rem; font-weight: 500; color: var(--text-primary);">£{{ "{:,.2f}".format(monthly_income_txn) }}</div>
         </div>
         {% endif %}
         <div style="flex: 1;">
@@ -190,10 +227,10 @@
         {% endfor %}
     </div>
     {% endif %}
-</div>
 
-{% else %}
-<!-- No plan data — only show CTA if no nudge is already visible above -->
-{% endif %}
+    {% else %}
+    <p style="font-size: 0.78rem; color: var(--text-tertiary); line-height: 1.5; margin: 0;">No transactions yet. Upload a bank statement or add them in My money to track your spending here.</p>
+    {% endif %}
+</div>
 
 {% endblock %}

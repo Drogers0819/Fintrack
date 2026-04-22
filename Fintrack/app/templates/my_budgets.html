@@ -16,7 +16,7 @@
 
 {% if not current_user.factfind_completed %}
 <a href="{{ url_for('pages.factfind') }}" class="factfind-nudge">
-    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--roman-gold)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0;"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--text-tertiary)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0;"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
     <span style="flex: 1; font-size: 0.8rem; color: var(--text-secondary);">Complete your financial profile to generate your plan</span>
     <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--text-tertiary)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0;"><path d="M9 18l6-6-6-6"/></svg>
 </a>
@@ -114,8 +114,16 @@
 {% endif %}
 
 <!-- Set a spending limit -->
+{% if budget_statuses | length == 0 %}
+<div style="padding-top: 8px; margin-bottom: 20px;">
+    <p style="font-size: 0.95rem; color: var(--text-primary); font-weight: 500; margin-bottom: 8px;">Set a spending limit</p>
+    <p style="font-size: 0.8rem; color: var(--text-tertiary); line-height: 1.6;">Choose a category and a monthly cap. Claro shows a progress bar as you spend so you always know where you stand.</p>
+</div>
+{% endif %}
 <div style="{% if budget_statuses | length > 0 %}padding-top: 4px; border-top: 0.5px solid var(--glass-border);{% endif %}">
-    <div style="font-size: 0.72rem; color: var(--text-tertiary); margin-bottom: 16px; {% if budget_statuses | length > 0 %}margin-top: 20px;{% endif %}">Set a spending limit</div>
+    {% if budget_statuses | length > 0 %}
+    <div style="font-size: 0.72rem; color: var(--text-tertiary); margin-bottom: 16px; margin-top: 20px;">Set a spending limit</div>
+    {% endif %}
     <form method="POST" action="{{ url_for('pages.create_budget_page') }}">
         <div class="grid-2">
             <div class="form-group" style="margin-bottom: 0;">
