@@ -6,13 +6,15 @@ from flask_login import current_user
 
 
 PAID_TIERS = {"pro", "pro_plus", "joint"}
+ACTIVE_STATUSES = {"trialing", "active"}
 
 
 def is_subscription_active(user):
     if user is None or not getattr(user, "is_authenticated", False):
         return False
 
-    if (user.subscription_tier or "free") in PAID_TIERS:
+    status = getattr(user, "subscription_status", None)
+    if status in ACTIVE_STATUSES:
         return True
 
     if user.trial_ends_at and user.trial_ends_at > datetime.utcnow():

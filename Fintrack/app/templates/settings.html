@@ -99,6 +99,49 @@
     </div>
 </div>
 
+<!-- Billing -->
+{% set tier_label = current_user.tier %}
+{% set sub_status = current_user.subscription_status or "none" %}
+{% set has_customer = current_user.stripe_customer_id %}
+<div style="padding: 16px 0; border-top: 0.5px solid var(--glass-border);">
+    <button class="settings-toggle" onclick="toggleSettings('billing')" aria-expanded="false">
+        <div style="display: flex; align-items: center; gap: 10px;">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="opacity: 0.5;"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
+            <span style="font-size: 0.9rem; color: var(--text-primary);">Billing</span>
+        </div>
+        <svg id="chevron-billing" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="opacity: 0.4; transition: transform 0.2s;"><path d="M9 18l6-6-6-6"/></svg>
+    </button>
+    <div id="panel-billing" hidden style="padding-top: 16px; border-top: 0.5px solid var(--glass-border); margin-top: 12px;">
+        <div style="padding: 10px 0; border-bottom: 0.5px solid var(--glass-border); display: flex; justify-content: space-between; align-items: center;">
+            <span style="font-size: 0.85rem; color: var(--text-tertiary);">Current plan</span>
+            <span style="font-size: 0.85rem;">{{ tier_label }}</span>
+        </div>
+        <div style="padding: 10px 0; border-bottom: 0.5px solid var(--glass-border); display: flex; justify-content: space-between; align-items: center;">
+            <span style="font-size: 0.85rem; color: var(--text-tertiary);">Status</span>
+            <span style="font-size: 0.85rem;">
+                {% if sub_status == "trialing" %}Trialing
+                {% elif sub_status == "active" %}Active
+                {% elif sub_status == "past_due" %}Past due
+                {% elif sub_status == "canceled" %}Canceled
+                {% else %}No subscription{% endif %}
+            </span>
+        </div>
+        {% if sub_status == "trialing" and current_user.trial_ends_at %}
+        <div style="padding: 10px 0; border-bottom: 0.5px solid var(--glass-border); display: flex; justify-content: space-between; align-items: center;">
+            <span style="font-size: 0.85rem; color: var(--text-tertiary);">Trial ends</span>
+            <span style="font-size: 0.85rem;">{{ current_user.trial_ends_at.strftime("%d %b %Y") }}</span>
+        </div>
+        {% endif %}
+        <div style="padding-top: 16px;">
+            {% if has_customer %}
+            <a href="{{ url_for('billing.billing_portal') }}" class="btn-primary btn-sm" style="text-decoration: none;">Manage billing</a>
+            {% else %}
+            <a href="{{ url_for('pages.trial_gate') }}" class="btn-primary btn-sm" style="text-decoration: none;">Start your trial</a>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
 <!-- Account (name, email, password, member since — inline edit) -->
 <div style="padding: 16px 0; border-top: 0.5px solid var(--glass-border);">
     <button class="settings-toggle" onclick="toggleSettings('account')" aria-expanded="false">
@@ -255,7 +298,7 @@
 
 <script>
 function toggleSettings(key) {
-    var keys = ['profile', 'appearance', 'account'];
+    var keys = ['profile', 'appearance', 'billing', 'account'];
     keys.forEach(function(k) {
         var p = document.getElementById('panel-' + k);
         var c = document.getElementById('chevron-' + k);

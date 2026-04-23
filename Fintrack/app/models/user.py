@@ -32,7 +32,10 @@ class User(db.Model, UserMixin):
     skip_emergency_fund = db.Column(db.Boolean, default=False)
     # Subscription
     subscription_tier = db.Column(db.String(20), default="free")
+    subscription_status = db.Column(db.String(30), default="none")
     trial_ends_at = db.Column(db.DateTime, nullable=True)
+    stripe_customer_id = db.Column(db.String(255), nullable=True)
+    stripe_subscription_id = db.Column(db.String(255), nullable=True)
     companion_messages_today = db.Column(db.Integer, default=0)
     companion_last_reset = db.Column(db.Date, nullable=True)
     last_life_checkin = db.Column(db.Date, nullable=True)

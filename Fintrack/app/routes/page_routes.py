@@ -1223,18 +1223,6 @@ def trial_gate():
     )
 
 
-@page_bp.route("/checkout")
-@login_required
-def checkout():
-    # Placeholder — Stripe integration goes here
-    # For now, set user to trial and redirect to overview
-    from datetime import timedelta
-    current_user.subscription_tier = "pro_plus"
-    current_user.trial_ends_at = datetime.utcnow() + timedelta(days=14)
-    db.session.commit()
-    flash("Your 14-day Pro+ trial has started.", "success")
-    return redirect(url_for("pages.overview"))
-
 # ─── SETTINGS ────────────────────────────────────────────
 
 @page_bp.route("/settings")

@@ -88,8 +88,13 @@ def create_app(config_class=None):
     from app.routes.insight_routes import insight_bp
     from app.routes.narrative_routes import narrative_bp
     from app.routes.companion_routes import companion_bp
+    from app.routes.billing_routes import billing_bp
     app.register_blueprint(narrative_bp)
     app.register_blueprint(companion_bp)
+    app.register_blueprint(billing_bp)
+
+    from app.services.stripe_service import init_stripe
+    init_stripe()
 
     # Scheduler — only in main process (not Flask reloader worker)
     import os

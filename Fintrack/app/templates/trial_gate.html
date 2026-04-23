@@ -38,27 +38,78 @@
 <!-- Trial offer -->
 <div style="margin-bottom: 28px;">
     <div style="margin-bottom: 16px;">
-        <div style="font-size: 0.95rem; color: var(--text-primary); font-weight: 500; margin-bottom: 3px;">14-day trial, then £9.99/month</div>
+        <div style="font-size: 0.95rem; color: var(--text-primary); font-weight: 500; margin-bottom: 3px;">14-day free trial on every plan</div>
         <div style="font-size: 0.75rem; color: var(--text-tertiary);">No charge until {{ trial_end_date }} · Cancel anytime</div>
     </div>
 
-    <div style="display: flex; flex-direction: column; gap: 7px; margin-bottom: 20px;">
-        {% set features = [
-            "Full financial plan with monthly tracking",
-            "AI companion: ask anything about your money",
-            "What-if scenarios and monthly check-ins",
-        ] %}
-        {% for label in features %}
-        <div style="display: flex; align-items: center; gap: 10px;">
-            <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--success)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0;"><polyline points="20 6 9 17 4 12"/></svg>
-            <span style="font-size: 0.8rem; color: var(--text-secondary);">{{ label }}</span>
+    {% set tiers = [
+        {
+            "slug": "plan",
+            "name": "Claro Plan",
+            "price": "£9.99/mo",
+            "tagline": "Your core financial plan, kept on track.",
+            "features": [
+                "Full financial plan with monthly tracking",
+                "What-if scenarios",
+                "Monthly check-ins",
+            ],
+        },
+        {
+            "slug": "coach",
+            "name": "Claro Coach",
+            "price": "£16.99/mo",
+            "tagline": "Plan + AI companion that actually knows you.",
+            "features": [
+                "Everything in Claro Plan",
+                "AI companion: ask anything about your money",
+                "Priority insights and nudges",
+            ],
+            "recommended": True,
+        },
+        {
+            "slug": "duo",
+            "name": "Claro Duo",
+            "price": "£24.99/mo",
+            "tagline": "Coach for two — align your money together.",
+            "features": [
+                "Everything in Claro Coach",
+                "Two linked accounts, one plan",
+                "Shared goals and joint tracking",
+            ],
+        },
+    ] %}
+
+    <div style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 16px;">
+        {% for tier in tiers %}
+        <div style="padding: 16px; border: 0.5px solid {% if tier.recommended %}var(--accent, var(--text-secondary)){% else %}var(--glass-border){% endif %}; border-radius: 10px; background: var(--glass-bg, transparent);">
+            <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 4px;">
+                <div style="display: flex; align-items: baseline; gap: 8px;">
+                    <span style="font-size: 0.95rem; color: var(--text-primary); font-weight: 500;">{{ tier.name }}</span>
+                    {% if tier.recommended %}
+                    <span style="font-size: 0.6rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--success);">Recommended</span>
+                    {% endif %}
+                </div>
+                <span style="font-size: 0.85rem; color: var(--text-primary); font-variant-numeric: tabular-nums;">{{ tier.price }}</span>
+            </div>
+            <div style="font-size: 0.75rem; color: var(--text-tertiary); margin-bottom: 12px;">{{ tier.tagline }}</div>
+            <div style="display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px;">
+                {% for label in tier.features %}
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--success)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0;"><polyline points="20 6 9 17 4 12"/></svg>
+                    <span style="font-size: 0.78rem; color: var(--text-secondary);">{{ label }}</span>
+                </div>
+                {% endfor %}
+            </div>
+            <a href="{{ url_for('billing.checkout', plan=tier.slug) }}" class="btn-primary btn-full" style="text-decoration: none;">
+                Start 14-day trial
+            </a>
         </div>
         {% endfor %}
     </div>
 
-    <a href="{{ url_for('pages.checkout') }}" class="btn-primary btn-full" style="text-decoration: none;">
-        Start 14-day trial
-    </a>
+    <div style="text-align: center;">
+        <a href="{{ url_for('pages.overview') }}" style="font-size: 0.75rem; color: var(--text-tertiary); text-decoration: underline; text-underline-offset: 2px;">Maybe later</a>
+    </div>
 </div>
 
 <!-- Trust signals -->
