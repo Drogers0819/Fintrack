@@ -83,7 +83,7 @@
                         <label class="amt-opt"><input type="radio" name="emergency_amount" value="3000" style="display:none;" onchange="selOpt(this)"><span>£3,000</span></label>
                         <label class="amt-opt"><input type="radio" name="emergency_amount" value="5000" style="display:none;" onchange="selOpt(this)"><span>£5,000</span></label>
                     </div>
-                    <input type="number" name="emergency_custom" class="form-input form-input-sm" placeholder="Or enter a custom amount" step="500" min="500">
+                    <input type="number" name="emergency_custom" class="form-input form-input-sm" placeholder="Or enter a custom amount" step="500" min="500" oninput="clearPreset('emergency_amount')">
                     <div style="margin-top: 12px;">
                         <div class="timeline-label">Already have emergency savings?</div>
                         <input type="number" name="emergency_current_savings" class="form-input form-input-sm" placeholder="Current emergency savings (£)" step="100" min="0">
@@ -100,7 +100,7 @@
                         <label class="amt-opt"><input type="radio" name="house_amount" value="15000" style="display:none;" onchange="selOpt(this)"><span>£15,000</span></label>
                         <label class="amt-opt"><input type="radio" name="house_amount" value="25000" style="display:none;" onchange="selOpt(this)"><span>£25,000</span></label>
                     </div>
-                    <input type="number" name="house_custom" class="form-input form-input-sm" style="margin-top: 10px;" placeholder="Or enter a custom amount" step="1000" min="1000">
+                    <input type="number" name="house_custom" class="form-input form-input-sm" style="margin-top: 10px;" placeholder="Or enter a custom amount" step="1000" min="1000" oninput="clearPreset('house_amount')">
                     <div style="margin-top: 12px;">
                         <div class="timeline-label">Already saving toward this?</div>
                         <input type="number" name="house_current_savings" class="form-input form-input-sm" placeholder="Current savings toward deposit (£)" step="100" min="0">
@@ -236,7 +236,7 @@
                         <label class="amt-opt"><input type="radio" name="wedding_amount" value="10000" style="display:none;" onchange="selOpt(this)"><span>£10,000</span></label>
                         <label class="amt-opt"><input type="radio" name="wedding_amount" value="20000" style="display:none;" onchange="selOpt(this)"><span>£20,000</span></label>
                     </div>
-                    <input type="number" name="wedding_custom" class="form-input form-input-sm" placeholder="Or enter custom amount" step="1000" min="1000">
+                    <input type="number" name="wedding_custom" class="form-input form-input-sm" placeholder="Or enter custom amount" step="1000" min="1000" oninput="clearPreset('wedding_amount')">
                     <div class="timeline-label">When?</div>
                     <div style="display: flex; flex-wrap: wrap; gap: 8px;">
                         <label class="amt-opt"><input type="radio" name="wedding_timeline" value="6" style="display:none;" onchange="selOpt(this); checkMustHit('wedding', 6)"><span>6 months</span></label>
@@ -354,7 +354,16 @@ function toggleChip(cb){
     else{chip.classList.remove('selected');if(detail)detail.style.display='none';}
     updateBtn();
 }
-function selOpt(r){}
+function selOpt(r){
+    // Selecting a preset chip clears the custom input for that group
+    var customName=r.name.replace('_amount','_custom');
+    var customInput=document.querySelector('input[name="'+customName+'"]');
+    if(customInput)customInput.value='';
+}
+function clearPreset(groupName){
+    // Typing in custom input unchecks all radios in that group
+    document.querySelectorAll('input[name="'+groupName+'"]').forEach(function(r){r.checked=false;});
+}
 function updateBtn(){
     var c=document.querySelectorAll('input[name="goals"]:checked');
     var btn=document.getElementById('buildBtn');

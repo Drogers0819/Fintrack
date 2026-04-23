@@ -2,11 +2,18 @@
 {% block title %}Your plan explained – Claro{% endblock %}
 
 {% block content %}
+<div style="max-width: 560px; margin: 0 auto;">
 
-    <a href="{{ url_for('pages.plan_reveal') }}" style="display: inline-flex; align-items: center; gap: 6px; font-size: 0.75rem; color: var(--text-tertiary); text-decoration: none; margin-bottom: 16px;">
-        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
-        Back
-    </a>
+    <!-- Wizard step indicator — all complete, no step counter (detail page after step 4) -->
+    <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 24px;">
+        <a href="{{ url_for('pages.plan_reveal') }}" style="font-size: 0.65rem; color: var(--text-tertiary); text-decoration: none; white-space: nowrap; display: inline-flex; align-items: center; gap: 2px;"><svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>Back</a>
+        <div style="display: flex; gap: 4px; flex: 1;">
+            <div class="step-bar step-bar--complete"></div>
+            <div class="step-bar step-bar--complete"></div>
+            <div class="step-bar step-bar--complete"></div>
+            <div class="step-bar step-bar--complete"></div>
+        </div>
+    </div>
 
     <div class="page-header">
         <h1>Your plan, explained</h1>
@@ -119,22 +126,23 @@
     {% endif %}
 
     <!-- CTA -->
-<a href="{{ url_for('pages.trial_gate') }}" class="btn-primary" style="display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; padding: 16px; font-size: 0.95rem; text-decoration: none; margin-top: 28px;">
+    <a href="{{ url_for('pages.trial_gate') }}" class="btn-primary btn-full" style="display: flex; align-items: center; justify-content: center; gap: 8px; text-decoration: none; margin-top: 28px;">
         Start following this plan
         <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>
     </a>
 
     <!-- Guidance note — footer treatment -->
-    <p style="font-size: 0.7rem; color: var(--text-tertiary); margin-top: 16px; line-height: 1.6; padding: 0 8px;">
+    <p style="font-size: 0.7rem; color: var(--text-tertiary); margin-top: 16px; line-height: 1.6;">
         Guidance only, not financial advice. Based on the information you've provided. Adjusts automatically as your circumstances change.
     </p>
 
     {% else %}
     <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 20px;">{{ plan.error if plan.error else "Unable to generate plan. Please check your financial profile." }}</p>
-    <a href="{{ url_for('pages.factfind') }}" class="btn-primary" style="display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; padding: 16px; font-size: 0.95rem; text-decoration: none;">
+    <a href="{{ url_for('pages.factfind') }}" class="btn-primary btn-full" style="display: flex; align-items: center; justify-content: center; gap: 8px; text-decoration: none;">
         Update my profile
         <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>
     </a>
     {% endif %}
 
+</div>
 {% endblock %}
