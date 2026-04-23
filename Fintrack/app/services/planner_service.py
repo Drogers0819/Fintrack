@@ -656,11 +656,11 @@ def _phase_description(phase_num, active_pots, completed_pots, all_pots=None):
         # Only mention non-completed goals as the focus
         remaining = [g for g in goal_pots if g not in completed_pots]
         if remaining:
-            return f"{completed_str} completes. Funds redirect to {' and '.join(remaining)}."
+            return f"{completed_str} completes, then everything moves to {' and '.join(remaining)}."
         return f"{completed_str} completes this phase."
     else:
         if not goal_pots:
-            return "All goals on track."
+            return "All goals are progressing as planned."
         if len(goal_pots) == 1:
             return f"Full focus on {goal_pots[0]}."
         return f"Funding {', '.join(goal_pots[:-1])} and {goal_pots[-1]} simultaneously."
@@ -887,7 +887,7 @@ def get_plan_summary(plan):
         else:
             return (
                 f"Your {soon_name} completes in ~{soon_months} month{'s' if soon_months != 1 else ''}. "
-                f"After that, your £{soon_amount:,.0f}/month surplus frees up entirely."
+                f"After that, that £{soon_amount:,.0f}/month is yours to redirect however you like."
             )
 
     # Fallback: underfunded goals warning
