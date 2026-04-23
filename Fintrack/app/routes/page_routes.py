@@ -403,6 +403,15 @@ def overview():
     hour = datetime.now().hour
     greeting = "morning" if hour < 12 else "afternoon" if hour < 18 else "evening"
 
+    # TEMPORARY: local fallback — remove when webhooks are live on Render
+    if request.args.get("checkout") == "success":
+        from datetime import timedelta
+        if (current_user.subscription_status or "none") == "none" or (current_user.subscription_tier or "free") == "free":
+            current_user.subscription_tier = "pro_plus"
+            current_user.subscription_status = "trialing"
+            current_user.trial_ends_at = datetime.utcnow() + timedelta(days=14)
+            db.session.commit()
+
     # Generate smart plan
     smart_plan = None
     plan_summary = None
