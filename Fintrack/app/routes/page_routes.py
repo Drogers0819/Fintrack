@@ -1003,35 +1003,8 @@ def plan_reveal():
     ).order_by(Goal.priority_rank.asc()).all()]
 
     plan = generate_financial_plan(user_profile, goals_data)
-    summary = get_plan_summary(plan) if "error" not in plan else plan.get("error", "")
 
-    return render_template("plan_reveal.html",
-        plan=plan,
-        summary=summary,
-        show_sidebar=False
-    )
-
-# ─── PLAN REVIEW (Onboarding) ────────────────────────────────
-@page_bp.route("/onboarding/plan-review")
-@login_required
-def plan_review():
-    if not current_user.factfind_completed:
-        return redirect(url_for("pages.factfind"))
-
-    if not current_user.plan_wizard_complete:
-        current_user.plan_wizard_complete = True
-        db.session.commit()
-
-    _ensure_emergency_goal()
-
-    user_profile = current_user.profile_dict()
-    goals_data = [g.to_dict() for g in Goal.query.filter_by(
-        user_id=current_user.id, status="active"
-    ).order_by(Goal.priority_rank.asc()).all()]
-
-    plan = generate_financial_plan(user_profile, goals_data)
-
-    # Build reasoning for each pot
+    # Build per-pot reasoning (formerly in plan_review)
     reasoning = []
     if "error" not in plan:
         for pot in plan["pots"]:
@@ -1078,13 +1051,22 @@ def plan_review():
 
     summary = get_plan_summary(plan) if "error" not in plan else ""
 
-    return render_template("plan_review.html",
+    if not current_user.plan_wizard_complete:
+        current_user.plan_wizard_complete = True
+        db.session.commit()
+
+    return render_template("plan_reveal.html",
         plan=plan,
         reasoning=reasoning,
-        profile=user_profile,
         summary=summary,
         show_sidebar=False
     )
+
+# ─── PLAN REVIEW (Onboarding) — redirects to merged plan_reveal ──────────────
+@page_bp.route("/onboarding/plan-review")
+@login_required
+def plan_review():
+    return redirect(url_for("pages.plan_reveal"))
 
 # ─── WITHDRAWAL ───────────────────────────────────────────
 

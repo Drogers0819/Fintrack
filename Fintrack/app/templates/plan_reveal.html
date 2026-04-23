@@ -4,7 +4,7 @@
 {% block content %}
 <div style="max-width: 560px; margin: 0 auto;">
 
-    <!-- Onboarding step indicator -->
+    <!-- Wizard step indicator -->
     <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 24px;">
         <a href="{{ url_for('pages.goal_chips') }}" style="font-size: 0.65rem; color: var(--text-tertiary); text-decoration: none; white-space: nowrap; display: inline-flex; align-items: center; gap: 2px;"><svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>Back</a>
         <div style="display: flex; gap: 4px; flex: 1;">
@@ -20,29 +20,46 @@
         <h1>Here's your plan.</h1>
     </div>
 
-    <!-- Income breakdown -->
-    <div class="reveal-section" style="animation: fadeUp 0.6s ease 0.2s both;">
-        <div style="display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 0.5px solid var(--glass-divider);">
-            <span style="font-size: 0.85rem; color: var(--text-tertiary);">Your income</span>
-            <span style="font-size: 0.85rem; color: var(--text-primary); font-weight: 500;">£{{ "{:,.0f}".format(plan.income) }}/month</span>
+    {% if plan and "error" not in plan %}
+
+    <!-- AI whisper — context before the numbers -->
+    {% if summary %}
+    <div class="gold-card" style="margin-bottom: 28px; animation: fadeUp 0.6s ease 0.2s both;">
+        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 10px;">
+            <span class="ai-pulse"></span>
+            <span style="font-size: 0.65rem; color: var(--roman-gold); text-transform: uppercase; letter-spacing: 0.06em;">Claro</span>
         </div>
-        <div style="display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 0.5px solid var(--glass-divider);">
-            <span style="font-size: 0.85rem; color: var(--text-tertiary);">Essentials</span>
-            <span style="font-size: 0.85rem; color: var(--text-secondary);">−£{{ "{:,.0f}".format(plan.essentials) }}</span>
+        <p style="font-size: 0.9rem; color: var(--text-secondary); line-height: 1.7; font-style: italic;">{{ summary }}</p>
+    </div>
+    {% endif %}
+
+    <!-- Income ledger → surplus hero -->
+    <div style="animation: fadeUp 0.6s ease 0.4s both; margin-bottom: 32px;">
+        <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 6px;">
+            <span style="font-size: 0.78rem; color: var(--text-tertiary);">Monthly income</span>
+            <span style="font-size: 0.78rem; color: var(--text-secondary); font-variant-numeric: tabular-nums;">£{{ "{:,.0f}".format(plan.income) }}</span>
         </div>
-        <div style="display: flex; justify-content: space-between; padding: 14px 0;">
-            <span style="font-size: 0.95rem; color: var(--text-primary); font-weight: 500;">Available for your goals</span>
-            <span style="font-size: 0.95rem; color: var(--text-primary); font-weight: 600;">£{{ "{:,.0f}".format(plan.surplus) }}/month</span>
+        <div style="display: flex; justify-content: space-between; align-items: baseline; padding-bottom: 16px; border-bottom: 0.5px solid var(--glass-border);">
+            <span style="font-size: 0.78rem; color: var(--text-tertiary);">Essential costs</span>
+            <span style="font-size: 0.78rem; color: var(--text-tertiary); font-variant-numeric: tabular-nums;">−£{{ "{:,.0f}".format(plan.essentials) }}</span>
+        </div>
+        <div style="padding-top: 16px;">
+            <div style="font-size: 0.65rem; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 6px;">Available for your goals</div>
+            <div style="display: flex; align-items: baseline; gap: 4px;">
+                <span style="font-size: 2rem; font-weight: 600; color: var(--text-primary); font-variant-numeric: tabular-nums; line-height: 1;">£{{ "{:,.0f}".format(plan.surplus) }}</span>
+                <span style="font-size: 0.8rem; color: var(--text-tertiary); font-weight: 400;">/mo</span>
+            </div>
+            <p style="font-size: 0.75rem; color: var(--text-tertiary); margin-top: 6px; line-height: 1.5;">Every pot is funded at once. When one goal completes, its allocation moves automatically to the next.</p>
         </div>
     </div>
 
     <!-- Where it goes -->
-    <div style="margin-top: 28px; animation: fadeUp 0.6s ease 0.6s both;">
+    <div style="animation: fadeUp 0.6s ease 0.6s both;">
         <div class="section-label" style="margin-bottom: 14px;">Where it goes</div>
 
         {% for pot in plan.pots %}
         {% if pot.monthly_amount > 0 %}
-        <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px 0; {% if not loop.last %}border-bottom: 0.5px solid var(--glass-border-subtle);{% endif %} animation: fadeUp 0.5s ease {{ 0.8 + loop.index0 * 0.15 }}s both;">
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px 0; {% if not loop.last %}border-bottom: 0.5px solid var(--glass-border-subtle);{% endif %}">
             <div>
                 <span style="font-size: 0.9rem; color: var(--text-primary);">{{ pot.name | replace(' (must-hit)', '') }}</span>
                 {% if pot.type == 'debt' or 'pay off' in pot.name|lower or 'credit' in pot.name|lower or 'loan' in pot.name|lower or 'overdraft' in pot.name|lower %}
@@ -52,7 +69,7 @@
                 <span style="font-size: 0.7rem; color: var(--text-tertiary); margin-left: 6px;">~{{ pot.months_to_target }} month{{ 's' if pot.months_to_target != 1 else '' }}</span>
                 {% endif %}
             </div>
-            <span style="font-size: 0.9rem; color: var(--text-primary); font-weight: 500;">£{{ "{:,.0f}".format(pot.monthly_amount) }}<span style="font-size: 0.7rem; font-weight: 400; color: var(--text-tertiary);">/mo</span></span>
+            <span style="font-size: 0.9rem; color: var(--text-primary); font-weight: 500; white-space: nowrap;">£{{ "{:,.0f}".format(pot.monthly_amount) }}<span style="font-size: 0.7rem; font-weight: 400; color: var(--text-tertiary);">/mo</span></span>
         </div>
         {% endif %}
         {% endfor %}
@@ -72,11 +89,10 @@
         {% endif %}
     </div>
 
-    <!-- Phases -->
-    {% if plan.phases|length > 1 %}
-    <div style="margin-top: 32px; animation: fadeUp 0.6s ease 1.4s both;">
+    <!-- Your journey — phases (conditional) -->
+    {% if plan.phases and plan.phases|length > 1 %}
+    <div style="margin-top: 32px; animation: fadeUp 0.6s ease 1.0s both;">
         <div class="section-label" style="margin-bottom: 14px;">Your journey</div>
-
         {% for phase in plan.phases %}
         <div style="display: flex; gap: 14px; margin-bottom: 12px;">
             <div style="display: flex; flex-direction: column; align-items: center;">
@@ -100,11 +116,74 @@
     </div>
     {% endif %}
 
+    <!-- The reasoning — subordinate but visible, earns its place via trust value -->
+    {% if reasoning %}
+    <div style="margin-top: 36px; padding-top: 24px; border-top: 0.5px solid var(--glass-border); animation: fadeUp 0.6s ease 1.2s both;">
+        <div class="section-label" style="margin-bottom: 4px;">The reasoning</div>
+        <p style="font-size: 0.75rem; color: var(--text-tertiary); margin-bottom: 20px; line-height: 1.5;">How Claro arrived at each allocation.</p>
+
+        {% for item in reasoning %}
+        <div style="padding: 14px 0; {% if not loop.last %}border-bottom: 0.5px solid var(--glass-border-subtle);{% endif %}">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 6px;">
+                <div style="display: flex; align-items: flex-start; gap: 8px; flex: 1; min-width: 0;">
+                    {% if item.type == 'emergency' %}
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;opacity:0.5;margin-top:2px;"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                    {% elif item.type == 'debt' or 'pay off' in item.name|lower or 'credit' in item.name|lower or 'loan' in item.name|lower or 'overdraft' in item.name|lower %}
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;opacity:0.5;margin-top:2px;"><rect width="22" height="16" x="1" y="4" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+                    {% elif item.type == 'lifestyle' %}
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;opacity:0.5;margin-top:2px;"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
+                    {% elif item.type == 'buffer' %}
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;opacity:0.5;margin-top:2px;"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/></svg>
+                    {% else %}
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;opacity:0.5;margin-top:2px;"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>
+                    {% endif %}
+                    <div style="min-width: 0;">
+                        <span style="font-size: 0.85rem; color: var(--text-primary); font-weight: 500;">{{ item.name | replace(' (must-hit)', '') }}</span>
+                        {% if item.target %}
+                        <div style="font-size: 0.72rem; color: var(--text-tertiary); margin-top: 2px;">£{{ "{:,.0f}".format(item.target) }} target{% if item.months %} · ~{{ item.months }} month{{ 's' if item.months != 1 else '' }}{% endif %}</div>
+                        {% endif %}
+                    </div>
+                </div>
+                <span style="font-size: 0.85rem; font-weight: 500; color: var(--text-secondary); font-variant-numeric: tabular-nums; white-space: nowrap; margin-left: 12px; flex-shrink: 0;">£{{ "{:,.0f}".format(item.monthly) }}/mo</span>
+            </div>
+            <div style="font-size: 0.78rem; color: var(--text-secondary); line-height: 1.6; padding-left: 22px;">{{ item.reason }}</div>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- Alerts -->
+    {% if plan.alerts %}
+    <div style="margin-top: 28px;">
+        <div class="section-label" style="margin-bottom: 12px;">Things to note</div>
+        {% for alert in plan.alerts %}
+        <div style="padding: 12px 14px; border-radius: 8px; background: var(--surface-subtle); border: 0.5px solid var(--glass-divider); margin-bottom: 8px;">
+            <div style="font-size: 0.78rem; color: var(--text-secondary); line-height: 1.5;">{{ alert.message }}</div>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
     <!-- CTA -->
-    <a href="{{ url_for('pages.plan_review') }}" class="btn-primary btn-full" style="display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 32px; text-decoration: none; animation: fadeUp 0.6s ease 1.8s both;">
-        Review my plan
+    <a href="{{ url_for('pages.trial_gate') }}" class="btn-primary btn-full" style="display: flex; align-items: center; justify-content: center; gap: 8px; text-decoration: none; margin-top: 32px; animation: fadeUp 0.6s ease 1.6s both;">
+        Start following this plan
         <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>
     </a>
+
+    <p style="font-size: 0.7rem; color: var(--text-tertiary); margin-top: 16px; line-height: 1.6;">
+        Guidance only, not financial advice. Based on the information you've provided. Adjusts automatically as your circumstances change.
+    </p>
+
+    {% else %}
+
+    <!-- Error state -->
+    <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 20px;">{{ plan.error if plan and plan.error else "Unable to generate your plan. Please check your financial profile." }}</p>
+    <a href="{{ url_for('pages.factfind') }}" class="btn-secondary btn-full" style="display: flex; align-items: center; justify-content: center; gap: 8px; text-decoration: none;">
+        Update my profile
+        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>
+    </a>
+
+    {% endif %}
 
 </div>
 <style>
