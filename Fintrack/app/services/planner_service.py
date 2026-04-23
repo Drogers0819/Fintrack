@@ -850,7 +850,7 @@ def get_plan_summary(plan):
                    and not p.get("completed")]
 
     if not active_pots:
-        return "All your goals are on track. Your surplus is free."
+        return "Your goals are fully funded. Any remaining surplus goes to lifestyle and buffer."
 
     # Find the pot closest to completion
     completing_soon = None
