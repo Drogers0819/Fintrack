@@ -322,6 +322,10 @@ nav {
     font-size: 0.82rem;
     color: var(--text-secondary);
 }
+.form-success-email {
+    color: var(--text-primary);
+    font-weight: 500;
+}
 
 /* ===== APP PREVIEW ===== */
 .preview-section {
@@ -636,7 +640,7 @@ footer {
                 <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
             </div>
             <p>You're on the list.</p>
-            <span>We'll let you know the moment Claro is ready.</span>
+            <span>We'll email <strong class="form-success-email"></strong> before August.</span>
         </div>
     </div>
 
@@ -752,7 +756,7 @@ footer {
                 <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
             </div>
             <p>You're on the list.</p>
-            <span>We'll be in touch soon.</span>
+            <span>We'll email <strong class="form-success-email"></strong> before August.</span>
         </div>
     </div>
 
@@ -824,7 +828,10 @@ function submitToBeehiiv(e, formId, successId, proofId) {
     document.body.removeChild(hiddenForm);
 
     form.style.display = 'none';
-    document.getElementById(successId).style.display = 'block';
+    var successEl = document.getElementById(successId);
+    successEl.style.display = 'block';
+    var emailTag = successEl.querySelector('.form-success-email');
+    if (emailTag) emailTag.textContent = email;
     if (proofId) {
         var proof = document.getElementById(proofId);
         if (proof) proof.style.display = 'none';
