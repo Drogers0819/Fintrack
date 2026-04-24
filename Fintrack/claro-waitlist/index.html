@@ -607,19 +607,20 @@ footer {
 <script>
 (function() {
     var container = document.getElementById('stars');
-    for (var i = 0; i < 35; i++) {
+    for (var i = 0; i < 40; i++) {
         var star = document.createElement('div');
         star.className = 'star';
-        var size = Math.random() * 1.5 + 0.5;
-        var isGold = Math.random() > 0.7;
+        var size = Math.random() * 2 + 1;
+        var isGold = Math.random() > 0.6;
         star.style.cssText =
             'width:' + size + 'px;height:' + size + 'px;' +
-            'left:' + Math.random() * 100 + '%;top:' + Math.random() * 60 + '%;' +
+            'left:' + Math.random() * 100 + '%;top:' + Math.random() * 70 + '%;' +
             'background:' + (isGold
-                ? 'rgba(197,163,93,' + (0.15 + Math.random() * 0.25) + ')'
-                : 'rgba(255,255,255,' + (0.12 + Math.random() * 0.2) + ')') + ';' +
-            'animation-duration:' + (4 + Math.random() * 5) + 's;' +
-            'animation-delay:' + Math.random() * 4 + 's;';
+                ? 'rgba(197,163,93,' + (0.3 + Math.random() * 0.4) + ')'
+                : 'rgba(255,255,255,' + (0.2 + Math.random() * 0.3) + ')') + ';' +
+            'animation-duration:' + (3 + Math.random() * 6) + 's;' +
+            'animation-delay:' + Math.random() * 5 + 's;' +
+            (isGold ? 'box-shadow:0 0 ' + (4 + Math.random() * 6) + 'px rgba(197,163,93,0.3);' : '');
         container.appendChild(star);
     }
 })();
