@@ -770,8 +770,6 @@ footer {
 
 </div>
 
-<iframe name="beehiiv-hidden" style="display:none;"></iframe>
-
 <script>
 (function() {
     var container = document.getElementById('stars');
@@ -814,28 +812,34 @@ function submitToBeehiiv(e, formId, successId, proofId) {
         return false;
     }
 
-    var hiddenForm = document.createElement('form');
-    hiddenForm.method = 'POST';
-    hiddenForm.action = 'https://subscribe-forms.beehiiv.com/2618cf66-b1ee-4ea4-90d4-9762e91b34e7';
-    hiddenForm.target = 'beehiiv-hidden';
-    hiddenForm.style.display = 'none';
-    var emailField = document.createElement('input');
-    emailField.name = 'email';
-    emailField.value = email;
-    hiddenForm.appendChild(emailField);
-    document.body.appendChild(hiddenForm);
-    hiddenForm.submit();
-    document.body.removeChild(hiddenForm);
+    var btn = form.querySelector('button[type="submit"]');
+    if (btn) { btn.disabled = true; btn.textContent = 'Joining…'; }
 
-    form.style.display = 'none';
-    var successEl = document.getElementById(successId);
-    successEl.style.display = 'block';
-    var emailTag = successEl.querySelector('.form-success-email');
-    if (emailTag) emailTag.textContent = email;
-    if (proofId) {
-        var proof = document.getElementById(proofId);
-        if (proof) proof.style.display = 'none';
-    }
+    fetch('/api/subscribe', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: email })
+    })
+    .then(function(res) { return res.json(); })
+    .then(function() {
+        form.style.display = 'none';
+        var successEl = document.getElementById(successId);
+        successEl.style.display = 'block';
+        var emailTag = successEl.querySelector('.form-success-email');
+        if (emailTag) emailTag.textContent = email;
+        if (proofId) {
+            var proof = document.getElementById(proofId);
+            if (proof) proof.style.display = 'none';
+        }
+    })
+    .catch(function() {
+        if (btn) { btn.disabled = false; btn.textContent = 'Join the waitlist'; }
+        var errorEl = emailInput.nextElementSibling;
+        if (errorEl && errorEl.classList.contains('form-error')) {
+            errorEl.textContent = 'Something went wrong. Please try again.';
+            errorEl.style.display = 'block';
+        }
+    });
     return false;
 }
 </script>
