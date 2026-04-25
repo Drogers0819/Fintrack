@@ -142,6 +142,19 @@
     </div>
 </div>
 
+<!-- Install Claro (PWA) — only shown when installable, on iOS Safari, or already installed -->
+<div id="pwaSettingsSection" hidden style="padding: 16px 0; border-top: 0.5px solid var(--glass-border);">
+    <div style="display: flex; align-items: center; gap: 12px;">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="opacity: 0.5; flex-shrink: 0;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        <div style="flex: 1; min-width: 0;">
+            <div style="font-size: 0.9rem; color: var(--text-primary);">Install Claro</div>
+            <div id="pwaSettingsDesc" style="font-size: 0.75rem; color: var(--text-tertiary); margin-top: 2px;">Add Claro to your home screen for quick access.</div>
+        </div>
+        <button type="button" id="pwaSettingsInstallBtn" class="btn-primary btn-sm" hidden style="flex-shrink: 0;">Install</button>
+        <span id="pwaSettingsStatus" hidden style="font-size: 0.78rem; color: var(--text-secondary); flex-shrink: 0;"></span>
+    </div>
+</div>
+
 <!-- Account (name, email, password, member since — inline edit) -->
 <div style="padding: 16px 0; border-top: 0.5px solid var(--glass-border);">
     <button class="settings-toggle" onclick="toggleSettings('account')" aria-expanded="false">
