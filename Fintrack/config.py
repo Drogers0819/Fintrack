@@ -1,10 +1,19 @@
 import os
 
 
+def _normalize_db_url(url):
+    if url and url.startswith("postgres://"):
+        return "postgresql://" + url[len("postgres://"):]
+    return url
+
+
+DATABASE_URL = _normalize_db_url(os.environ.get("DATABASE_URL"))
+
+
 class DevelopmentConfig:
-    SECRET_KEY = "dev-secret-key"
+    SECRET_KEY = os.environ.get("SECRET_KEY", "dev-secret-key")
     DEBUG = True
-    SQLALCHEMY_DATABASE_URI = "sqlite:///dev.db"
+    SQLALCHEMY_DATABASE_URI = DATABASE_URL or "sqlite:///dev.db"
     SEND_FILE_MAX_AGE_DEFAULT = 0  # Disable static file caching in dev
 
 
@@ -15,7 +24,7 @@ class TestingConfig:
 
 
 class ProductionConfig:
-    SECRET_KEY = os.environ.get("SECRET_KEY")
+    SECRET_KEY = os.environ.get("SECRET_KEY", "dev-secret-key")
     DEBUG = False
-    SQLALCHEMY_DATABASE_URI = os.environ.get("DATABASE_URL")
-    RESEND_API_KEY = os.environ.get("RESEND_API_KEY")  # Set in Render/Railway env vars
+    SQLALCHEMY_DATABASE_URI = DATABASE_URL or "sqlite:///dev.db"
+    RESEND_API_KEY = os.environ.get("RESEND_API_KEY")

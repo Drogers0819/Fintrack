@@ -1,7 +1,12 @@
+import os
+
+from dotenv import load_dotenv
 from flask import Flask, jsonify, redirect, url_for
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager
 from flask_bcrypt import Bcrypt
+
+load_dotenv()
 
 db = SQLAlchemy()
 login_manager = LoginManager()
@@ -26,8 +31,12 @@ DEFAULT_CATEGORIES = [
 
 def create_app(config_class=None):
     if config_class is None:
-        from config import DevelopmentConfig
-        config_class = DevelopmentConfig
+        if os.environ.get("FLASK_ENV") == "production":
+            from config import ProductionConfig
+            config_class = ProductionConfig
+        else:
+            from config import DevelopmentConfig
+            config_class = DevelopmentConfig
 
     app = Flask(__name__)
     app.config.from_object(config_class)
