@@ -26,7 +26,9 @@ from app.services.planner_service import generate_financial_plan, get_plan_summa
 from app.services.whisper_service import generate_action_whisper
 from app.services.withdrawal_service import get_withdrawal_options
 from app.models.life_checkin import LifeCheckIn
+from app.models.checkin import CheckInEntry
 from app.utils.auth import is_subscription_active, requires_subscription
+from sqlalchemy.exc import IntegrityError
 page_bp = Blueprint("pages", __name__)
 
 
@@ -1608,9 +1610,14 @@ def delete_goal(goal_id):
         flash("Goal not found", "error")
         return redirect(url_for("pages.my_goals"))
 
-    db.session.delete(goal)
-    db.session.commit()
-    flash("Goal deleted", "success")
+    try:
+        CheckInEntry.query.filter_by(goal_id=goal.id).delete(synchronize_session=False)
+        db.session.delete(goal)
+        db.session.commit()
+        flash("Goal deleted", "success")
+    except IntegrityError:
+        db.session.rollback()
+        flash("Couldn't delete this goal — it's still referenced by other records.", "error")
     return redirect(url_for("pages.my_goals"))
 
 
