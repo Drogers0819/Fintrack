@@ -21,8 +21,8 @@
     <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='favicon.ico') }}">
     <link rel="icon" type="image/png" sizes="32x32" href="{{ url_for('static', filename='images/logo.png') }}">
     <link rel="apple-touch-icon" href="{{ url_for('static', filename='images/logo.png') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}?v=20260425t">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/themes.css') }}?v=20260425t">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}?v=20260426a">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/themes.css') }}?v=20260426a">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
     <style>
         .pwa-install-banner {
@@ -438,6 +438,10 @@
                 return window.navigator.standalone === true;
             }
 
+            function isMobile() {
+                return window.innerWidth <= 768;
+            }
+
             function isIOSSafari() {
                 var ua = window.navigator.userAgent || '';
                 var isIOS = /iPad|iPhone|iPod/.test(ua) && !window.MSStream;
@@ -457,6 +461,7 @@
 
             function showBanner(mode) {
                 if (!banner) return;
+                if (!isMobile()) return;
                 if (isStandalone() || dismissedRecently()) return;
                 if (mode === 'ios') {
                     if (bannerText) bannerText.textContent = 'Install Claro: tap Share, then "Add to Home Screen"';
