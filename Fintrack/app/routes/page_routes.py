@@ -2077,3 +2077,45 @@ def unsubscribe():
     # TODO: when email preferences are built, mark current_user as opted out here.
     # For now, a polite confirmation page so the link doesn't 404.
     return render_template("unsubscribe.html")
+
+
+# ─── DESIGN PREVIEW — Direction C: "Soft Modern" ──────────
+# Standalone shell that doesn't extend base.html. Lets us prototype a
+# native-app-style UI without disturbing the production design system.
+
+@page_bp.route("/preview/modern")
+@login_required
+def preview_modern():
+    today = date.today()
+    hour = datetime.now().hour
+    greeting = "morning" if hour < 12 else "afternoon" if hour < 18 else "evening"
+
+    goals = Goal.query.filter_by(
+        user_id=current_user.id, status="active"
+    ).order_by(Goal.priority_rank.asc()).limit(4).all()
+
+    directed_amount = None
+    if current_user.created_at and current_user.factfind_completed:
+        signup_date = current_user.created_at.date() if hasattr(current_user.created_at, "date") else current_user.created_at
+        delta = relativedelta(today, signup_date)
+        months_active = delta.years * 12 + delta.months
+        surplus = current_user.monthly_surplus or 0
+        if months_active >= 1 and surplus > 0:
+            directed_amount = round(float(surplus) * months_active, 2)
+
+    expenses_this_month = db.session.query(
+        func.coalesce(func.sum(Transaction.amount), 0)
+    ).filter_by(user_id=current_user.id, type="expense").filter(
+        extract("month", Transaction.date) == today.month,
+        extract("year", Transaction.date) == today.year
+    ).scalar() or 0
+
+    return render_template(
+        "preview_modern.html",
+        greeting=greeting,
+        first_name=(current_user.name or "there").split()[0],
+        date_label=f"{today.strftime('%A')}, {today.day} {today.strftime('%B')}",
+        goals=goals,
+        directed_amount=directed_amount,
+        expenses_this_month=float(expenses_this_month),
+    )
