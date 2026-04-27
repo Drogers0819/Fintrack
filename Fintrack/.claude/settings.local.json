@@ -13,7 +13,12 @@
       "Bash(git push *)",
       "Bash(./venv/Scripts/python.exe -m pytest -q)",
       "Bash(./venv/Scripts/python.exe -m pytest tests/ -q)",
-      "Bash(git *)"
+      "Bash(git *)",
+      "Bash(./venv/Scripts/pip.exe install *)",
+      "Bash(./venv/Scripts/python.exe -m pytest tests/ -q --maxfail=3)",
+      "Bash(./venv/Scripts/python.exe -m pytest tests/ -q --maxfail=5)",
+      "Bash(./venv/Scripts/python.exe _inject_csrf.py)",
+      "Bash(./venv/Scripts/python.exe -m pytest tests/ -q --maxfail=10)"
     ]
   }
 }
