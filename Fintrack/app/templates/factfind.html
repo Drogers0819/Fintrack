@@ -94,10 +94,35 @@
     </div>
     <p style="font-size: 0.75rem; color: var(--text-tertiary); margin-bottom: 14px;">Tap any you pay for. We'll add up the total.</p>
 
+    {% set _top_subs = [
+        ("netflix",     "Netflix",          10.99),
+        ("spotify",     "Spotify",          10.99),
+        ("prime",       "Amazon Prime",      8.99),
+        ("disney",      "Disney+",           7.99),
+        ("apple_music", "Apple Music",      10.99),
+        ("apple_tv",    "Apple TV+",         8.99),
+        ("youtube",     "YouTube Premium",  12.99),
+        ("now_tv",      "NOW TV",            6.99)
+    ] %}
+    {% set _more_subs = [
+        ("sky",       "Sky",              26.00),
+        ("gym",       "Gym membership",   30.00),
+        ("crunch",    "Crunchyroll",       4.99),
+        ("audible",   "Audible",           7.99),
+        ("xbox",      "Xbox Game Pass",   12.99),
+        ("ps_plus",   "PS Plus",          10.99),
+        ("icloud",    "iCloud+",           2.99),
+        ("chatgpt",   "ChatGPT Plus",     20.00),
+        ("notion",    "Notion",            8.00),
+        ("adobe",     "Adobe CC",         19.97),
+        ("deliveroo", "Deliveroo Plus",    3.49),
+        ("just_eat",  "Just Eat+",         5.99)
+    ] %}
+
     {% macro sub_chip(id, label, cost) %}
     <label style="cursor: pointer;">
-        <input type="checkbox" class="sub-checkbox" data-cost="{{ cost }}" data-name="{{ label }}" style="display: none;" onchange="updateSubTotal()">
-        <div class="sub-chip" style="display: flex; align-items: center; gap: 6px; padding: 7px 14px; border-radius: 50px; border: 1px solid var(--glass-chip); background: var(--surface-subtle); transition: all 0.2s ease; font-size: 0.78rem; color: var(--text-secondary); user-select: none;">
+        <input type="checkbox" class="sub-checkbox" data-cost="{{ cost }}" data-id="{{ id }}" data-name="{{ label }}" style="display: none;" onchange="toggleSub(this, '{{ id }}', {{ cost }})">
+        <div class="sub-chip" id="sub-chip-{{ id }}" style="display: flex; align-items: center; gap: 6px; padding: 7px 14px; border-radius: 50px; border: 1px solid var(--glass-chip); background: var(--surface-subtle); transition: all 0.2s ease; font-size: 0.78rem; color: var(--text-secondary); user-select: none;">
             {{ label }} <span style="color: var(--text-tertiary); font-size: 0.7rem;">£{{ "{:,.2f}".format(cost) }}</span>
         </div>
     </label>
@@ -105,30 +130,24 @@
 
     <!-- Top 8 — always visible -->
     <div style="display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 8px;">
-        {{ sub_chip("netflix",     "Netflix",          10.99) }}
-        {{ sub_chip("spotify",     "Spotify",          10.99) }}
-        {{ sub_chip("prime",       "Amazon Prime",      8.99) }}
-        {{ sub_chip("disney",      "Disney+",           7.99) }}
-        {{ sub_chip("apple_music", "Apple Music",      10.99) }}
-        {{ sub_chip("apple_tv",    "Apple TV+",         8.99) }}
-        {{ sub_chip("youtube",     "YouTube Premium",  12.99) }}
-        {{ sub_chip("now_tv",      "NOW TV",            6.99) }}
+        {% for id, label, cost in _top_subs %}{{ sub_chip(id, label, cost) }}{% endfor %}
     </div>
 
     <!-- Overflow — hidden until toggle -->
     <div id="subs-more" style="display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 0; overflow: hidden; max-height: 0; transition: max-height 0.3s ease;">
-        {{ sub_chip("sky",       "Sky",              26.00) }}
-        {{ sub_chip("gym",       "Gym membership",   30.00) }}
-        {{ sub_chip("crunch",    "Crunchyroll",       4.99) }}
-        {{ sub_chip("audible",   "Audible",           7.99) }}
-        {{ sub_chip("xbox",      "Xbox Game Pass",   12.99) }}
-        {{ sub_chip("ps_plus",   "PS Plus",          10.99) }}
-        {{ sub_chip("icloud",    "iCloud+",           2.99) }}
-        {{ sub_chip("chatgpt",   "ChatGPT Plus",     20.00) }}
-        {{ sub_chip("notion",    "Notion",            8.00) }}
-        {{ sub_chip("adobe",     "Adobe CC",         19.97) }}
-        {{ sub_chip("deliveroo", "Deliveroo Plus",    3.49) }}
-        {{ sub_chip("just_eat",  "Just Eat+",         5.99) }}
+        {% for id, label, cost in _more_subs %}{{ sub_chip(id, label, cost) }}{% endfor %}
+    </div>
+
+    <!-- Editable amount inputs — appear below their chip when selected -->
+    <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 12px;">
+        {% for id, label, cost in (_top_subs + _more_subs) %}
+        <div id="sub-input-{{ id }}" style="display: none;">
+            <div style="display: flex; align-items: center; gap: 10px; padding: 8px 14px; border-radius: 8px; background: var(--surface-subtle); border: 0.5px solid var(--glass-border);">
+                <span style="font-size: 0.78rem; color: var(--text-secondary); flex: 1;">{{ label }}</span>
+                <input type="number" class="form-input form-input-sm sub-amount" data-id="{{ id }}" value="{{ cost }}" step="0.01" min="0" oninput="updateSubTotal()" style="width: 90px;">
+            </div>
+        </div>
+        {% endfor %}
     </div>
 
     <!-- Toggle -->
@@ -291,19 +310,34 @@ function toggleSubsMore() {
 
 var customSubs = [];
 
+function toggleSub(cb, id, defaultCost) {
+    var chip = document.getElementById('sub-chip-' + id);
+    var inputWrap = document.getElementById('sub-input-' + id);
+    if (cb.checked) {
+        if (chip) chip.classList.add('selected');
+        if (inputWrap) inputWrap.style.display = 'block';
+    } else {
+        if (chip) chip.classList.remove('selected');
+        if (inputWrap) {
+            inputWrap.style.display = 'none';
+            var amt = inputWrap.querySelector('.sub-amount');
+            if (amt) amt.value = defaultCost;
+        }
+    }
+    updateSubTotal();
+}
+
 function updateSubTotal() {
     var total = 0;
     var selectedCount = 0;
     var checkboxes = document.querySelectorAll('.sub-checkbox');
     checkboxes.forEach(function(cb) {
-        if (cb.checked) selectedCount++;
-        var chip = cb.nextElementSibling;
-        if (cb.checked) {
-            chip.classList.add('selected');
-            total += parseFloat(cb.dataset.cost);
-        } else {
-            chip.classList.remove('selected');
-        }
+        if (!cb.checked) return;
+        selectedCount++;
+        var amtInput = document.querySelector('.sub-amount[data-id="' + cb.dataset.id + '"]');
+        var amt = amtInput ? parseFloat(amtInput.value) : NaN;
+        if (isNaN(amt) || amt < 0) amt = parseFloat(cb.dataset.cost) || 0;
+        total += amt;
     });
 
     // Add custom subs
@@ -412,6 +446,20 @@ function renderCustomPayments() {
         container.appendChild(div);
     });
 }
+
+// On load, mirror the persisted totals into the visible displays so users
+// see what was previously saved. Touching a chip will recompute from current
+// selections — the saved total stays in the hidden input until then.
+document.addEventListener('DOMContentLoaded', function() {
+    var subSaved = parseFloat(document.getElementById('subscriptions_total').value) || 0;
+    if (subSaved > 0) {
+        document.getElementById('sub-total-display').textContent = '£' + fmtGBP(subSaved);
+    }
+    var paySaved = parseFloat(document.getElementById('other_commitments').value) || 0;
+    if (paySaved > 0) {
+        document.getElementById('pay-total-display').textContent = '£' + fmtGBP(paySaved);
+    }
+});
 
 function updatePartialProjection() {
     var income = parseFloat(document.getElementById('ff-income').value) || 0;

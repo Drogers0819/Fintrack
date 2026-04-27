@@ -125,6 +125,22 @@
 </a>
 {% endif %}
 
+<!-- ════ DIRECTED COUNTER + NEXT CHECK-IN ════ -->
+{% if not is_frozen and (directed_amount or checkin_state) %}
+<div style="margin-bottom: 24px;">
+    {% if directed_amount %}
+    <div style="font-family: var(--font-serif); font-style: italic; font-size: 1.1rem; color: var(--roman-gold);">
+        £{{ "{:,.0f}".format(directed_amount) }} directed toward your goals{% if directed_since %} since {{ directed_since }}{% endif %}
+    </div>
+    {% endif %}
+    {% if checkin_state %}
+    <a href="{{ url_for('pages.checkin') }}" style="display: inline-block; margin-top: 4px; font-size: 0.78rem; color: var(--text-tertiary); text-decoration: none;">
+        {% if checkin_state.completed %}{{ checkin_state.label }} ✓ — next one {{ checkin_state.next_date_str }}{% else %}{{ checkin_state.label }} · {{ checkin_state.next_date_str }}{% endif %}
+    </a>
+    {% endif %}
+</div>
+{% endif %}
+
 <!-- ════ ACTIVE POTS — compact progress ════ -->
 {% set goal_pots = smart_plan.pots %}
 {% set ns_gp = namespace(has_visible=false) %}

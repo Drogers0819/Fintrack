@@ -519,6 +519,74 @@ def overview():
         and not never_started_trial
     )
 
+    # ── Directed-toward-goals counter & next check-in line ──
+    directed_amount = None
+    directed_since = None
+    checkin_state = None
+
+    if not is_frozen and current_user.created_at and smart_plan and "error" not in smart_plan:
+        signup_dt = current_user.created_at
+        signup_date = signup_dt.date() if hasattr(signup_dt, "date") else signup_dt
+        delta = relativedelta(today, signup_date)
+        months_active = delta.years * 12 + delta.months
+        surplus = float(smart_plan.get("surplus") or 0)
+        if months_active >= 1 and surplus > 0:
+            directed_amount = round(surplus * months_active, 2)
+            if signup_dt.year == today.year:
+                directed_since = signup_dt.strftime("%B")
+            else:
+                directed_since = signup_dt.strftime("%B %Y")
+
+        # Next check-in: window is the last 3 days of the current calendar month;
+        # the check-in covers the previous month.
+        from app.models.checkin import CheckIn
+        last_day = calendar.monthrange(today.year, today.month)[1]
+        window_start_day = last_day - 2
+        if today.month == 1:
+            cover_month, cover_year = 12, today.year - 1
+        else:
+            cover_month, cover_year = today.month - 1, today.year
+        already_done = CheckIn.query.filter_by(
+            user_id=current_user.id, month=cover_month, year=cover_year
+        ).first() is not None
+
+        def _fmt(d):
+            return f"{d.day} {d.strftime('%B')}"
+
+        if already_done:
+            if today.month == 12:
+                nm, ny = 1, today.year + 1
+            else:
+                nm, ny = today.month + 1, today.year
+            nm_last = calendar.monthrange(ny, nm)[1]
+            next_date = date(ny, nm, nm_last)
+            checkin_state = {
+                "completed": True,
+                "label": "Check-in complete",
+                "next_date_str": _fmt(next_date),
+            }
+        elif today.day >= window_start_day:
+            days_left = last_day - today.day
+            if days_left == 0:
+                label = "Check-in due today"
+            elif days_left == 1:
+                label = "Check-in due tomorrow"
+            else:
+                label = f"Check-in due in {days_left} days"
+            checkin_state = {
+                "completed": False,
+                "label": label,
+                "next_date_str": _fmt(date(today.year, today.month, last_day)),
+            }
+        else:
+            next_date = date(today.year, today.month, window_start_day)
+            days_until = (next_date - today).days
+            checkin_state = {
+                "completed": False,
+                "label": f"Next check-in in {days_until} day{'s' if days_until != 1 else ''}",
+                "next_date_str": _fmt(next_date),
+            }
+
     return render_template("overview.html",
         greeting=greeting,
         smart_plan=smart_plan,
@@ -538,6 +606,9 @@ def overview():
         show_life_checkin_nudge=show_life_checkin_nudge,
         is_frozen=is_frozen,
         first_overview=first_overview,
+        directed_amount=directed_amount,
+        directed_since=directed_since,
+        checkin_state=checkin_state,
     )
 
 

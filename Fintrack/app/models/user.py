@@ -77,9 +77,9 @@ class User(db.Model, UserMixin):
     def tier(self):
         tier_labels = {
             "free": "Claro Free",
-            "pro": "Claro Pro",
-            "pro_plus": "Claro Pro+",
-            "joint": "Claro Joint"
+            "pro": "Claro Plan",
+            "pro_plus": "Claro Coach",
+            "joint": "Claro Duo"
         }
         return tier_labels.get(self.subscription_tier, "Claro Free")
 
