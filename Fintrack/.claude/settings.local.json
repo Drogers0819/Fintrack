@@ -18,7 +18,8 @@
       "Bash(./venv/Scripts/python.exe -m pytest tests/ -q --maxfail=3)",
       "Bash(./venv/Scripts/python.exe -m pytest tests/ -q --maxfail=5)",
       "Bash(./venv/Scripts/python.exe _inject_csrf.py)",
-      "Bash(./venv/Scripts/python.exe -m pytest tests/ -q --maxfail=10)"
+      "Bash(./venv/Scripts/python.exe -m pytest tests/ -q --maxfail=10)",
+      "Bash(./venv/Scripts/python.exe -c ' *)"
     ]
   }
 }
