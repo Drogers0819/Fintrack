@@ -808,8 +808,8 @@ body.theme-soft-modern {
     --roman-gold: #9b7d3a;
     --roman-gold-dim: rgba(155, 125, 58, 0.10);
     --roman-gold-glow: rgba(155, 125, 58, 0.20);
-    --gold-whisper-bg: rgba(155, 125, 58, 0.05);
-    --gold-whisper-border: rgba(155, 125, 58, 0.10);
+    --gold-whisper-bg: #ffffff;
+    --gold-whisper-border: rgba(0, 0, 0, 0.06);
     --glass-border: rgba(0, 0, 0, 0.06);
     --text-primary: #1a1916;
     --text-secondary: #5c5a54;
@@ -841,8 +841,9 @@ body.theme-soft-modern .glass-card {
 }
 
 body.theme-soft-modern .gold-card {
-    background: rgba(155, 125, 58, 0.08);
-    border-color: rgba(155, 125, 58, 0.25);
+    background: #ffffff;
+    border-color: rgba(0, 0, 0, 0.06);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04), 0 4px 12px rgba(0, 0, 0, 0.03);
 }
 
 body.theme-soft-modern .form-input,
