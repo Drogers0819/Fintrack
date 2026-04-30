@@ -73,6 +73,7 @@
                   data-confirm-title="Delete goal?"
                   data-confirm-body="This will permanently remove {{ g.name }}. Your saved amount won't be affected."
                   data-confirm-label="Delete">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <button type="submit" class="btn-destructive btn-sm">Delete</button>
             </form>
         </div>
