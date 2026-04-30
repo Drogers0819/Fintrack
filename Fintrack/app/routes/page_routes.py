@@ -453,12 +453,25 @@ def overview():
 
     # Total saved toward goals (sum of current balances across all pots with a goal)
     total_saved_toward_goals = 0.0
+    debt_allocation = 0.0
+    available_surplus = 0.0
+    has_debt_goals = False
     if smart_plan and "error" not in smart_plan:
         total_saved_toward_goals = sum(
             float(p.get("current") or 0)
             for p in (smart_plan.get("pots") or [])
             if p.get("goal_id")
         )
+        debt_keywords = ("credit card", "overdraft", "loan", "pay off", "debt")
+        for pot in (smart_plan.get("pots") or []):
+            name_low = (pot.get("name") or "").lower()
+            is_debt = pot.get("type") == "debt" or any(k in name_low for k in debt_keywords)
+            if is_debt and pot.get("monthly_amount", 0) > 0 and not pot.get("completed"):
+                debt_allocation += float(pot.get("monthly_amount") or 0)
+                has_debt_goals = True
+        plan_surplus = float(smart_plan.get("surplus") or 0)
+        available_surplus = round(plan_surplus - debt_allocation, 2)
+        debt_allocation = round(debt_allocation, 2)
 
     # Money left (secondary stat)
     money_left, days_remaining = _get_money_left()
@@ -615,6 +628,9 @@ def overview():
         directed_amount=directed_amount,
         directed_since=directed_since,
         checkin_state=checkin_state,
+        debt_allocation=debt_allocation,
+        available_surplus=available_surplus,
+        has_debt_goals=has_debt_goals,
     )
 
 
@@ -744,6 +760,18 @@ def plan():
         and not never_started_trial
     )
 
+    debt_monthly = 0.0
+    has_debt_goals = False
+    if smart_plan and "error" not in smart_plan:
+        debt_keywords = ("credit card", "overdraft", "loan", "pay off", "debt")
+        for pot in (smart_plan.get("pots") or []):
+            name_low = (pot.get("name") or "").lower()
+            is_debt = pot.get("type") == "debt" or any(k in name_low for k in debt_keywords)
+            if is_debt and pot.get("monthly_amount", 0) > 0 and not pot.get("completed"):
+                debt_monthly += float(pot.get("monthly_amount") or 0)
+                has_debt_goals = True
+        debt_monthly = round(debt_monthly, 2)
+
     return render_template("plan.html",
         waterfall=data["waterfall"],
         projections=data["projections"],
@@ -754,6 +782,8 @@ def plan():
         habit_amount=habit_amount,
         habit_description=habit_description,
         is_frozen=is_frozen,
+        debt_monthly=debt_monthly,
+        has_debt_goals=has_debt_goals,
     )
 
 
@@ -854,6 +884,19 @@ def checkin():
             db.session.flush()
             existing = None
 
+        # Variable-income users can update their take-home for the new month.
+        # Plan recalculates next page load since it reads current_user.monthly_income.
+        if (current_user.employment_type or "full_time") != "full_time":
+            raw_income = request.form.get("actual_income")
+            if raw_income not in (None, ""):
+                try:
+                    new_income = validate_amount(
+                        raw_income, "Income", min_val=0.01, max_val=1_000_000
+                    )
+                    current_user.monthly_income = new_income
+                except ValueError:
+                    pass
+
         checkin_record = CheckIn(
             user_id=current_user.id,
             month=checkin_month,
@@ -911,7 +954,9 @@ def checkin():
         existing=existing.to_dict() if (existing and not edit_mode) else None,
         pots=pots_for_checkin,
         smart_plan=smart_plan,
-        past_checkins=[c.to_dict() for c in past_checkins]
+        past_checkins=[c.to_dict() for c in past_checkins],
+        variable_income=(current_user.employment_type or "full_time") != "full_time",
+        current_monthly_income=float(current_user.monthly_income) if current_user.monthly_income else 0
     )
 
 # ─── SURPLUS REVEAL (Onboarding) ─────────────────────────────
@@ -1412,6 +1457,10 @@ def factfind():
             flash(str(e), "error")
             return redirect(url_for("pages.factfind"))
 
+        employment_type = request.form.get("employment_type", "full_time")
+        if employment_type not in ("full_time", "part_time", "self_employed", "contract"):
+            employment_type = "full_time"
+
         current_user.monthly_income = monthly_income
         current_user.rent_amount = rent_amount
         current_user.bills_amount = bills_amount
@@ -1420,6 +1469,7 @@ def factfind():
         current_user.subscriptions_total = subscriptions_total
         current_user.other_commitments = other_commitments
         current_user.income_day = income_day
+        current_user.employment_type = employment_type
         was_already_completed = current_user.factfind_completed
         current_user.factfind_completed = True
 

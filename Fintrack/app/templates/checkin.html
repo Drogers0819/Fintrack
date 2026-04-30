@@ -68,6 +68,21 @@
 
     <form method="POST" action="{{ url_for('pages.checkin') }}">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+        {% if variable_income %}
+        <div style="padding: 14px 0; border-bottom: 0.5px solid var(--glass-border-subtle);">
+            <div class="section-label" style="margin-top: 0; margin-bottom: 6px;">Income this month</div>
+            <div class="form-group" style="margin-bottom: 4px;">
+                <label class="form-label" for="actual_income">What was your take-home this month?</label>
+                <input type="number" id="actual_income" name="actual_income"
+                       class="form-input" step="0.01" min="0.01"
+                       value="{{ '{:.2f}'.format(current_monthly_income) if current_monthly_income else '' }}"
+                       placeholder="e.g. 1700.00">
+            </div>
+            <p style="font-size: 0.7rem; color: var(--text-tertiary); margin: 4px 0 0; line-height: 1.5;">Your plan will adjust based on this month's actual income.</p>
+        </div>
+        {% endif %}
+
         {% for pot in pots %}
         <div style="padding: 14px 0; {% if not loop.last %}border-bottom: 0.5px solid var(--glass-border-subtle);{% endif %}">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">

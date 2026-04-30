@@ -86,6 +86,18 @@
     {% endif %}
     {% endif %}
 
+    {% if smart_plan.surplus and smart_plan.surplus > 0 %}
+    <div style="margin-top: 14px; font-size: 0.75rem; color: var(--text-tertiary); line-height: 1.5;">
+        {% if has_debt_goals and debt_allocation > 0 %}
+        £{{ "{:,.0f}".format(smart_plan.surplus) }}/month surplus
+        · <span style="color: #c98a3f;">£{{ "{:,.0f}".format(debt_allocation) }} clearing debt</span>
+        · £{{ "{:,.0f}".format(available_surplus) }} building goals
+        {% else %}
+        £{{ "{:,.0f}".format(smart_plan.surplus) }}/month surplus
+        {% endif %}
+    </div>
+    {% endif %}
+
     {% if plan_status == 'payday' and action_whisper and not is_frozen %}
     <div style="margin-top: 18px; display: flex; align-items: flex-start; gap: 8px;">
         <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--roman-gold)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0; margin-top: 2px;"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
@@ -159,8 +171,9 @@
         {# Pick a color + emoji from goal type / name keywords #}
         {% set _name_low = (pot.name or '') | lower %}
         {% set _type = pot.type or '' %}
-        {% if _type == 'debt' or 'debt' in _name_low or 'loan' in _name_low or 'overdraft' in _name_low or 'card' in _name_low %}
-            {% set _circle = '#888780' %}{% set _emoji = '💳' %}
+        {% set _is_debt = (_type == 'debt' or 'debt' in _name_low or 'loan' in _name_low or 'overdraft' in _name_low or 'credit card' in _name_low or 'pay off' in _name_low) %}
+        {% if _is_debt %}
+            {% set _circle = '#c98a3f' %}{% set _emoji = '💳' %}
         {% elif 'emergency' in _name_low or 'safety' in _name_low or 'rainy' in _name_low %}
             {% set _circle = '#5b8a72' %}{% set _emoji = '🛡️' %}
         {% elif 'house' in _name_low or 'deposit' in _name_low or 'mortgage' in _name_low or 'home' in _name_low %}
@@ -190,6 +203,19 @@
                 </div>
             </div>
             {% if pot.target and not pot.completed %}
+            {% if _is_debt %}
+            {% set _remaining = [pot.target - pot.current, 0] | max %}
+            {% set _remaining_pct = ([(_remaining / pot.target) * 100, 100] | min) | round(1) %}
+            <div class="progress-track">
+                <div class="progress-fill" style="width: {{ _remaining_pct }}%; background: #c98a3f;"></div>
+            </div>
+            <div style="display: flex; justify-content: space-between; margin-top: 3px;">
+                <span style="font-size: 0.65rem; color: var(--text-tertiary);">£{{ "{:,.2f}".format(_remaining) }} left to clear</span>
+                {% if pot.months_to_target is defined %}
+                <span style="font-size: 0.65rem; color: var(--text-tertiary);">{{ pot.months_to_target }} month{% if pot.months_to_target != 1 %}s{% endif %} to go</span>
+                {% endif %}
+            </div>
+            {% else %}
             <div class="progress-track">
                 <div class="progress-fill" style="width: {{ ((pot.current / pot.target) * 100) | round(1) }}%; background: var(--roman-gold);"></div>
             </div>
@@ -199,6 +225,7 @@
                 <span style="font-size: 0.65rem; color: var(--text-tertiary);">{{ pot.months_to_target }} month{% if pot.months_to_target != 1 %}s{% endif %} to go</span>
                 {% endif %}
             </div>
+            {% endif %}
             {% endif %}
         </div>
     </a>

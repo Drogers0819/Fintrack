@@ -26,6 +26,7 @@ class User(db.Model, UserMixin):
     other_commitments = db.Column(db.Numeric(10, 2), nullable=True)
     lifestyle_budget = db.Column(db.Numeric(10, 2), nullable=True)
     income_day = db.Column(db.Integer, nullable=True)
+    employment_type = db.Column(db.String(30), default="full_time")
     factfind_completed = db.Column(db.Boolean, default=False)
     plan_wizard_complete = db.Column(db.Boolean, default=False)
 
@@ -99,6 +100,8 @@ class User(db.Model, UserMixin):
             "other_commitments": float(self.other_commitments) if self.other_commitments else None,
             "lifestyle_budget": float(self.lifestyle_budget) if self.lifestyle_budget else None,
             "income_day": self.income_day,
+            "employment_type": self.employment_type or "full_time",
+            "variable_income": (self.employment_type or "full_time") != "full_time",
             "fixed_commitments": self.fixed_commitments,
             "total_essentials": self.total_essentials,
             "monthly_surplus": self.monthly_surplus,

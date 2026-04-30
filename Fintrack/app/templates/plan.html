@@ -18,6 +18,13 @@
 
 {% if smart_plan and not smart_plan.error %}
 
+{% if has_debt_goals and debt_monthly > 0 %}
+<div style="margin-bottom: 20px; padding: 14px 16px; border-radius: 12px; background: rgba(201, 138, 63, 0.08); border: 0.5px solid rgba(201, 138, 63, 0.4);">
+    <div style="font-size: 0.65rem; color: #c98a3f; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 6px;">Debt first</div>
+    <p style="font-size: 0.82rem; color: var(--text-primary); line-height: 1.6; margin: 0;">Debt is being cleared first. Once done, £{{ "{:,.0f}".format(debt_monthly) }}/month redirects to your other goals and everything accelerates.</p>
+</div>
+{% endif %}
+
 <!-- Plan summary whisper -->
 {% if plan_summary %}
 <div class="gold-card" style="margin-bottom: 28px;">

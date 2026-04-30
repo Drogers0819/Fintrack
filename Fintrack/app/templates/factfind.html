@@ -36,6 +36,32 @@
 <form method="POST" action="{{ url_for('pages.factfind') }}">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
+    <!-- ─── EMPLOYMENT TYPE ─── -->
+    <div class="section-label" style="margin-top: 0; margin-bottom: 12px;">How do you earn?</div>
+    <p style="font-size: 0.75rem; color: var(--text-tertiary); margin-bottom: 12px;">Tap one. We'll handle variable income differently.</p>
+
+    {% set _employment = profile.employment_type or 'full_time' %}
+    <div style="display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 24px;">
+        {% set employment_chips = [
+            ('full_time', 'Full-time employed'),
+            ('part_time', 'Part-time employed'),
+            ('self_employed', 'Self-employed / Freelance'),
+            ('contract', 'Contract / Temporary')
+        ] %}
+        {% for value, label in employment_chips %}
+        <label style="cursor: pointer;">
+            <input type="radio" name="employment_type" value="{{ value }}" class="employment-radio"
+                   data-value="{{ value }}" {% if _employment == value %}checked{% endif %}
+                   style="display: none;" onchange="updateEmploymentChips()">
+            <div class="sub-chip employment-chip {% if _employment == value %}selected{% endif %}"
+                 data-value="{{ value }}"
+                 style="display: flex; align-items: center; padding: 8px 16px; border-radius: 50px; border: 1px solid var(--glass-chip); background: rgba(255,255,255,0.02); transition: all 0.2s ease; font-size: 0.8rem; color: var(--text-secondary); user-select: none;">
+                {{ label }}
+            </div>
+        </label>
+        {% endfor %}
+    </div>
+
     <!-- ─── INCOME ─── -->
     <div class="section-label" style="margin-top: 0; margin-bottom: 16px;">Income</div>
 
@@ -54,6 +80,10 @@
                    value="{{ profile.income_day | int if profile.income_day else '' }}">
         </div>
     </div>
+
+    <p id="variable-income-helper" style="font-size: 0.75rem; color: var(--text-tertiary); margin-top: 8px; margin-bottom: 0; line-height: 1.5; {% if _employment == 'full_time' %}display: none;{% endif %}">
+        Since your income varies, enter your average monthly take-home. You'll update this each month during your check-in.
+    </p>
 
     <!-- ─── COMMITMENTS ─── -->
     <div class="section-label" style="margin-top: var(--sp-xl); margin-bottom: 16px;">Commitments</div>
@@ -461,6 +491,22 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('pay-total-display').textContent = '£' + fmtGBP(paySaved);
     }
 });
+
+function updateEmploymentChips() {
+    var selected = document.querySelector('.employment-radio:checked');
+    var selectedValue = selected ? selected.dataset.value : 'full_time';
+    document.querySelectorAll('.employment-chip').forEach(function(chip) {
+        if (chip.dataset.value === selectedValue) {
+            chip.classList.add('selected');
+        } else {
+            chip.classList.remove('selected');
+        }
+    });
+    var helper = document.getElementById('variable-income-helper');
+    if (helper) {
+        helper.style.display = (selectedValue === 'full_time') ? 'none' : 'block';
+    }
+}
 
 function updatePartialProjection() {
     var income = parseFloat(document.getElementById('ff-income').value) || 0;

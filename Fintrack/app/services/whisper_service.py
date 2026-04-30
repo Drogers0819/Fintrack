@@ -76,7 +76,12 @@ def generate_action_whisper(user, plan, goals):
     if whisper:
         return whisper
 
-    # 7. Default: plan status
+    # 7. Active debt position (LOW priority — informational)
+    whisper = _debt_position_whisper(pots)
+    if whisper:
+        return whisper
+
+    # 8. Default: plan status
     whisper = _default_whisper(plan, active_pots)
     if whisper:
         return whisper
@@ -295,6 +300,43 @@ def _directed_counter_whisper(user, plan):
         "action_url": None,
         "icon": "bar-chart-2",
         "type": "counter"
+    }
+
+
+_DEBT_KEYWORDS = ("credit card", "overdraft", "loan", "pay off", "debt")
+
+
+def _is_debt_pot(pot):
+    name_low = (pot.get("name") or "").lower()
+    return pot.get("type") == "debt" or any(k in name_low for k in _DEBT_KEYWORDS)
+
+
+def _debt_position_whisper(pots):
+    """Acknowledge active debt and frame the redirect once cleared."""
+    debt_pots = [
+        p for p in pots
+        if _is_debt_pot(p) and not p.get("completed") and p.get("monthly_amount", 0) > 0
+    ]
+    if not debt_pots:
+        return None
+
+    debt_total = sum(
+        max(float(p.get("target") or 0) - float(p.get("current") or 0), 0)
+        for p in debt_pots
+    )
+    debt_monthly = sum(float(p.get("monthly_amount") or 0) for p in debt_pots)
+    if debt_total <= 0 or debt_monthly <= 0:
+        return None
+
+    return {
+        "message": (
+            f"You're clearing £{debt_total:,.0f} in debt. Your plan handles this first — "
+            f"£{debt_monthly:,.0f}/month goes to clearing it, then that money shifts to your other goals."
+        ),
+        "action_label": "View plan",
+        "action_url": "/plan",
+        "icon": "credit-card",
+        "type": "debt_position"
     }
 
 

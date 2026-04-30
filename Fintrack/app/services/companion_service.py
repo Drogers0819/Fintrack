@@ -105,6 +105,9 @@ def _build_user_context(user):
     parts = []
     if user.name:
         parts.append(f"Name: {user.name}")
+    employment_type = user.employment_type or "full_time"
+    parts.append(f"Employment type: {employment_type}")
+    parts.append(f"Income stability: {'stable' if employment_type == 'full_time' else 'variable'}")
     if user.monthly_income:
         parts.append(f"Monthly income: £{float(user.monthly_income):,.0f}")
     if user.rent_amount:
@@ -131,7 +134,37 @@ def _build_user_context(user):
     if user.income_day:
         parts.append(f"Pay day: {user.income_day}th of each month")
 
+    debt_summary = _summarise_debt(user)
+    if debt_summary:
+        parts.append(debt_summary)
+
     return "\n".join(parts) if parts else "No profile data available yet."
+
+
+def _summarise_debt(user):
+    """Summarise the user's active debt goals for the companion context."""
+    try:
+        from app.models.goal import Goal
+    except ImportError:
+        return None
+
+    debt_keywords = ("credit card", "overdraft", "loan", "pay off", "debt")
+    goals = Goal.query.filter_by(user_id=user.id, status="active").all()
+    debt_total = 0.0
+    debt_count = 0
+    for g in goals:
+        name_low = (g.name or "").lower()
+        if not any(k in name_low for k in debt_keywords):
+            continue
+        target = float(g.target_amount) if g.target_amount else 0
+        current = float(g.current_amount) if g.current_amount else 0
+        remaining = max(target - current, 0)
+        if remaining > 0:
+            debt_total += remaining
+            debt_count += 1
+    if debt_count == 0:
+        return None
+    return f"Active debt: £{debt_total:,.0f} across {debt_count} debt{'s' if debt_count != 1 else ''}"
 
 
 def _build_plan_context(plan):
