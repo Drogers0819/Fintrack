@@ -3396,6 +3396,27 @@ body { -webkit-text-size-adjust: 100%; }
     }
     .slim-overview__side { display: none !important; }
 
+    /* CRITICAL: the inner __main wrapper holds every section on mobile.
+       Without this, gap was only declared at min-width: 768px, leaving
+       mobile children with zero spacing between them. */
+    .slim-overview__main {
+        display: flex;
+        flex-direction: column;
+        gap: 18px;
+        min-width: 0;
+    }
+
+    /* Defensive fallback for older WebViews where flex `gap` isn't
+       supported (pre-iOS 14.5 PWAs). */
+    @supports not (gap: 1px) {
+        .slim-overview__main > * {
+            margin-bottom: 18px;
+        }
+        .slim-overview__main > *:last-child {
+            margin-bottom: 0;
+        }
+    }
+
     /* ── Greeting block: stack title + check-in pill ────────────── */
     .slim-greet {
         flex-direction: column;
