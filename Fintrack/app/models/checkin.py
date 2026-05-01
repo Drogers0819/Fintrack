@@ -6,7 +6,7 @@ class CheckIn(db.Model):
     __tablename__ = "checkins"
 
     id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
     month = db.Column(db.Integer, nullable=False)
     year = db.Column(db.Integer, nullable=False)
     completed_at = db.Column(db.DateTime, server_default=db.func.now())
@@ -17,7 +17,7 @@ class CheckIn(db.Model):
 
     # Relationships
     entries = db.relationship("CheckInEntry", backref="checkin", lazy=True,
-                              cascade="all, delete-orphan")
+                              cascade="all, delete-orphan", passive_deletes=True)
 
     def to_dict(self):
         return {
@@ -38,8 +38,8 @@ class CheckInEntry(db.Model):
     __tablename__ = "checkin_entries"
 
     id = db.Column(db.Integer, primary_key=True)
-    checkin_id = db.Column(db.Integer, db.ForeignKey("checkins.id"), nullable=False)
-    goal_id = db.Column(db.Integer, db.ForeignKey("goals.id"), nullable=True)
+    checkin_id = db.Column(db.Integer, db.ForeignKey("checkins.id", ondelete="CASCADE"), nullable=False)
+    goal_id = db.Column(db.Integer, db.ForeignKey("goals.id", ondelete="SET NULL"), nullable=True)
     pot_name = db.Column(db.String(255), nullable=False)
     planned_amount = db.Column(db.Numeric(10, 2), nullable=False)
     actual_amount = db.Column(db.Numeric(10, 2), nullable=False)

@@ -44,9 +44,25 @@ class User(db.Model, UserMixin):
     # Preferences
     theme = db.Column(db.String(30), default="obsidian-vault")
 
-    # Relationships
-    transactions = db.relationship("Transaction", backref="user", lazy=True)
-    goals = db.relationship("Goal", backref="user", lazy=True)
+    # Relationships — DB-level ON DELETE CASCADE handles the delete in
+    # production Postgres; passive_deletes=True tells SQLAlchemy to defer
+    # to the database rather than emit per-row DELETEs.
+    transactions = db.relationship(
+        "Transaction", backref="user", lazy=True,
+        cascade="all, delete-orphan", passive_deletes=True,
+    )
+    goals = db.relationship(
+        "Goal", backref="user", lazy=True,
+        cascade="all, delete-orphan", passive_deletes=True,
+    )
+    budgets = db.relationship(
+        "Budget", backref="user", lazy=True,
+        cascade="all, delete-orphan", passive_deletes=True,
+    )
+    checkins = db.relationship(
+        "CheckIn", backref="user", lazy=True,
+        cascade="all, delete-orphan", passive_deletes=True,
+    )
 
     def set_password(self, password):
         self.password_hash = bcrypt.generate_password_hash(password).decode("utf-8")

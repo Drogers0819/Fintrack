@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block title %}Account deleted – Claro{% endblock %}
+
+{% block content %}
+<div style="max-width: 400px; margin: 80px auto; padding: 0 20px; text-align: center;">
+    <div style="margin-bottom: 24px;">
+        <img src="{{ url_for('static', filename='images/logo.png') }}" alt="Claro"
+             style="width: 140px; height: auto;">
+    </div>
+    <div class="glass-card" style="padding: 36px 28px;">
+        <div style="font-size: 1rem; color: var(--text-primary); margin-bottom: 8px;">Your account has been deleted.</div>
+        <p style="font-size: 0.82rem; color: var(--text-tertiary); line-height: 1.7; margin-bottom: 20px;">
+            Thank you for trying Claro.
+        </p>
+        <p style="font-size: 0.75rem; color: var(--text-tertiary); line-height: 1.7; margin-bottom: 24px;">
+            If this was a mistake, you can register again with the same email.
+        </p>
+        <a href="{{ url_for('pages.register') }}" style="font-size: 0.8rem; color: var(--text-secondary); text-decoration: underline; text-underline-offset: 2px;">Create a new account</a>
+    </div>
+</div>
+{% endblock %}

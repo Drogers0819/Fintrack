@@ -5,7 +5,7 @@ class Budget(db.Model):
     __tablename__ = "budgets"
 
     id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
     category_id = db.Column(db.Integer, db.ForeignKey("categories.id"), nullable=False)
     monthly_limit = db.Column(db.Numeric(10, 2), nullable=False)
     is_active = db.Column(db.Boolean, default=True)

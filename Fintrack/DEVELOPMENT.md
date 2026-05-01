@@ -422,6 +422,58 @@ Ran a comprehensive end-to-end UI audit against the full `/ui-audit` checklist a
 
 ---
 
+## 2026-05-01 — Account deletion (UK GDPR Article 17) + FK cascade
+
+### What I did
+
+- **Cascade on every user-referencing FK.** Updated `transactions`, `goals`,
+  `budgets`, `chat_messages`, `life_checkins`, `checkins`, and
+  `checkin_entries` so deleting a user (or a parent check-in) doesn't fail
+  on FK violations. Models now use `ondelete="CASCADE"`; relationships use
+  `cascade="all, delete-orphan"` and `passive_deletes=True` so SQLAlchemy
+  defers to the DB instead of issuing per-row DELETEs.
+- **Idempotent migration in `app/__init__.py`.** Postgres-only block that
+  reads `information_schema.referential_constraints`, drops + recreates any
+  FK whose `delete_rule` isn't already `CASCADE` (or `SET NULL` for
+  `checkin_entries.goal_id`). Safe to redeploy — once the cascade is in
+  place, the block becomes a no-op. SQLite local dev relies on ORM-level
+  cascade plus `PRAGMA foreign_keys = ON` (added as a connect-event hook).
+- **Deletion service.** `app/services/account_service.py` —
+  `delete_user_account(user_id, reason=None)`. Cancels the Stripe
+  subscription immediately, fires `account_deleted` to PostHog *before* the
+  row is removed (so the distinct_id still resolves), then deletes the user.
+  Stripe failures are caught and logged but do not abort the DB delete —
+  data erasure is the GDPR obligation; an orphaned subscription is the
+  lesser harm. Idempotent: deleting an already-absent user returns True.
+- **Settings UX.** A subtle "Danger zone" link at the bottom of
+  `/settings` opens a dedicated `/settings/delete-account` page (not a
+  modal — account deletion deserves a full-page moment). The page explains
+  what is removed, takes an optional reason, and uses GitHub's "type
+  DELETE to confirm" pattern to arm the destructive button. After
+  deletion the user is logged out and lands on `/account-deleted` with a
+  short confirmation and a link to register again.
+- **9 new tests** covering the service (DB delete, cascade, Stripe call,
+  Stripe failure, PostHog ordering, idempotency) and the route (auth
+  required, wrong confirmation rejected, happy path). Suite goes
+  407 → 416 passing.
+
+### GDPR status
+
+- **Article 17 (right to erasure):** ✅ in place from this PR.
+- **Article 20 (right to data portability / export):** ❌ still TODO.
+  When a user deletes their account they're also entitled to a copy of
+  their data first. Half-day of work. Pre-launch backlog.
+
+### Schema management note
+
+Migrations are still managed by `db.create_all()` + the idempotent
+`ALTER TABLE` block in `app/__init__.py`. Bootstrapping
+Flask-Migrate / Alembic is recommended within the next 2 weeks
+pre-launch (separate PR — needs `flask db stamp head` against prod
+before the first `flask db upgrade`).
+
+---
+
 ## 2026-05-01 — Server-side PostHog instrumentation
 
 ### What I did
@@ -459,6 +511,7 @@ Ran a comprehensive end-to-end UI audit against the full `/ui-audit` checklist a
 | `withdrawal_started` | `pages.withdraw` GET |
 | `withdrawal_confirmed` | `pages.withdraw` POST success |
 | `cancel_confirmed` | Stripe `customer.subscription.deleted` webhook |
+| `account_deleted` | `account_service.delete_user_account` — fires before the User row is removed; properties: `reason` (optional free text from the user) |
 | `dev_test_event` | `/dev/posthog-test` (debug-only smoke test) |
 
 `identify_user(user_id, {email, name, tier, signup_date})` also fires on every register and login so funnels attribute to a stable distinct ID.

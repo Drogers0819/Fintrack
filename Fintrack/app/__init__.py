@@ -62,6 +62,24 @@ def create_app(config_class=None):
     csrf.init_app(app)
     limiter.init_app(app)
 
+    # SQLite doesn't enforce foreign keys by default. Without this, ON DELETE
+    # CASCADE / passive_deletes are silently ignored in local dev and tests,
+    # so a deletion appears to succeed but related rows linger. Postgres
+    # enforces FKs unconditionally, so this hook is a no-op there.
+    from sqlalchemy import event
+    from sqlalchemy.engine import Engine
+
+    @event.listens_for(Engine, "connect")
+    def _sqlite_fk_pragma(dbapi_connection, connection_record):
+        try:
+            import sqlite3
+            if isinstance(dbapi_connection, sqlite3.Connection):
+                cursor = dbapi_connection.cursor()
+                cursor.execute("PRAGMA foreign_keys = ON")
+                cursor.close()
+        except Exception:
+            pass
+
     @app.after_request
     def set_security_headers(response):
         response.headers["X-Content-Type-Options"] = "nosniff"
@@ -126,6 +144,73 @@ def create_app(config_class=None):
                 except Exception as e:
                     db.session.rollback()
                     print(f"Migration skipped {col_name}: {e}")
+
+        # ── Foreign-key cascade migration (Postgres only) ──
+        # Production needs ON DELETE CASCADE on every FK referencing
+        # users.id (and on checkin_entries.checkin_id) so account deletion
+        # works without orphaning data — required for UK GDPR Article 17.
+        #
+        # SQLite local dev relies on SQLAlchemy ORM-level cascade
+        # (cascade="all, delete-orphan", passive_deletes=True on the
+        # relationships). Both code paths produce the same end state for
+        # account deletion; they just route through different layers.
+        #
+        # Idempotent: each FK is only dropped/recreated if the live
+        # constraint's delete_rule is not already CASCADE, so redeploys
+        # are no-ops once the cascade has been applied.
+        if db.engine.dialect.name == "postgresql":
+            cascade_targets = [
+                # (table, fk_column, referenced_table, delete_rule)
+                ("transactions", "user_id", "users", "CASCADE"),
+                ("goals", "user_id", "users", "CASCADE"),
+                ("budgets", "user_id", "users", "CASCADE"),
+                ("chat_messages", "user_id", "users", "CASCADE"),
+                ("life_checkins", "user_id", "users", "CASCADE"),
+                ("checkins", "user_id", "users", "CASCADE"),
+                ("checkin_entries", "checkin_id", "checkins", "CASCADE"),
+                ("checkin_entries", "goal_id", "goals", "SET NULL"),
+            ]
+
+            for table, column, ref_table, desired_rule in cascade_targets:
+                try:
+                    row = db.session.execute(text("""
+                        SELECT tc.constraint_name, rc.delete_rule
+                        FROM information_schema.table_constraints tc
+                        JOIN information_schema.key_column_usage kcu
+                          ON tc.constraint_name = kcu.constraint_name
+                         AND tc.table_schema = kcu.table_schema
+                        JOIN information_schema.referential_constraints rc
+                          ON tc.constraint_name = rc.constraint_name
+                         AND tc.table_schema = rc.constraint_schema
+                        WHERE tc.constraint_type = 'FOREIGN KEY'
+                          AND tc.table_name = :table
+                          AND kcu.column_name = :column
+                        LIMIT 1
+                    """), {"table": table, "column": column}).fetchone()
+
+                    if row is None:
+                        # Table or FK doesn't exist yet — db.create_all() will
+                        # build it from the model, which already declares the
+                        # cascade. Nothing to migrate.
+                        continue
+
+                    constraint_name, current_rule = row
+                    if (current_rule or "").upper() == desired_rule.upper():
+                        continue
+
+                    db.session.execute(text(
+                        f'ALTER TABLE {table} DROP CONSTRAINT "{constraint_name}"'
+                    ))
+                    db.session.execute(text(
+                        f'ALTER TABLE {table} ADD CONSTRAINT "{constraint_name}" '
+                        f'FOREIGN KEY ({column}) REFERENCES {ref_table}(id) '
+                        f'ON DELETE {desired_rule}'
+                    ))
+                    db.session.commit()
+                    print(f"Migration: {table}.{column} FK now ON DELETE {desired_rule}")
+                except Exception as e:
+                    db.session.rollback()
+                    print(f"Migration skipped {table}.{column} FK: {e}")
 
         if Category.query.count() == 0:
             for cat_data in DEFAULT_CATEGORIES:

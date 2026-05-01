@@ -6,14 +6,22 @@ class LifeCheckIn(db.Model):
     __tablename__ = "life_checkins"
 
     id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
     checkin_type = db.Column(db.String(30), nullable=False)
     details = db.Column(db.Text, nullable=True)
     amount = db.Column(db.Numeric(10, 2), nullable=True)
     plan_adjusted = db.Column(db.Boolean, default=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
-    user = db.relationship("User", backref=db.backref("life_checkins", lazy=True))
+    user = db.relationship(
+        "User",
+        backref=db.backref(
+            "life_checkins",
+            lazy=True,
+            cascade="all, delete-orphan",
+            passive_deletes=True,
+        ),
+    )
 
     def to_dict(self):
         return {

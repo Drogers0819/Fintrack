@@ -37,6 +37,7 @@ from app.models.life_checkin import LifeCheckIn
 from app.models.checkin import CheckInEntry
 from app.utils.auth import is_subscription_active, requires_subscription
 from app.services.analytics_service import track_event, identify_user
+from app.services.account_service import delete_user_account
 from sqlalchemy.exc import IntegrityError
 page_bp = Blueprint("pages", __name__)
 
@@ -1528,6 +1529,35 @@ def service_worker():
 @login_required
 def settings():
     return render_template("settings.html")
+
+
+@page_bp.route("/settings/delete-account", methods=["GET", "POST"])
+@login_required
+def delete_account():
+    if request.method == "POST":
+        confirmation = (request.form.get("confirmation") or "").strip()
+        reason = (request.form.get("reason") or "").strip() or None
+
+        if confirmation != "DELETE":
+            flash("Please type DELETE to confirm.", "error")
+            return redirect(url_for("pages.delete_account"))
+
+        user_id = current_user.id
+        success = delete_user_account(user_id, reason=reason)
+
+        if not success:
+            flash("Something went wrong. Please contact support.", "error")
+            return redirect(url_for("pages.settings"))
+
+        logout_user()
+        return redirect(url_for("pages.account_deleted"))
+
+    return render_template("delete_account.html")
+
+
+@page_bp.route("/account-deleted")
+def account_deleted():
+    return render_template("account_deleted.html")
 
 
 @page_bp.route("/update-theme", methods=["POST"])
