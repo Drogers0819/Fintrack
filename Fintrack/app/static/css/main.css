@@ -2815,6 +2815,8 @@ html {
     .slim-tab-fab {
         position: absolute;
         top: -22px;
+        left: 50%;
+        transform: translateX(-50%);
         width: 48px;
         height: 48px;
         border-radius: 50%;
@@ -2827,9 +2829,11 @@ html {
         text-decoration: none;
         -webkit-tap-highlight-color: transparent;
         transition: transform 60ms ease-out;
+        z-index: 10;
     }
 
-    .slim-tab-fab:active { transform: scale(0.94); opacity: 1; }
+    /* Preserve the centering transform when scaling on press. */
+    .slim-tab-fab:active { transform: translateX(-50%) scale(0.94); opacity: 1; }
 
     .slim-tab-fab svg {
         width: 20px;
@@ -3539,9 +3543,12 @@ body { -webkit-text-size-adjust: 100%; }
     }
     .slim-tab-fab {
         top: -16px;
+        left: 50%;
+        transform: translateX(-50%);
         width: 48px;
         height: 48px;
     }
+    .slim-tab-fab:active { transform: translateX(-50%) scale(0.94); }
 
     /* ── Other pages — sensible breathing room ───────────────────── */
     body.has-slim-shell .glass-card,

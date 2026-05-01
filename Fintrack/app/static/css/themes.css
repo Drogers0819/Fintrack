@@ -1096,7 +1096,7 @@ body.theme-soft-modern {
     --card-bg: #ffffff;
     --card-border: rgba(0, 0, 0, 0.06);
     --card-hover-border: rgba(0, 0, 0, 0.12);
-    --stat-bg: #f5f3ee;
+    --stat-bg: #ffffff;
     --whisper-border-left: #9b7d3a;
     --progress-track: #f0ece4;
     --goal-circle-house: #E6F1FB;
@@ -1113,12 +1113,26 @@ body.theme-soft-modern {
     --goal-stroke-holiday: #c5a35d;
     --goal-circle-default: #EFEDE6;
     --goal-stroke-default: #6e6e6a;
-    --qa-chip-bg: #f5f3ee;
-    --qa-chip-border: transparent;
+    --qa-chip-bg: #ffffff;
+    --qa-chip-border: rgba(0, 0, 0, 0.06);
     --nav-active-bg: rgba(0, 0, 0, 0.05);
     --nav-hover-bg: rgba(0, 0, 0, 0.03);
     --nav-icon-color: #5c5a54;
     --nav-icon-active-color: #1a1916;
+}
+
+/* Soft Modern stat pills + chips — explicit border so the white card
+   stands out against the off-white page background. */
+body.theme-soft-modern .slim-stat,
+body.theme-soft-modern .slim-chip {
+    border-color: rgba(0, 0, 0, 0.06);
+}
+
+body.theme-soft-modern .slim-card,
+body.theme-soft-modern .slim-goal-card,
+body.theme-soft-modern .slim-companion-prompt,
+body.theme-soft-modern .slim-side-card {
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04), 0 4px 12px rgba(0, 0, 0, 0.03);
 }
 
 body.theme-obsidian-vault {
