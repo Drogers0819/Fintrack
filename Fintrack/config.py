@@ -15,6 +15,8 @@ class DevelopmentConfig:
     DEBUG = True
     SQLALCHEMY_DATABASE_URI = DATABASE_URL or "sqlite:///dev.db"
     SEND_FILE_MAX_AGE_DEFAULT = 0  # Disable static file caching in dev
+    POSTHOG_API_KEY = os.environ.get("POSTHOG_API_KEY")
+    POSTHOG_HOST = os.environ.get("POSTHOG_HOST", "https://eu.i.posthog.com")
 
 
 class TestingConfig:
@@ -23,6 +25,8 @@ class TestingConfig:
     SQLALCHEMY_DATABASE_URI = "sqlite:///:memory:"
     WTF_CSRF_ENABLED = False
     RATELIMIT_ENABLED = False
+    POSTHOG_API_KEY = None
+    POSTHOG_HOST = None
 
 
 class ProductionConfig:
@@ -30,3 +34,5 @@ class ProductionConfig:
     DEBUG = False
     SQLALCHEMY_DATABASE_URI = DATABASE_URL or "sqlite:///dev.db"
     RESEND_API_KEY = os.environ.get("RESEND_API_KEY")
+    POSTHOG_API_KEY = os.environ.get("POSTHOG_API_KEY")
+    POSTHOG_HOST = os.environ.get("POSTHOG_HOST", "https://eu.i.posthog.com")

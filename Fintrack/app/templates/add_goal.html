@@ -16,7 +16,8 @@
 </div>
 
 <div style="max-width: 560px; padding-bottom: 100px;">
-    <form method="POST" action="{{ url_for('pages.add_goal') }}">
+    <form method="POST" action="{{ url_for('pages.add_goal') }}"
+          onsubmit="if(window.posthog)posthog.capture('goal_created');">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <div class="form-group">
             <label class="form-label">Goal name</label>
