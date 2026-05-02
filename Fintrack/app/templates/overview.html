@@ -69,16 +69,24 @@
 {% set _has_goals = active_goals_count > 0 %}
 
 {% if not _profile_done %}
-<a href="{{ url_for('pages.factfind') }}" class="press-scale" style="display:flex; align-items:center; gap:10px; padding:12px 16px; border-radius:12px; background:var(--card-bg); border:0.5px solid var(--card-border); margin-bottom:18px; text-decoration:none;">
+<a href="{{ url_for('pages.factfind') }}" class="press-scale" style="display:flex; align-items:center; gap:10px; padding:12px 16px; border-radius:12px; background:var(--card-bg); border:0.5px solid var(--card-border); margin-bottom:14px; text-decoration:none;">
     <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--text-tertiary)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-    <span style="flex:1; font-size:0.82rem; color:var(--text-secondary);">Complete your profile to generate your financial plan</span>
+    <span style="flex:1; font-size:0.82rem; color:var(--text-secondary);">Take 4 minutes to share your situation. We'll show you exactly when your goals become real.</span>
     <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--text-tertiary)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><path d="M9 18l6-6-6-6"/></svg>
 </a>
+<div data-empty-state="overview-no-plan" style="margin-bottom:18px; padding:16px; border-radius:12px; background:var(--card-bg); border:0.5px solid var(--card-border);">
+    <p style="font-size:0.7rem; color:var(--text-tertiary); text-transform:uppercase; letter-spacing:0.06em; margin:0 0 6px;">Your monthly position</p>
+    <p style="font-size:0.82rem; color:var(--text-tertiary); line-height:1.6; margin:0;">Will appear here once your plan is built.</p>
+</div>
 {% elif not _has_goals %}
-<a href="{{ url_for('pages.goal_chips') }}" class="press-scale" style="display:flex; align-items:center; gap:10px; padding:12px 16px; border-radius:12px; background:var(--card-bg); border:0.5px solid var(--card-border); margin-bottom:18px; text-decoration:none;">
-    <span style="flex:1; font-size:0.82rem; color:var(--text-secondary);">One step left. Choose your goals to finish building your plan.</span>
+<a href="{{ url_for('pages.goal_chips') }}" class="press-scale" style="display:flex; align-items:center; gap:10px; padding:12px 16px; border-radius:12px; background:var(--card-bg); border:0.5px solid var(--card-border); margin-bottom:14px; text-decoration:none;">
+    <span style="flex:1; font-size:0.82rem; color:var(--text-secondary);">Your plan is ready. What are you saving for?</span>
     <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--text-tertiary)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><path d="M9 18l6-6-6-6"/></svg>
 </a>
+<div data-empty-state="overview-no-goals" style="margin-bottom:18px; padding:16px; border-radius:12px; background:var(--card-bg); border:0.5px solid var(--card-border);">
+    <p style="font-size:0.7rem; color:var(--text-tertiary); text-transform:uppercase; letter-spacing:0.06em; margin:0 0 6px;">Your goals</p>
+    <p style="font-size:0.82rem; color:var(--text-tertiary); line-height:1.6; margin:0;">Will appear here as you add them. Pick what matters.</p>
+</div>
 {% endif %}
 
 <div class="slim-overview">

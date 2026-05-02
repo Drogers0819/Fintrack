@@ -20,20 +20,34 @@
 </div>
 
 {% if not smart_plan or smart_plan.error %}
-<div style="padding-top: 8px;">
+<div data-empty-state="checkin-no-plan" style="padding-top: 8px;">
     <p style="font-size: 0.95rem; color: var(--text-primary); font-weight: 500; margin-bottom: 8px;">Your monthly check-in.</p>
     <p style="font-size: 0.8rem; color: var(--text-tertiary); line-height: 1.6; margin-bottom: 20px;">Set up your financial profile and add a goal to unlock your monthly check-in.</p>
     <a href="{{ url_for('pages.factfind') }}" class="btn-primary btn-sm">Set up your profile</a>
 </div>
 
+{% elif view_state == "scheduled" %}
+<!-- Outside the check-in window -->
+<div data-empty-state="checkin-scheduled" style="padding-top: 8px;">
+    <p style="font-size: 0.95rem; color: var(--text-primary); font-weight: 500; margin-bottom: 8px;">Your next check-in is on {{ next_checkin_str }}</p>
+    <p style="font-size: 0.8rem; color: var(--text-tertiary); line-height: 1.6; margin-bottom: 6px;">We'll let you know when it's time. Until then, your plan is running quietly in the background.</p>
+    <p style="font-size: 0.72rem; color: var(--text-tertiary); margin-bottom: 20px;">{{ next_checkin_days }} day{{ 's' if next_checkin_days != 1 else '' }} to go</p>
+    <a href="{{ url_for('pages.life_checkin') }}" style="font-size: 0.78rem; color: var(--text-secondary); text-decoration: underline; text-underline-offset: 2px;">Want to log something now?</a>
+</div>
+
 {% elif already_done %}
 <!-- Already checked in -->
-<div class="gold-card" style="margin-bottom: 24px;">
+<div data-empty-state="checkin-complete" class="gold-card" style="margin-bottom: 24px;">
     <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 12px;">
         <span class="ai-pulse"></span>
         <span style="font-size: 0.65rem; color: var(--roman-gold); text-transform: uppercase; letter-spacing: 0.06em;">Done for {{ checkin_month }}</span>
     </div>
-    <p style="font-size: 0.9rem; color: var(--text-primary); line-height: 1.7;">You've already checked in for {{ checkin_month }}. Your plan has been updated with the figures you provided.</p>
+    <p style="font-size: 0.95rem; color: var(--text-primary); font-weight: 500; line-height: 1.6; margin: 0 0 6px;">You're all set for this month</p>
+    <p style="font-size: 0.85rem; color: var(--text-secondary); line-height: 1.7; margin: 0 0 4px;">Your plan has been updated based on your check-in. We'll see you next month.</p>
+    {% if completed_at_str %}
+    <p style="font-size: 0.72rem; color: var(--text-tertiary); margin: 0 0 14px;">Completed {{ completed_at_str }}.</p>
+    {% endif %}
+    <a href="{{ url_for('pages.plan') }}" style="font-size: 0.78rem; color: var(--text-secondary); text-decoration: underline; text-underline-offset: 2px;">Review my plan</a>
 </div>
 
 {% if existing and existing.entries %}

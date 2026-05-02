@@ -909,6 +909,44 @@ def my_budgets():
 
 # ─── CHECK-IN ────────────────────────────────────────────────
 
+
+def _checkin_view_state(today, existing, edit_mode=False):
+    """Decide which view to render on /check-in.
+
+    Returns a dict with `state` in {'complete', 'form', 'scheduled'} plus
+    `next_date` and `days_until` keys when the state is 'scheduled'.
+
+    The check-in window is the last 3 days of the current calendar month
+    and covers the previous month. Outside that window, a user without a
+    completed check-in for the prior month sees the 'scheduled' state.
+
+    Edit mode (`?edit=1`) always reveals the form so a user can correct
+    a previously-submitted check-in regardless of where we are in the
+    month.
+
+    TODO (Block 2 — forgiveness flow): a user who missed a check-in two
+    or more months back is invisible here because cover_month rolls
+    forward each month. Block 2 will scan back-months and let users catch
+    up; those users should fall through to the 'form' state, not
+    'scheduled'.
+    """
+    if existing and not edit_mode:
+        return {"state": "complete"}
+
+    last_day = calendar.monthrange(today.year, today.month)[1]
+    window_start_day = last_day - 2
+    if today.day >= window_start_day:
+        return {"state": "form"}
+
+    next_date = date(today.year, today.month, window_start_day)
+    days_until = (next_date - today).days
+    return {
+        "state": "scheduled",
+        "next_date": next_date,
+        "days_until": days_until,
+    }
+
+
 @page_bp.route("/check-in", methods=["GET", "POST"])
 @login_required
 def checkin():
@@ -1057,12 +1095,26 @@ def checkin():
         user_id=current_user.id
     ).order_by(CheckIn.year.desc(), CheckIn.month.desc()).limit(6).all()
 
-    if not (existing and not edit_mode):
+    view_state = _checkin_view_state(today, existing, edit_mode=edit_mode)
+    if view_state["state"] == "form":
         track_event(current_user.id, "checkin_started", {
             "month": checkin_month,
             "year": checkin_year,
             "edit_mode": edit_mode,
         })
+
+    next_checkin_str = None
+    next_checkin_days = None
+    if view_state["state"] == "scheduled":
+        nd = view_state["next_date"]
+        next_checkin_str = f"{nd.day} {nd.strftime('%B')}"
+        next_checkin_days = view_state["days_until"]
+
+    completed_at_str = None
+    if view_state["state"] == "complete" and existing and existing.completed_at:
+        # Build "5 May" format manually because %-d is POSIX-only and
+        # we need to support Windows local dev too.
+        completed_at_str = f"{existing.completed_at.day} {existing.completed_at.strftime('%B')}"
 
     return render_template("checkin.html",
         checkin_month=checkin_month_name,
@@ -1072,7 +1124,11 @@ def checkin():
         smart_plan=smart_plan,
         past_checkins=[c.to_dict() for c in past_checkins],
         variable_income=(current_user.employment_type or "full_time") != "full_time",
-        current_monthly_income=float(current_user.monthly_income) if current_user.monthly_income else 0
+        current_monthly_income=float(current_user.monthly_income) if current_user.monthly_income else 0,
+        view_state=view_state["state"],
+        next_checkin_str=next_checkin_str,
+        next_checkin_days=next_checkin_days,
+        completed_at_str=completed_at_str,
     )
 
 # ─── SURPLUS REVEAL (Onboarding) ─────────────────────────────

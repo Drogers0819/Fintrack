@@ -234,15 +234,25 @@
 
 </div><!-- /max-width tools -->
 
+{% elif smart_plan and smart_plan.error %}
+<!-- Plan error fallback -->
+<div data-empty-state="plan-error" style="padding: 8px 0 32px;">
+    <p style="font-size: 0.95rem; color: var(--text-primary); font-weight: 500; margin-bottom: 8px;">We can't quite build your plan yet</p>
+    <p style="font-size: 0.8rem; color: var(--text-tertiary); line-height: 1.6; margin-bottom: 20px;">Something in your profile needs another look. Let's go back and check.</p>
+    <a href="{{ url_for('pages.factfind') }}?edit=1" class="btn-primary">Review my profile</a>
+    <div style="margin-top: 24px; padding: 12px 14px; border-radius: 10px; border: 0.5px solid var(--glass-border); font-size: 0.72rem; color: var(--text-tertiary); line-height: 1.5;">{{ smart_plan.error }}</div>
+</div>
+
 {% else %}
-<!-- No plan yet -->
-<div style="padding: 8px 0 32px;">
-    <p style="font-size: 0.95rem; color: var(--text-primary); margin-bottom: 8px;">Build your financial plan.</p>
-    <p style="font-size: 0.8rem; color: var(--text-tertiary); line-height: 1.6; margin-bottom: 20px;">Complete your financial profile and Claro will calculate exactly how much to put toward each goal each month.</p>
-    <a href="{{ url_for('pages.factfind') }}" class="btn-primary">Set up your profile</a>
+<!-- Factfind not yet complete -->
+<div data-empty-state="plan-no-factfind" style="padding: 8px 0 32px;">
+    <p style="font-size: 0.95rem; color: var(--text-primary); font-weight: 500; margin-bottom: 8px;">Your plan is waiting to be built</p>
+    <p style="font-size: 0.8rem; color: var(--text-tertiary); line-height: 1.6; margin-bottom: 20px;">Take 4 minutes to share your situation. We'll show you exactly when your goals become real.</p>
+    <a href="{{ url_for('pages.factfind') }}" class="btn-primary">Build my plan</a>
 </div>
 {% endif %}
 
+{% if smart_plan and not smart_plan.error %}
 <!-- Scenario link -->
 <div style="padding-top: 20px; margin-top: 20px; border-top: 0.5px solid var(--glass-border);">
     <div style="font-size: 0.9rem; color: var(--text-primary); font-weight: 500; margin-bottom: 4px;">What if?</div>
@@ -347,4 +357,5 @@
 
     {% endif %}
 </div>
+{% endif %}
 {% endblock %}

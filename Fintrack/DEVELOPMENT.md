@@ -509,6 +509,7 @@ before the first `flask db upgrade`).
 | `goal_milestone_hit` | Inside `pages.checkin` POST loop — fires when a goal's progress crosses 25/50/75/100% |
 | `companion_message_sent` | `companion.companion_chat` after successful response — properties: `tier`, `message_count_today`, `tokens_in/out`, `model_routed` (`haiku` or `sonnet`) |
 | `companion_rate_limit_hit` | `companion.companion_chat` and `.edit_message` when daily limit reached — properties: `tier` (effective rate-limit key, e.g. `pro`/`pro_plus`/`joint`/`trial`), `time_until_reset_seconds` |
+| `companion_starter_chip_clicked` | `companion.chip_clicked` (fired from `/api/companion/chip-clicked` POST when a user clicks a suggestion chip on the empty-state companion view) — properties: `chip_text` |
 | `withdrawal_started` | `pages.plan` GET when `?withdraw=1` first opens the inline section |
 | `withdrawal_preview_generated` | `pages.plan_withdraw_preview` POST success — properties: `amount` |
 | `withdrawal_confirmed` | `pages.plan_withdraw_confirm` POST success — properties: `amount` (the plan was applied to goals) |
@@ -583,6 +584,47 @@ Added `tests/test_companion_routes.py` covering classifier (existing triggers + 
 - Verify a free post-trial test account does NOT see the Companion nav link in any of the four nav slots.
 - Verify the rate-limit bubble appears (lower the limit temporarily to 1 if needed for the test).
 - After verification, delete the smoke test route in a follow-up commit.
+
+---
+
+## 2026-05-02 — Empty states across primary screens
+
+### What I did
+
+Audited the primary screens, kept the patterns that already worked, and refined or added the rest. The audit found `/my-goals` and `/companion` already had decent empty states, `/check-in` had the "already done" path, and `/overview` and `/plan` had reasonable but unpolished fallbacks. The work below is mostly copy refinement plus two genuinely new states: the `/check-in` "scheduled" view and the `/plan` error fallback.
+
+- **Overview banner copy + placeholder cards.** Kept the existing banner-on-top pattern (the audit confirmed it's friendlier than a wholesale replacement). Refined the banner copy for both factfind-incomplete ("Take 4 minutes to share your situation. We'll show you exactly when your goals become real.") and no-goals ("Your plan is ready. What are you saving for?"). Added a calm placeholder card under each banner ("Your monthly position will appear here once your plan is built." / "Your goals will appear here as you add them. Pick what matters.") so the dashboard isn't anchored only by the banner.
+- **Goals empty state polish.** Refined heading + subtitle copy, swapped CTA to "Add my first goal", and added four illustrative chips ("House deposit", "Holiday", "Emergency fund", "Pay off debt") below the CTA. Display-only, not clickable.
+- **Plan empty / error states.** Replaced the inline "Build your financial plan" message with two branches: factfind-incomplete shows "Your plan is waiting to be built" + "Build my plan" CTA, and a new plan-error branch shows "We can't quite build your plan yet" + "Review my profile" CTA with the underlying error in a tertiary panel for support context. Wrapped the scenario link and withdrawal section in a `smart_plan and not smart_plan.error` guard so they no longer leak below the empty state.
+- **Check-in window gating.** Added `_checkin_view_state(today, existing, edit_mode)` helper in `page_routes.py` that returns one of `'complete'`, `'form'`, or `'scheduled'`. The check-in form now only renders during the last 3 days of the current month (the existing window definition reused from the overview pill). Outside the window, users see the "Your next check-in is on [date]" state with days-to-go and a "Want to log something now?" link to `/life-checkin`. Refreshed the "all set for this month" copy on the complete-state gold card and added a "Review my plan" link with the completion date. Edit mode (`?edit=1`) still always reveals the form.
+- **TODO for Block 2 forgiveness flow.** A user who missed a prior month's check-in two or more months back is invisible to the current logic because the cover_month rolls forward. The Block 2 forgiveness flow should scan back-months and let users catch up; that case should fall through to the form state, not 'scheduled'. Marked with a TODO in `_checkin_view_state`'s docstring.
+- **Companion starter-chip tracking.** Added `/api/companion/chip-clicked` (POST, JSON body, returns 204) which fires `companion_starter_chip_clicked` with `chip_text`. The existing `sendSuggestion` JS now does a fire-and-forget `fetch` to that endpoint with `keepalive: true` before pre-filling and submitting. CSRF token included in the headers per the existing pattern. Kept the existing 6 chips and the auto-send behaviour as-is — they were deliberate and they work.
+
+### Events instrumented
+
+- `companion_starter_chip_clicked` (new) — fired from `companion.chip_clicked` route when a user picks a suggestion chip. Property: `chip_text`. Lets us see which entry phrasings drive the first message in beta.
+
+### What's deliberately NOT done
+
+- **No wholesale overview replacement.** The banner-on-top pattern is calmer and lets the user see what the dashboard *will* contain.
+- **No redirect to `/factfind` from `/plan`.** The inline replacement is friendlier and the plan page has nothing meaningful to render without a profile.
+- **No new chips on companion empty state.** The existing 6 chips were kept; only tracking was added.
+- **No JS-side analytics SDK.** The chip-click endpoint is a tiny server-side fire-and-forget so we keep the no-JS-tracking-SDK rule.
+- **No new CSS classes.** All new empty-state markup uses inline styles matching `settings.html` / `delete_account.html` patterns.
+
+### Tests
+
+Added `tests/test_empty_states.py` covering: overview banner + placeholder card rendering for factfind-incomplete and no-goals; goals empty-state copy + 4 illustrative chips; plan factfind-incomplete and plan-error branches; `_checkin_view_state` helper in all three states; `/api/companion/chip-clicked` event firing and login gate.
+
+### Manual verification still needed
+
+- Register a fresh test account, do not complete factfind, visit `/overview` → confirm banner copy + "Your monthly position" placeholder card.
+- Complete factfind, visit `/overview` before adding goals → confirm "Your plan is ready" banner + "Your goals" placeholder card.
+- Visit `/my-goals` with no goals → confirm copy + 4 illustrative chips render.
+- Visit `/plan` without completing factfind → confirm "Your plan is waiting to be built" empty state.
+- Visit `/check-in` outside the last 3 days of the month → confirm "Your next check-in is on [date]" state and `/life-checkin` link.
+- Visit `/check-in` after completing this month's check-in → confirm "You're all set for this month" copy and "Review my plan" link.
+- Open `/companion` with no message history, click a chip → confirm message sends and `companion_starter_chip_clicked` fires in PostHog with the chip text.
 
 ---
 

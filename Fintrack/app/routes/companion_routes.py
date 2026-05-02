@@ -135,6 +135,22 @@ def clear_chat():
     return jsonify({"success": True})
 
 
+@companion_bp.route("/api/companion/chip-clicked", methods=["POST"])
+@login_required
+def chip_clicked():
+    """Fire-and-forget tracking endpoint for the suggestion-chip clicks on
+    the companion empty-state. The actual message goes through the normal
+    /api/companion/chat path; this just records which chip the user picked
+    so we can see the most-clicked entry phrasings in PostHog."""
+    data = request.get_json(silent=True) or {}
+    chip_text = sanitize_string(data.get("chip_text") or "", max_length=200)
+    if chip_text:
+        track_event(current_user.id, "companion_starter_chip_clicked", {
+            "chip_text": chip_text,
+        })
+    return ("", 204)
+
+
 @companion_bp.route("/api/companion/chat", methods=["POST"])
 @login_required
 @limiter.limit("30 per day")

@@ -152,10 +152,15 @@
 </div>
 
 {% else %}
-<div style="padding-top: 8px;">
+<div data-empty-state="goals" style="padding-top: 8px;">
     <p style="font-size: 0.95rem; color: var(--text-primary); font-weight: 500; margin-bottom: 8px;">What are you saving for?</p>
-    <p style="font-size: 0.8rem; color: var(--text-tertiary); line-height: 1.6; margin-bottom: 20px;">A house deposit, emergency fund, holiday. Add a goal and Claro will show you exactly when you'll get there.</p>
-    <a href="{{ url_for('pages.add_goal') }}" class="btn-primary btn-sm">Set your first goal</a>
+    <p style="font-size: 0.8rem; color: var(--text-tertiary); line-height: 1.6; margin-bottom: 20px;">A house deposit. A holiday. Peace of mind. Add what matters and Claro shows you when it becomes real.</p>
+    <a href="{{ url_for('pages.add_goal') }}" class="btn-primary btn-sm">Add my first goal</a>
+    <div style="display: flex; gap: 6px; margin-top: 18px; flex-wrap: wrap;">
+        {% for chip in ["House deposit", "Holiday", "Emergency fund", "Pay off debt"] %}
+        <span style="padding: 6px 14px; border-radius: 50px; border: 0.5px solid var(--glass-border); background: var(--glass-bg); font-size: 0.72rem; color: var(--text-tertiary);">{{ chip }}</span>
+        {% endfor %}
+    </div>
 </div>
 {% endif %}
 {% endblock %}

@@ -227,7 +227,21 @@ function handleKey(e) {
 }
 
 function sendSuggestion(btn) {
-    document.getElementById('chat-input').value = btn.textContent;
+    var chipText = btn.textContent;
+    // Fire-and-forget tracking. Failures must not block the send.
+    try {
+        var csrfMeta = document.querySelector('meta[name="csrf-token"]');
+        fetch('/api/companion/chip-clicked', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrfMeta ? csrfMeta.getAttribute('content') : ''
+            },
+            body: JSON.stringify({ chip_text: chipText }),
+            keepalive: true
+        }).catch(function() { /* no-op */ });
+    } catch (_) { /* no-op */ }
+    document.getElementById('chat-input').value = chipText;
     sendMessage();
 }
 
