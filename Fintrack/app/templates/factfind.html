@@ -68,16 +68,18 @@
     <div class="grid-2">
         <div class="form-group" style="margin-bottom: 0;">
             <label class="form-label">Monthly take-home pay (£)</label>
-            <input type="number" name="monthly_income" id="ff-income" class="form-input" step="0.01" min="0.01"
+            <input type="number" name="monthly_income" id="ff-income" class="form-input{% if errors and errors.monthly_income %} field-invalid{% endif %}" step="0.01" min="0.01"
                    placeholder="e.g. 1700" required
                    oninput="updatePartialProjection()"
-                   value="{{ '%g' | format(profile.monthly_income) if profile.monthly_income else '' }}">
+                   value="{{ form_data.monthly_income if (form_data and form_data.monthly_income) else ('%g' | format(profile.monthly_income) if profile.monthly_income else '') }}">
+            {% if errors and errors.monthly_income %}<span class="field-error-msg">{{ errors.monthly_income }}</span>{% endif %}
         </div>
         <div class="form-group" style="margin-bottom: 0;">
             <label class="form-label">Pay day (day of month) <span style="font-size: 0.7rem; color: var(--text-tertiary); font-weight: 400;">(optional)</span></label>
-            <input type="number" name="income_day" class="form-input" min="1" max="31"
+            <input type="number" name="income_day" class="form-input{% if errors and errors.income_day %} field-invalid{% endif %}" min="1" max="31"
                    placeholder="e.g. 25"
-                   value="{{ profile.income_day | int if profile.income_day else '' }}">
+                   value="{{ form_data.income_day if (form_data and form_data.income_day) else (profile.income_day | int if profile.income_day else '') }}">
+            {% if errors and errors.income_day %}<span class="field-error-msg">{{ errors.income_day }}</span>{% endif %}
         </div>
     </div>
 
@@ -91,16 +93,18 @@
     <div class="grid-2">
         <div class="form-group" style="margin-bottom: 0;">
             <label class="form-label">Monthly rent or mortgage (£)</label>
-            <input type="number" name="rent_amount" id="ff-rent" class="form-input" step="0.01" min="0"
+            <input type="number" name="rent_amount" id="ff-rent" class="form-input{% if errors and errors.rent_amount %} field-invalid{% endif %}" step="0.01" min="0"
                    placeholder="e.g. 800" required
                    oninput="updatePartialProjection()"
-                   value="{{ '%g' | format(profile.rent_amount) if profile.rent_amount else '' }}">
+                   value="{{ form_data.rent_amount if (form_data and form_data.rent_amount) else ('%g' | format(profile.rent_amount) if profile.rent_amount else '') }}">
+            {% if errors and errors.rent_amount %}<span class="field-error-msg">{{ errors.rent_amount }}</span>{% endif %}
         </div>
         <div class="form-group" style="margin-bottom: 0;">
             <label class="form-label">Monthly bills combined (£)</label>
-            <input type="number" name="bills_amount" class="form-input" step="0.01" min="0"
+            <input type="number" name="bills_amount" class="form-input{% if errors and errors.bills_amount %} field-invalid{% endif %}" step="0.01" min="0"
                    placeholder="e.g. 150" required
-                   value="{{ '%g' | format(profile.bills_amount) if profile.bills_amount else '' }}">
+                   value="{{ form_data.bills_amount if (form_data and form_data.bills_amount) else ('%g' | format(profile.bills_amount) if profile.bills_amount else '') }}">
+            {% if errors and errors.bills_amount %}<span class="field-error-msg">{{ errors.bills_amount }}</span>{% endif %}
         </div>
     </div>
 
@@ -269,15 +273,17 @@
     <div class="grid-2">
         <div class="form-group" style="margin-bottom: 0;">
             <label class="form-label">Monthly groceries (£) <span style="font-size: 0.7rem; color: var(--text-tertiary); font-weight: 400;">(optional)</span></label>
-            <input type="number" name="groceries_estimate" class="form-input" step="0.01" min="0"
+            <input type="number" name="groceries_estimate" class="form-input{% if errors and errors.groceries_estimate %} field-invalid{% endif %}" step="0.01" min="0"
                    placeholder="e.g. 250"
-                   value="{{ '%g' | format(profile.groceries_estimate) if profile.groceries_estimate else '' }}">
+                   value="{{ form_data.groceries_estimate if (form_data and form_data.groceries_estimate) else ('%g' | format(profile.groceries_estimate) if profile.groceries_estimate else '') }}">
+            {% if errors and errors.groceries_estimate %}<span class="field-error-msg">{{ errors.groceries_estimate }}</span>{% endif %}
         </div>
         <div class="form-group" style="margin-bottom: 0;">
             <label class="form-label">Monthly transport (£) <span style="font-size: 0.7rem; color: var(--text-tertiary); font-weight: 400;">(optional)</span></label>
-            <input type="number" name="transport_estimate" class="form-input" step="0.01" min="0"
+            <input type="number" name="transport_estimate" class="form-input{% if errors and errors.transport_estimate %} field-invalid{% endif %}" step="0.01" min="0"
                    placeholder="e.g. 80"
-                   value="{{ '%g' | format(profile.transport_estimate) if profile.transport_estimate else '' }}">
+                   value="{{ form_data.transport_estimate if (form_data and form_data.transport_estimate) else ('%g' | format(profile.transport_estimate) if profile.transport_estimate else '') }}">
+            {% if errors and errors.transport_estimate %}<span class="field-error-msg">{{ errors.transport_estimate }}</span>{% endif %}
         </div>
     </div>
 
@@ -297,7 +303,7 @@
     {% endif %}
 
     <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 4px;">
-        <button type="submit" class="btn-primary btn-full">
+        <button type="submit" class="btn-primary btn-full" data-loading-text="Building your plan...">
             {% if profile.get('plan_wizard_complete') %}
                 Update profile
             {% else %}

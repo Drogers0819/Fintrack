@@ -402,16 +402,26 @@ function _doSend(isEdit) {
         ? { message_id: msgId, new_content: message }
         : { message: message };
 
+    // 30s timeout. Anthropic responses normally land in 1-3s; if we cross
+    // 30s the network or the upstream is stuck and the user deserves to
+    // know rather than stare at the typing dots forever.
+    var controller = (typeof AbortController !== 'undefined') ? new AbortController() : null;
+    var timeoutId = setTimeout(function () {
+        if (controller) controller.abort();
+    }, 30000);
+
     fetch(endpoint, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
             'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
         },
-        body: JSON.stringify(body)
+        body: JSON.stringify(body),
+        signal: controller ? controller.signal : undefined
     })
     .then(function(res) { return res.json(); })
     .then(function(data) {
+        clearTimeout(timeoutId);
         hideTyping();
         if (data.error && !data.allowed) {
             // Rate-limit (or tier-block) response: render as an assistant
@@ -437,9 +447,14 @@ function _doSend(isEdit) {
             updateCounter();
         }
     })
-    .catch(function() {
+    .catch(function(err) {
+        clearTimeout(timeoutId);
         hideTyping();
-        addMessage('assistant', 'Something went wrong. Please try again.');
+        if (err && err.name === 'AbortError') {
+            addMessage('assistant', "Hmm, that took longer than expected. Mind trying again?");
+        } else {
+            addMessage('assistant', "Something went wrong on our end. Try sending that again?");
+        }
     })
     .finally(function() {
         sending = false;

@@ -20,50 +20,80 @@
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <div class="form-group">
             <label class="form-label">Goal name</label>
-            <input type="text" name="name" class="form-input" placeholder="e.g. Manchester house deposit" required
+            <input type="text" name="name" class="form-input{% if errors and errors.name %} field-invalid{% endif %}"
+                placeholder="e.g. Manchester house deposit"
+                value="{{ form_data.name if form_data else '' }}" required
                 oninvalid="this.setCustomValidity('Please enter a name for your goal')"
                 oninput="this.setCustomValidity('')">
+            {% if errors and errors.name %}
+            <span class="field-error-msg">{{ errors.name }}</span>
+            {% endif %}
         </div>
 
         <div class="grid-2">
             <div class="form-group">
                 <label class="form-label">Goal type</label>
                 <select name="type" class="form-select" required>
-                    <option value="savings_target">Saving toward a target</option>
-                    <option value="spending_allocation">Monthly spending budget</option>
-                    <option value="accumulation">Building over time</option>
+                    {% set selected_type = (form_data.type if form_data else 'savings_target') or 'savings_target' %}
+                    <option value="savings_target" {% if selected_type == 'savings_target' %}selected{% endif %}>Saving toward a target</option>
+                    <option value="spending_allocation" {% if selected_type == 'spending_allocation' %}selected{% endif %}>Monthly spending budget</option>
+                    <option value="accumulation" {% if selected_type == 'accumulation' %}selected{% endif %}>Building over time</option>
                 </select>
             </div>
             <div class="form-group">
                 <label class="form-label">Priority <span style="font-weight: 400; color: var(--text-tertiary);">(1 = highest)</span></label>
-                <input type="number" name="priority_rank" class="form-input" min="1" value="1" required>
+                <input type="number" name="priority_rank" class="form-input{% if errors and errors.priority_rank %} field-invalid{% endif %}"
+                    min="1" value="{{ form_data.priority_rank if form_data and form_data.priority_rank else '1' }}" required>
+                {% if errors and errors.priority_rank %}
+                <span class="field-error-msg">{{ errors.priority_rank }}</span>
+                {% endif %}
             </div>
         </div>
 
         <div class="grid-2">
             <div class="form-group">
                 <label class="form-label">Target amount (£) <span style="font-size: 0.7rem; color: var(--text-tertiary); font-weight: 400;">(optional)</span></label>
-                <input type="number" name="target_amount" class="form-input" step="0.01" min="0" placeholder="e.g. 10000">
+                <input type="number" name="target_amount" class="form-input{% if errors and errors.target_amount %} field-invalid{% endif %}"
+                    step="0.01" min="0" placeholder="e.g. 10000"
+                    value="{{ form_data.target_amount if form_data else '' }}">
+                {% if errors and errors.target_amount %}
+                <span class="field-error-msg">{{ errors.target_amount }}</span>
+                {% endif %}
             </div>
             <div class="form-group">
                 <label class="form-label">Already saved (£) <span style="font-size: 0.7rem; color: var(--text-tertiary); font-weight: 400;">(optional)</span></label>
-                <input type="number" name="current_amount" class="form-input" step="0.01" min="0" placeholder="0">
+                <input type="number" name="current_amount" class="form-input{% if errors and errors.current_amount %} field-invalid{% endif %}"
+                    step="0.01" min="0" placeholder="0"
+                    value="{{ form_data.current_amount if form_data else '' }}">
+                {% if errors and errors.current_amount %}
+                <span class="field-error-msg">{{ errors.current_amount }}</span>
+                {% endif %}
             </div>
         </div>
 
         <div class="grid-2">
             <div class="form-group">
                 <label class="form-label">Monthly contribution (£) <span style="font-size: 0.7rem; color: var(--text-tertiary); font-weight: 400;">(optional)</span></label>
-                <input type="number" name="monthly_allocation" class="form-input" step="0.01" min="0" placeholder="e.g. 412">
+                <input type="number" name="monthly_allocation" class="form-input{% if errors and errors.monthly_allocation %} field-invalid{% endif %}"
+                    step="0.01" min="0" placeholder="e.g. 412"
+                    value="{{ form_data.monthly_allocation if form_data else '' }}">
+                {% if errors and errors.monthly_allocation %}
+                <span class="field-error-msg">{{ errors.monthly_allocation }}</span>
+                {% endif %}
             </div>
             <div class="form-group">
                 <label class="form-label">Target date <span style="font-size: 0.7rem; color: var(--text-tertiary); font-weight: 400;">(optional)</span></label>
-                <input type="text" name="deadline" class="form-input date-picker" placeholder="Select date">
+                <input type="text" name="deadline" class="form-input date-picker{% if errors and errors.deadline %} field-invalid{% endif %}"
+                    placeholder="Select date"
+                    value="{{ form_data.deadline if form_data else '' }}">
+                {% if errors and errors.deadline %}
+                <span class="field-error-msg">{{ errors.deadline }}</span>
+                {% endif %}
             </div>
         </div>
 
         <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 4px;">
-            <button type="submit" class="btn-primary btn-full">Create goal</button>
+            <button type="submit" class="btn-primary btn-full" data-loading-text="Saving...">Create goal</button>
             <a href="{{ url_for('pages.my_goals') }}" style="text-align: center; font-size: 0.82rem; color: var(--text-tertiary); text-decoration: none;">Cancel</a>
         </div>
     </form>

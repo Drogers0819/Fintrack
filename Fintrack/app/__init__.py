@@ -105,7 +105,14 @@ def create_app(config_class=None):
 
     @app.errorhandler(500)
     def server_error(e):
+        # Roll back any in-flight transaction so this request's failure
+        # doesn't poison the SQLAlchemy session and cascade-fail the next
+        # request from the same worker.
         from flask import render_template
+        try:
+            db.session.rollback()
+        except Exception:  # noqa: BLE001
+            pass
         return render_template("500.html"), 500
 
     with app.app_context():

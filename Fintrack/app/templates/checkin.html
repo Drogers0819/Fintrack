@@ -123,7 +123,7 @@
         {% endfor %}
 
         <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 20px;">
-            <button type="submit" class="btn-primary btn-full">Confirm check-in</button>
+            <button type="submit" class="btn-primary btn-full" data-loading-text="Saving your check-in...">Confirm check-in</button>
             {% if request.args.get('edit') != '1' %}
             <a href="{{ url_for('pages.overview') }}" style="text-align: center; font-size: 0.82rem; color: var(--text-tertiary); text-decoration: none;">Cancel</a>
             {% endif %}

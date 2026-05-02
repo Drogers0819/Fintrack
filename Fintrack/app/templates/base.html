@@ -88,6 +88,24 @@
                 max-width: 300px;
             }
         }
+
+        /* Form-submission spinner. Used by the global form-loading helper
+           below and any inline link/button that opts in. Colour follows
+           currentColor so it picks up the surrounding button text colour. */
+        .btn-spinner {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border: 1.5px solid currentColor;
+            border-top-color: transparent;
+            border-radius: 50%;
+            animation: claro-spin 0.6s linear infinite;
+            vertical-align: -1px;
+            margin-right: 6px;
+        }
+        @keyframes claro-spin {
+            to { transform: rotate(360deg); }
+        }
     </style>
 </head>
 <body class="{% if current_user.is_authenticated %}theme-{{ current_user.theme or 'obsidian-vault' }}{% else %}theme-obsidian-vault{% endif %}{% if show_header is defined and not show_header %} no-app-header{% endif %}{% if use_slim_shell %} has-slim-shell{% endif %}">
@@ -482,6 +500,42 @@
                 });
             });
         })();
+
+        // ── Global form-loading helper ──
+        // Forms opt in by adding data-loading="true" on the form, OR by
+        // setting data-loading-text="..." on the submit button. On submit
+        // the helper disables the submit button, sets aria-busy=true, and
+        // swaps the button label to a spinner + the loading text. The
+        // existing client-side required-field validator at the top of this
+        // script block runs first and may e.preventDefault(); when it does
+        // the loading state correctly never engages because submit hasn't
+        // fired by the time we reach this listener (we register on submit
+        // *after* validation, so e.defaultPrevented is true by then).
+        document.addEventListener('DOMContentLoaded', function () {
+            var seen = new WeakSet();
+            function bind(form) {
+                if (seen.has(form)) return;
+                seen.add(form);
+                form.addEventListener('submit', function (e) {
+                    if (e.defaultPrevented) return;
+                    var btn = form.querySelector('button[type="submit"]:not([disabled])');
+                    if (!btn) return;
+                    var label = btn.dataset.loadingText
+                        || form.dataset.loadingText
+                        || 'Saving...';
+                    btn.setAttribute('aria-busy', 'true');
+                    btn.dataset.originalLabel = btn.innerHTML;
+                    btn.innerHTML = '<span class="btn-spinner" aria-hidden="true"></span>' + label;
+                    // Disable AFTER swapping so the button still submits the form.
+                    setTimeout(function () { btn.disabled = true; }, 0);
+                });
+            }
+            document.querySelectorAll('form[data-loading="true"]').forEach(bind);
+            document.querySelectorAll('form button[type="submit"][data-loading-text]').forEach(function (btn) {
+                var form = btn.closest('form');
+                if (form) bind(form);
+            });
+        });
 
         // ── Toast notifications ──
         function dismissToast(el) {

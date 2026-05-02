@@ -31,50 +31,57 @@
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <div class="form-group">
             <label class="form-label">What's this goal called?</label>
-            <input type="text" name="name" class="form-input" value="{{ goal.name | replace(' (must-hit)', '') }}" required
+            <input type="text" name="name" class="form-input{% if errors and errors.name %} field-invalid{% endif %}"
+                value="{{ form_data.name if form_data and form_data.name else (goal.name | replace(' (must-hit)', '')) }}" required
                 oninvalid="this.setCustomValidity('Please enter a name for your goal')"
                 oninput="this.setCustomValidity('')">
+            {% if errors and errors.name %}<span class="field-error-msg">{{ errors.name }}</span>{% endif %}
         </div>
 
         <div class="grid-2">
             <div class="form-group">
                 <label class="form-label">Target amount (£) <span style="font-size: 0.7rem; color: var(--text-tertiary); font-weight: 400;">(optional)</span></label>
-                <input type="number" name="target_amount" class="form-input" step="0.01" min="0"
-                       value="{{ '%.2f' | format(goal.target_amount) if goal.target_amount else '' }}"
+                <input type="number" name="target_amount" class="form-input{% if errors and errors.target_amount %} field-invalid{% endif %}" step="0.01" min="0"
+                       value="{{ form_data.target_amount if form_data and form_data.target_amount else ('%.2f' | format(goal.target_amount) if goal.target_amount else '') }}"
                        placeholder="e.g. 10000">
+                {% if errors and errors.target_amount %}<span class="field-error-msg">{{ errors.target_amount }}</span>{% endif %}
             </div>
             <div class="form-group">
                 <label class="form-label">Already saved (£) <span style="font-size: 0.7rem; color: var(--text-tertiary); font-weight: 400;">(optional)</span></label>
-                <input type="number" name="current_amount" class="form-input" step="0.01" min="0"
-                       value="{{ '%.2f' | format(goal.current_amount) if goal.current_amount else '0' }}">
+                <input type="number" name="current_amount" class="form-input{% if errors and errors.current_amount %} field-invalid{% endif %}" step="0.01" min="0"
+                       value="{{ form_data.current_amount if form_data and form_data.current_amount else ('%.2f' | format(goal.current_amount) if goal.current_amount else '0') }}">
+                {% if errors and errors.current_amount %}<span class="field-error-msg">{{ errors.current_amount }}</span>{% endif %}
             </div>
         </div>
 
         <div class="grid-2">
             <div class="form-group">
                 <label class="form-label">Monthly contribution (£) <span style="font-size: 0.7rem; color: var(--text-tertiary); font-weight: 400;">(optional)</span></label>
-                <input type="number" name="monthly_allocation" class="form-input" step="0.01" min="0"
-                       value="{{ '%.2f' | format(goal.monthly_allocation) if goal.monthly_allocation else '' }}"
+                <input type="number" name="monthly_allocation" class="form-input{% if errors and errors.monthly_allocation %} field-invalid{% endif %}" step="0.01" min="0"
+                       value="{{ form_data.monthly_allocation if form_data and form_data.monthly_allocation else ('%.2f' | format(goal.monthly_allocation) if goal.monthly_allocation else '') }}"
                        placeholder="e.g. 412">
+                {% if errors and errors.monthly_allocation %}<span class="field-error-msg">{{ errors.monthly_allocation }}</span>{% endif %}
             </div>
             <div class="form-group">
                 <label class="form-label">Target date <span style="font-size: 0.7rem; color: var(--text-tertiary); font-weight: 400;">(optional)</span></label>
-                <input type="text" name="deadline" class="form-input date-picker"
-                       value="{{ goal.deadline.isoformat() if goal.deadline else '' }}"
+                <input type="text" name="deadline" class="form-input date-picker{% if errors and errors.deadline %} field-invalid{% endif %}"
+                       value="{{ form_data.deadline if form_data and form_data.deadline else (goal.deadline.isoformat() if goal.deadline else '') }}"
                        placeholder="Select date">
+                {% if errors and errors.deadline %}<span class="field-error-msg">{{ errors.deadline }}</span>{% endif %}
             </div>
         </div>
 
         <div class="form-group" style="margin-bottom: 24px;">
             <label class="form-label">Priority (1 = most important)</label>
-            <input type="number" name="priority_rank" class="form-input" min="1"
-                   value="{{ goal.priority_rank }}" required
+            <input type="number" name="priority_rank" class="form-input{% if errors and errors.priority_rank %} field-invalid{% endif %}" min="1"
+                   value="{{ form_data.priority_rank if form_data and form_data.priority_rank else goal.priority_rank }}" required
                    oninvalid="this.setCustomValidity('Please enter a priority rank. 1 means this goal comes first.')"
                    oninput="this.setCustomValidity('')">
+            {% if errors and errors.priority_rank %}<span class="field-error-msg">{{ errors.priority_rank }}</span>{% endif %}
         </div>
 
         <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 4px;">
-            <button type="submit" class="btn-primary btn-full">Save changes</button>
+            <button type="submit" class="btn-primary btn-full" data-loading-text="Saving...">Save changes</button>
             <a href="{{ url_for('pages.goal_detail', goal_id=goal.id) }}{% if request.args.get('from') %}?from={{ request.args.get('from') }}{% endif %}" style="text-align: center; font-size: 0.82rem; color: var(--text-tertiary); text-decoration: none;">Cancel</a>
         </div>
     </form>

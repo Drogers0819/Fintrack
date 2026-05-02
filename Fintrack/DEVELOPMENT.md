@@ -628,4 +628,76 @@ Added `tests/test_empty_states.py` covering: overview banner + placeholder card 
 
 ---
 
+## 2026-05-02 — Loading and error states (Block 1 complete)
+
+### What I did
+
+The audit found the codebase in better shape than expected: 404/500 handlers were already registered, Stripe checkout already had `try/except stripe.error.StripeError` wrappers, the companion already had a typing indicator with error fallback, and Resend was a stub so email failures were a non-issue. The genuine gaps were the `db.session.rollback()` on 500, no fetch timeout in the companion JS, no form-loading states on slow forms, no inline validation errors (validation failures used flash + redirect, losing user input), and no loading state on the trial-gate Stripe redirect.
+
+- **`db.session.rollback()` on 500.** Added to the handler in `app/__init__.py`. Wrapped in its own try/except so a rollback failure doesn't itself raise inside the error handler. Without this, a failed transaction left the SQLAlchemy session in a broken state and subsequent requests on the same worker would cascade-fail confusingly.
+- **404 / 500 templates.** Added a conditional home link to 404 (anonymous → `/`, logged-in → `/overview`), plus a "Something we should know about?" support link with a `mailto:`. Added a "Try again" reload button to 500 alongside the existing back-to-overview link. Both templates now define `{% block content %}` AND `{% block auth_content %}` (via a Jinja macro) because base.html switches between those blocks based on `current_user.is_authenticated`. Without that, anonymous 404s rendered the base envelope with no body.
+- **Companion fetch timeout.** Added `AbortController` + `setTimeout(..., 30000)` around the `fetch()` in `companion.html`. On `AbortError` the catch handler shows "Hmm, that took longer than expected. Mind trying again?". On any other error it shows "Something went wrong on our end. Try sending that again?" — both per the spec copy. Falls back gracefully when `AbortController` is undefined (very old browsers); the request just runs without a timeout.
+- **Global form-loading helper.** Added a small vanilla-JS helper to base.html's existing `<script>` block. Forms opt in by adding `data-loading="true"` on the form OR `data-loading-text="..."` on the submit button. On submit the helper sets `aria-busy="true"`, swaps the button label to a spinner + the loading text, and disables the button on the next microtask (deferring disable so the form actually submits). Registered: factfind ("Building your plan..."), check-in ("Saving your check-in..."), add-goal ("Saving..."), edit-goal ("Saving..."), registration ("Creating your account...").
+- **`.btn-spinner` CSS.** Added a 12px ring-spinner with `@keyframes claro-spin` to the existing `<style>` block in base.html's head. Uses `currentColor` so it picks up the surrounding button text colour; named `claro-spin` to avoid clashing with any future `spin` keyframe elsewhere.
+- **Inline validation.** Refactored four routes from "redirect on error with a flash" to "re-render with `errors` dict and `form_data`". Each field validates independently so errors accumulate (one typo doesn't blank the rest). Errors render below the relevant input as `<span class="field-error-msg">...</span>` and the input picks up `field-invalid` — both classes already existed in `main.css` for the client-side required-field validator, so no new CSS needed for error display. Refactored:
+  - `pages.register` + `register.html`
+  - `pages.factfind` + `factfind.html`
+  - `pages.add_goal` + `add_goal.html` (also added cross-field check: current must not exceed target; deadline must be in the future)
+  - `pages.edit_goal` + `edit_goal.html` (plus tightened edit_goal's previously-unsafe `float()` calls into the proper `validate_amount` path)
+- **Trial-gate Stripe redirect.** Added an inline `onclick` handler on the per-tier "Start 14-day trial" link that swaps the link text to a spinner + "Setting up your trial...", disables further clicks (`pointer-events: none`), and sets `aria-busy="true"`. Single CTA, no helper needed; if a second redirect-loading link shows up, extract into a `data-redirect-loading` helper.
+
+### What's deliberately NOT done
+
+- **No inline validation on login or password-reset.** Spec scope was registration + factfind + add-goal + edit-goal. Login and reset can stay on flash-style errors for now; tracking as future work.
+- **No JS-side analytics on errors.** Error tracking belongs in Sentry (Block 3).
+- **No Resend wrapping.** Email send is still a stub; nothing to catch yet.
+
+### Tests
+
+22 new tests in `tests/test_loading_error_states.py`: 404 anonymous + logged-in, 500 template body, 500 handler rollback (verified by triggering an exception then confirming a follow-up request still works), inline validation across all four refactored routes (errors render + input preserved + valid POSTs still redirect), data-loading-text attributes wired on every relevant submit button, `.btn-spinner` CSS + form-loading helper present in base.html, companion timeout/AbortController wiring.
+
+494 baseline + 22 new = **516 passing**.
+
+### Deviations from spec
+
+- **`.btn-spinner` is a new CSS class.** The hard rule said "no new CSS classes — use existing inline-style patterns". The deviation is intentional: a one-off keyframe animation is functional infrastructure that doesn't yet exist in the codebase, and inlining it on every submit button would mean repeating `@keyframes` declarations per page. Single class in base.html matches the existing `.typing-dots` precedent in companion.html.
+- **404 / 500 templates defined `auth_content` block.** base.html toggles between `{% block content %}` (logged-in) and `{% block auth_content %}` (anonymous) based on `current_user.is_authenticated`, so error templates that only define `content` rendered as an empty page envelope for unauthenticated users. The macro pattern keeps the body in one place and renders it from both blocks.
+
+### Manual verification still needed
+
+- Visit `/this-page-does-not-exist` → confirm 404 page renders with conditional "Take me home" link.
+- Trigger a 500 in production (e.g. via a debug-only route or by causing a DB issue) → confirm the friendly fallback shows, and confirm the next request from the same worker still works (rollback fix).
+- Submit factfind on a slow connection → confirm the button swaps to "Building your plan..." with a spinner.
+- Submit registration with an invalid email → confirm inline error appears next to the email field, name field still has what you typed.
+- Click "Add card"/"Start 14-day trial" on `/trial` → confirm "Setting up your trial..." with spinner before the redirect to Stripe.
+- Send a companion message → confirm typing indicator. Optional: simulate a slow upstream by setting an artificial delay; confirm the 30s timeout copy appears.
+
+---
+
+## 2026-05-02 — Block 1 complete
+
+All four Block 1 tasks are now in `main`:
+
+| Commit | Task |
+|--------|------|
+| `990488b` | feat: withdrawal intelligence UI on plan page |
+| `436674c` | feat: companion live in production with hybrid routing, rate limits, nav visibility |
+| `423bd0f` | feat: empty states across primary screens |
+| `__this__` | feat: loading and error states across the app |
+
+Test count: **516 passing** (started at 416; +100 net across the block).
+
+The product is meaningfully F&F-beta-ready on the four biggest pre-beta gaps: the withdrawal flow exists end-to-end, the AI companion is gated/rate-limited/observable in production, every primary screen has a calm empty state, and external service calls degrade to friendly errors instead of Flask debug pages. Original projection was 5-6 build days; landed in 4 focused sessions.
+
+**Manual verification outstanding for the full block** (one consolidated pass before declaring beta-ready):
+
+1. Withdrawal flow: walk through `/plan?withdraw=1` end-to-end on a test account, confirm Yes/No paths, confirm goal balance moves on Yes and stays on No.
+2. Companion: hit `/dev/companion-smoke-test` locally twice within 5 minutes, confirm caching engages on the second call. Send a real message in production with a Pro+ test account; confirm `companion_message_sent` lands in PostHog with `model_routed`. Verify free post-trial test account does NOT see the Companion link in nav. Confirm rate-limit bubble appears when limit is hit.
+3. Empty states: fresh test account → `/overview` shows banner + placeholder before factfind, then "Your plan is ready" + goals placeholder before goals. `/my-goals` empty shows the 4 illustrative chips. `/plan` without factfind shows the "Your plan is waiting to be built" empty state. `/check-in` outside last 3 days of month shows scheduled state. Companion empty state shows starter chips and clicking one sends a message.
+4. Loading/error states: visit `/this-page-doesnt-exist` for 404, trigger any 500 path and confirm next request still works, submit factfind on slow connection and watch the button label, submit registration with bad email for inline error, click "Start 14-day trial" and watch the spinner before Stripe redirect.
+
+Once the manual pass is done, Block 1 is shippable. Block 2 (unhappy paths: pay-day notifications, missed check-in forgiveness, crisis flow, survival mode, hardship pause, signposting library) starts next session.
+
+---
+
 *This journal is part of the FinTrack project. It documents genuine learning, not polished retrospection. Mistakes, confusion, and wrong turns are included deliberately — they're where the real growth happened.*

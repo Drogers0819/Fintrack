@@ -100,7 +100,8 @@
                 </div>
                 {% endfor %}
             </div>
-            <a href="{{ url_for('billing.checkout', plan=tier.slug) }}" class="btn-primary btn-full" style="text-decoration: none;">
+            <a href="{{ url_for('billing.checkout', plan=tier.slug) }}" class="btn-primary btn-full" style="text-decoration: none;"
+               onclick="if(this.dataset.busy)return false; this.dataset.busy='1'; this.style.pointerEvents='none'; this.style.opacity='0.85'; this.setAttribute('aria-busy','true'); this.innerHTML='<span class=&quot;btn-spinner&quot; aria-hidden=&quot;true&quot;></span>Setting up your trial...';">
                 Start 14-day trial
             </a>
         </div>

@@ -1,10 +1,24 @@
 {% extends "base.html" %}
 {% block title %}Page not found – Claro{% endblock %}
 
-{% block content %}
+{# Defined as a macro so we can render it from either content block.
+   base.html shows {% block content %} for logged-in users and
+   {% block auth_content %} for anonymous users. #}
+{% macro _404_body() %}
 <div class="empty-page-center">
     <p style="font-size: 0.95rem; color: var(--text-primary); font-weight: 500; margin-bottom: 8px; max-width: 280px;">This page doesn't exist.</p>
-    <p style="font-size: 0.8rem; color: var(--text-tertiary); line-height: 1.6; margin-bottom: 20px; max-width: 280px;">The link may have changed or the page may have moved. Head back to your overview to pick up where you left off.</p>
-    <a href="{{ url_for('pages.overview') }}" class="btn-primary btn-sm">Back to overview</a>
+    <p style="font-size: 0.8rem; color: var(--text-tertiary); line-height: 1.6; margin-bottom: 20px; max-width: 280px;">The link may have changed or the page may have moved.</p>
+    {% if current_user.is_authenticated %}
+    <a href="{{ url_for('pages.overview') }}" class="btn-primary btn-sm">Take me home</a>
+    {% else %}
+    <a href="{{ url_for('pages.index') }}" class="btn-primary btn-sm">Take me home</a>
+    {% endif %}
+    <p style="font-size: 0.72rem; color: var(--text-tertiary); margin-top: 18px; max-width: 280px;">
+        Something we should know about?
+        <a href="mailto:hello@clarofinance.co.uk" style="color: var(--text-secondary); text-decoration: underline; text-underline-offset: 2px;">Tell us</a>.
+    </p>
 </div>
-{% endblock %}
+{% endmacro %}
+
+{% block content %}{{ _404_body() }}{% endblock %}
+{% block auth_content %}{{ _404_body() }}{% endblock %}

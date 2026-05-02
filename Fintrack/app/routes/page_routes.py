@@ -369,17 +369,30 @@ def register():
         return redirect(url_for("pages.overview"))
 
     if request.method == "POST":
-        try:
-            name = validate_name(request.form.get("name", ""), max_length=100)
-            email = validate_email(request.form.get("email", ""))
-            password = validate_password(request.form.get("password", ""))
-        except ValueError as e:
-            flash(str(e), "error")
-            return redirect(url_for("pages.register"))
+        errors = {}
+        form_data = request.form
+        name = email = password = None
 
-        if User.query.filter_by(email=email).first():
-            flash("An account with this email already exists", "error")
-            return redirect(url_for("pages.register"))
+        try:
+            name = validate_name(form_data.get("name", ""), max_length=100)
+        except ValueError as e:
+            errors["name"] = str(e)
+
+        try:
+            email = validate_email(form_data.get("email", ""))
+        except ValueError as e:
+            errors["email"] = str(e)
+
+        try:
+            password = validate_password(form_data.get("password", ""))
+        except ValueError as e:
+            errors["password"] = str(e)
+
+        if "email" not in errors and email and User.query.filter_by(email=email).first():
+            errors["email"] = "An account with this email already exists"
+
+        if errors:
+            return render_template("register.html", errors=errors, form_data=form_data)
 
         user = User(email=email, name=name)
         user.set_password(password)
@@ -1723,58 +1736,72 @@ def update_theme():
 @login_required
 def factfind():
     if request.method == "POST":
+        errors = {}
+        form_data = request.form
+
+        # Each field validates independently so a typo in one field doesn't
+        # blank the others — all errors land in the dict at once and the
+        # template re-renders with the user's input intact.
+        amount_fields = [
+            ("monthly_income", "Monthly income", 0.01, 1_000_000, False),
+            ("rent_amount", "Rent", 0, 100_000, False),
+            ("bills_amount", "Bills", 0, 100_000, False),
+            ("groceries_estimate", "Groceries", 0, 100_000, True),
+            ("transport_estimate", "Transport", 0, 100_000, True),
+            ("subscriptions_total", "Subscriptions", 0, 100_000, True),
+            ("other_commitments", "Other commitments", 0, 100_000, True),
+        ]
+        values = {}
+        for fname, label, min_val, max_val, optional in amount_fields:
+            raw = form_data.get(fname, "")
+            try:
+                if optional and not str(raw).strip():
+                    values[fname] = 0
+                else:
+                    values[fname] = validate_amount(
+                        raw if str(raw).strip() else 0,
+                        label, min_val=min_val, max_val=max_val,
+                    )
+            except ValueError as e:
+                errors[fname] = str(e)
+
         try:
-            monthly_income = validate_amount(
-                request.form.get("monthly_income", 0),
-                "Monthly income", min_val=0.01, max_val=1_000_000
-            )
-            rent_amount = validate_amount(
-                request.form.get("rent_amount", 0),
-                "Rent", min_val=0, max_val=100_000
-            )
-            bills_amount = validate_amount(
-                request.form.get("bills_amount", 0),
-                "Bills", min_val=0, max_val=100_000
-            )
-            groceries_estimate = validate_amount(
-                request.form.get("groceries_estimate", 0) or 0,
-                "Groceries", min_val=0, max_val=100_000
-            )
-            transport_estimate = validate_amount(
-                request.form.get("transport_estimate", 0) or 0,
-                "Transport", min_val=0, max_val=100_000
-            )
-            subscriptions_total = validate_amount(
-                request.form.get("subscriptions_total", 0) or 0,
-                "Subscriptions", min_val=0, max_val=100_000
-            )
-            other_commitments = validate_amount(
-                request.form.get("other_commitments", 0) or 0,
-                "Other commitments", min_val=0, max_val=100_000
-            )
             income_day = validate_int(
-                request.form.get("income_day"),
-                "Pay day", min_val=1, max_val=31, allow_none=True
+                form_data.get("income_day"),
+                "Pay day", min_val=1, max_val=31, allow_none=True,
             )
         except ValueError as e:
-            flash(str(e), "error")
-            return redirect(url_for("pages.factfind"))
+            errors["income_day"] = str(e)
+            income_day = None
 
-        employment_type = request.form.get("employment_type", "full_time")
+        if errors:
+            return render_template(
+                "factfind.html",
+                errors=errors,
+                form_data=form_data,
+                profile=current_user.profile_dict(),
+                show_sidebar=current_user.plan_wizard_complete,
+                show_header=current_user.plan_wizard_complete,
+            )
+
+        employment_type = form_data.get("employment_type", "full_time")
         if employment_type not in ("full_time", "part_time", "self_employed", "contract"):
             employment_type = "full_time"
 
-        current_user.monthly_income = monthly_income
-        current_user.rent_amount = rent_amount
-        current_user.bills_amount = bills_amount
-        current_user.groceries_estimate = groceries_estimate
-        current_user.transport_estimate = transport_estimate
-        current_user.subscriptions_total = subscriptions_total
-        current_user.other_commitments = other_commitments
+        current_user.monthly_income = values["monthly_income"]
+        current_user.rent_amount = values["rent_amount"]
+        current_user.bills_amount = values["bills_amount"]
+        current_user.groceries_estimate = values["groceries_estimate"]
+        current_user.transport_estimate = values["transport_estimate"]
+        current_user.subscriptions_total = values["subscriptions_total"]
+        current_user.other_commitments = values["other_commitments"]
         current_user.income_day = income_day
         current_user.employment_type = employment_type
         was_already_completed = current_user.factfind_completed
         current_user.factfind_completed = True
+
+        # Bind these locally for the post-commit track_event call below.
+        monthly_income = values["monthly_income"]
 
         db.session.commit()
         if not was_already_completed:
@@ -1987,41 +2014,71 @@ def delete_transaction(transaction_id):
 @login_required
 def add_goal():
     if request.method == "POST":
+        errors = {}
+        form_data = request.form
+        name = target_amount = current_amount = monthly_allocation = priority_rank = None
+
         try:
-            name = validate_name(request.form.get("name", ""), max_length=255)
+            name = validate_name(form_data.get("name", ""), max_length=255)
+        except ValueError as e:
+            errors["name"] = str(e)
+
+        try:
             target_amount = validate_amount(
-                request.form.get("target_amount", "") or None,
-                "Target amount", min_val=0.01, max_val=10_000_000, allow_none=True
-            )
-            current_amount = validate_amount(
-                request.form.get("current_amount", "") or 0,
-                "Current amount", min_val=0, max_val=10_000_000
-            )
-            monthly_allocation = validate_amount(
-                request.form.get("monthly_allocation", "") or None,
-                "Monthly allocation", min_val=0, max_val=1_000_000, allow_none=True
-            )
-            priority_rank = validate_int(
-                request.form.get("priority_rank", 1),
-                "Priority", min_val=1, max_val=100, allow_none=False
+                form_data.get("target_amount", "") or None,
+                "Target amount", min_val=0.01, max_val=10_000_000, allow_none=True,
             )
         except ValueError as e:
-            flash(str(e), "error")
-            return redirect(url_for("pages.add_goal"))
+            errors["target_amount"] = str(e)
 
-        if target_amount is not None and current_amount > target_amount:
-            flash("Current amount cannot exceed target", "error")
-            return redirect(url_for("pages.add_goal"))
+        try:
+            current_amount = validate_amount(
+                form_data.get("current_amount", "") or 0,
+                "Current amount", min_val=0, max_val=10_000_000,
+            )
+        except ValueError as e:
+            errors["current_amount"] = str(e)
 
-        goal_type = sanitize_string(request.form.get("type", "savings_target"), max_length=30) or "savings_target"
+        try:
+            monthly_allocation = validate_amount(
+                form_data.get("monthly_allocation", "") or None,
+                "Monthly allocation", min_val=0, max_val=1_000_000, allow_none=True,
+            )
+        except ValueError as e:
+            errors["monthly_allocation"] = str(e)
+
+        try:
+            priority_rank = validate_int(
+                form_data.get("priority_rank", 1),
+                "Priority", min_val=1, max_val=100, allow_none=False,
+            )
+        except ValueError as e:
+            errors["priority_rank"] = str(e)
+
+        # Cross-field validation
+        if (
+            "target_amount" not in errors
+            and "current_amount" not in errors
+            and target_amount is not None
+            and current_amount is not None
+            and current_amount > target_amount
+        ):
+            errors["current_amount"] = "Current amount cannot exceed target"
 
         deadline = None
-        val = (request.form.get("deadline") or "").strip()
+        val = (form_data.get("deadline") or "").strip()
         if val:
             try:
                 deadline = date.fromisoformat(val)
+                if deadline < date.today():
+                    errors["deadline"] = "Deadline must be in the future"
             except ValueError:
-                pass
+                errors["deadline"] = "Please enter a valid date"
+
+        if errors:
+            return render_template("add_goal.html", errors=errors, form_data=form_data)
+
+        goal_type = sanitize_string(form_data.get("type", "savings_target"), max_length=30) or "savings_target"
 
         goal = Goal(
             user_id=current_user.id, name=name, type=goal_type,
@@ -2069,38 +2126,77 @@ def edit_goal(goal_id):
     goal = Goal.query.filter_by(id=goal_id, user_id=current_user.id).first_or_404()
 
     if request.method == "POST":
-        name = request.form.get("name", "").strip()
-        if not name:
-            flash("Goal name is required", "error")
-            return redirect(url_for("pages.edit_goal", goal_id=goal_id))
+        errors = {}
+        form_data = request.form
+        name = target_amount = current_amount = monthly_allocation = priority_rank = None
+
+        try:
+            name = validate_name(form_data.get("name", ""), max_length=255)
+        except ValueError as e:
+            errors["name"] = str(e)
+
+        try:
+            target_amount = validate_amount(
+                form_data.get("target_amount", "") or None,
+                "Target amount", min_val=0.01, max_val=10_000_000, allow_none=True,
+            )
+        except ValueError as e:
+            errors["target_amount"] = str(e)
+
+        try:
+            current_amount = validate_amount(
+                form_data.get("current_amount", "") or 0,
+                "Current amount", min_val=0, max_val=10_000_000,
+            )
+        except ValueError as e:
+            errors["current_amount"] = str(e)
+
+        try:
+            monthly_allocation = validate_amount(
+                form_data.get("monthly_allocation", "") or None,
+                "Monthly allocation", min_val=0, max_val=1_000_000, allow_none=True,
+            )
+        except ValueError as e:
+            errors["monthly_allocation"] = str(e)
+
+        try:
+            priority_rank = validate_int(
+                form_data.get("priority_rank", 1),
+                "Priority", min_val=1, max_val=100, allow_none=False,
+            )
+        except ValueError as e:
+            errors["priority_rank"] = str(e)
+
+        if (
+            "target_amount" not in errors
+            and "current_amount" not in errors
+            and target_amount is not None
+            and current_amount is not None
+            and current_amount > target_amount
+        ):
+            errors["current_amount"] = "Current amount cannot exceed target"
+
+        deadline = None
+        val = (form_data.get("deadline") or "").strip()
+        if val:
+            try:
+                deadline = date.fromisoformat(val)
+                if deadline < date.today():
+                    errors["deadline"] = "Deadline must be in the future"
+            except ValueError:
+                errors["deadline"] = "Please enter a valid date"
+
+        if errors:
+            return render_template(
+                "edit_goal.html", goal=goal, errors=errors, form_data=form_data
+            )
 
         goal.name = name
-
-        val = request.form.get("target_amount", "").strip()
-        goal.target_amount = round(float(val), 2) if val else None
-
-        val = request.form.get("current_amount", "").strip()
-        if val:
-            try:
-                goal.current_amount = round(float(val), 2)
-            except ValueError:
-                pass
-
-        val = request.form.get("monthly_allocation", "").strip()
-        goal.monthly_allocation = round(float(val), 2) if val else None
-
-        val = request.form.get("deadline", "").strip()
-        if val:
-            try:
-                goal.deadline = date.fromisoformat(val)
-            except ValueError:
-                goal.deadline = None
-        else:
-            goal.deadline = None
-
-        priority = request.form.get("priority_rank", type=int)
-        if priority and priority >= 1:
-            goal.priority_rank = priority
+        goal.target_amount = target_amount
+        goal.current_amount = current_amount if current_amount is not None else goal.current_amount
+        goal.monthly_allocation = monthly_allocation
+        goal.deadline = deadline
+        goal.priority_rank = priority_rank
 
         db.session.commit()
         flash("Goal updated", "success")
