@@ -1109,11 +1109,13 @@ def checkin():
     ).order_by(CheckIn.year.desc(), CheckIn.month.desc()).limit(6).all()
 
     view_state = _checkin_view_state(today, existing, edit_mode=edit_mode)
+    source = request.args.get("source")
     if view_state["state"] == "form":
         track_event(current_user.id, "checkin_started", {
             "month": checkin_month,
             "year": checkin_year,
             "edit_mode": edit_mode,
+            "source": source if source in ("payday",) else "direct",
         })
 
     next_checkin_str = None

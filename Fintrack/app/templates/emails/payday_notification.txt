@@ -1,0 +1,15 @@
+Pay day.
+
+Hi {{ first_name }},
+
+Today's pay day. Your monthly check-in is ready when you are.
+
+It takes 2 minutes. Tell us what came in, what's gone out, and we'll keep your plan moving.
+
+Open my check-in: {{ checkin_url }}
+
+Your plan is built around the rhythm of your month. Showing up matters.
+
+Claro
+
+You're receiving this because your pay day is set in your Claro profile. Update it any time from settings.

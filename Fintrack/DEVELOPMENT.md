@@ -700,4 +700,77 @@ Once the manual pass is done, Block 1 is shippable. Block 2 (unhappy paths: pay-
 
 ---
 
+## 2026-05-05 — Pay-day notification system (Block 2 Task 2.1)
+
+### What I did
+
+The first piece of Block 2 unhappy-path infrastructure. On a user's pay day they get an email linking to a pre-populated check-in. Without it, the monthly check-in is something users have to remember themselves; with it, the check-in becomes a ritual the system actively supports.
+
+End-to-end shape: a daily Render cron POSTs to `/cron/payday-notifications` with an `X-Cron-Secret` header. The endpoint runs `process_payday_notifications()` from the new `app/services/scheduling_service.py`, which finds every user whose pay day matches today (or today is the last day of the month for users with `income_day` > the month length), skips users already notified this calendar month, skips users who've already filed their check-in for the relevant period, and ships the `payday_notification.{html,txt}` email via Resend.
+
+- **Email service activated.** Replaced the stub in `app/services/email_service.py` with a real Resend implementation. New general-purpose `send_email(to_email, subject, template_name, template_context)` that renders Jinja templates from `app/templates/emails/`, swallows render and SDK failures, and returns `False` rather than raising. Logs use `sha8:<hash>` for the recipient instead of the raw address (PII rule). The pre-existing `send_weekly_digest` path is migrated onto the same SDK call but keeps its hand-built HTML render via `digest_service.render_digest_html`.
+- **`payday_notification_last_sent` Date column on `User`.** Added to the model and to the idempotent ALTER block in `app/__init__.py`. Used to gate per-month idempotency.
+- **`payday_notification.html` + `.txt` templates.** Mobile-first single-column layout, max-width 600px, all CSS inline. Cormorant Garamond serif heading with web-safe fallbacks, gold CTA on `#C5A35D`, copy is calm/specific/second-person — no urgency marketing, no em-dashes.
+- **`app/services/scheduling_service.py` — new file.** `process_payday_notifications(today=None)` returns `{users_notified, users_skipped, errors}`. Handles the `min(income_day, last_day_of_month)` edge case so a user with `income_day=31` still gets nudged in February. Per-user errors are caught and rolled into the `errors` list rather than propagating — one bad row never locks out the rest of the run. Rate limiter sleeps 0.1s between sends once a single run crosses 100 emails (Resend free tier headroom; trivial at current scale).
+- **`/cron/payday-notifications` POST endpoint** in a new `cron_routes.py` blueprint. Requires `X-Cron-Secret` header to match `CRON_SECRET` config value. Returns 405 on GET, 503 if `CRON_SECRET` isn't configured on the server, 401 on bad secret, 200 with a JSON summary otherwise. Even a top-level crash in the inner job returns 200 with errors so an external runner doesn't retry-storm.
+- **Check-in route — `?source=payday`.** Pre-population was already free in `checkin.html` (income input pre-fills from `current_monthly_income`, pot inputs from `pot.planned`). The only wiring needed was reading `request.args.get("source")` and adding it as a property on the `checkin_started` event so PostHog can attribute conversions. Defaults to `"direct"` when absent.
+- **Config**: `RESEND_API_KEY`, `EMAIL_FROM`, `EMAIL_FROM_NAME`, `CRON_SECRET` are now read on `DevelopmentConfig` and `ProductionConfig`. `TestingConfig` explicitly sets all four to `None` to keep tests hermetic. The email service and cron route deliberately do NOT fall back to `os.environ` — `config.py` is the single source of truth, otherwise a stray dev env var leaks past `TestingConfig`.
+
+### Schema changes
+
+| Column | Type | Nullable | Purpose |
+|--------|------|---------|---------|
+| `users.payday_notification_last_sent` | `DATE` | yes | Per-month idempotency anchor for the cron |
+
+Both `db.create_all()` (fresh DBs) and the idempotent `ALTER TABLE` block (existing Postgres) cover the migration.
+
+### New routes
+
+| Method | Path | Auth | Purpose |
+|--------|------|------|---------|
+| `POST` | `/cron/payday-notifications` | `X-Cron-Secret` header | Daily pay-day notification cron |
+
+### Events instrumented
+
+| Event | Where it fires | Properties |
+|-------|----------------|------------|
+| `payday_notification_sent` | `scheduling_service.process_payday_notifications` after a successful send | `payday_day` (the user's `income_day`), `effective_day` (capped at last day of month) |
+
+The existing `checkin_started` event now also includes `source` (`"payday"` or `"direct"`) so the funnel can attribute check-ins to the email.
+
+### Manual verification still needed (for Daniel)
+
+1. **Render env vars.** Confirm `RESEND_API_KEY`, `EMAIL_FROM` (`hello@getclaro.co.uk`), `EMAIL_FROM_NAME` (`Claro`), and `CRON_SECRET` (any high-entropy string) are all set on the production service.
+2. **Render cron job.** Configure a new Render cron service:
+   - Command: `curl -X POST -H "X-Cron-Secret: $CRON_SECRET" https://claro-2.onrender.com/cron/payday-notifications`
+   - Schedule: `0 9 * * *` (09:00 UTC daily)
+3. **First-day smoke test.** Hit the endpoint manually with the secret header. Expect a 200 with `users_notified: 0` (no users are due today unless their `income_day` matches).
+4. **End-to-end on a test account.** Set `income_day` on a test account to tomorrow's day-of-month. Wait for the next cron tick. Confirm: email lands in the inbox, has the right copy, the CTA opens `/check-in?source=payday`, the check-in form pre-populates, PostHog shows a `payday_notification_sent` event for that user, and a follow-up cron run on the same day notifies zero new users.
+
+### Tests
+
+22 new tests in `tests/test_payday_notifications.py`:
+- Scheduling matching (5): basic match, no `income_day`, non-matching day, `income_day=31` in 28-day February, `income_day=31` in 30-day April.
+- Idempotency (3): same-day re-run skips, send failure does NOT mark notified, prior-month notify resets this month.
+- Skip rules (1): user who already filed the check-in is skipped.
+- Analytics (1): `payday_notification_sent` fires with the right properties.
+- Cron endpoint (6): GET=405, missing config=503, missing header=401, wrong header=401, valid call returns summary, top-level crash returns 200 with errors.
+- Email service (4): no API key, SDK exception swallowed, HTML template renders, text template renders.
+- Check-in source param (2): `?source=payday` flows into `checkin_started`, default is `"direct"`.
+
+Suite count: **537 passing** (515 baseline that still pass today + 22 new). One pre-existing failure (`test_anomaly.py::TestDetectCategorySpikes::test_no_spike`) is calendar-date dependent — its synthetic transaction data prorates against the day-of-month and triggers a false spike on early-month days. Confirmed unchanged on the pre-Block-2 commit. Not addressed in this task; logged for a future calendar-stable rewrite of the anomaly test fixtures.
+
+### What's deliberately NOT done
+
+- **No timezone handling.** The cron runs at 09:00 UTC and matches users whose `income_day` matches today's UTC date. UK users will see the email roughly when they expect; users on other continents will see it earlier or later than their local "pay day". Out of scope until we add a `timezone` column to `User` (deferred to whenever timezone awareness lands more broadly across the app).
+- **No notification preferences.** Every user with an `income_day` set gets the email by default; there's no opt-out. The footer mentions that the user can update their pay day in settings, but doesn't offer "stop sending these emails" yet. When the unsubscribe / notification preferences page ships, gate this send on a `notify_payday=True` flag.
+- **No retry of send failures within a single cron run.** A failed send doesn't stamp `payday_notification_last_sent`, so the next day's cron will retry — but only if the user's `income_day` still matches today's date, which it won't on day 2. Practical effect: users who hit a transient Resend error miss that month's nudge. Acceptable at MVP scale; revisit when we build a generic transactional-email outbox.
+
+### Deviations from the prompt
+
+- **Check-in pre-population was already free.** The prompt suggested updating the check-in route to pre-fill values when `source=payday`, but `checkin.html` already pre-fills `current_monthly_income` (variable income input) and `pot.planned` (every other input) for every render path. The only wiring needed was the `source` property on `checkin_started` for PostHog attribution. No template change needed.
+- **`income_day` field already existed.** Audit confirmed the field is on the User model, captured cleanly in factfind, and used in `companion_service` and `whisper_service`. No migration or UX work needed.
+
+---
+
 *This journal is part of the FinTrack project. It documents genuine learning, not polished retrospection. Mistakes, confusion, and wrong turns are included deliberately — they're where the real growth happened.*

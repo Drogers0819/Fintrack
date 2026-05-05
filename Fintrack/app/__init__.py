@@ -140,6 +140,7 @@ def create_app(config_class=None):
 
         migrations = [
             ("employment_type", "ALTER TABLE users ADD COLUMN employment_type VARCHAR(30) DEFAULT 'full_time'"),
+            ("payday_notification_last_sent", "ALTER TABLE users ADD COLUMN payday_notification_last_sent DATE"),
         ]
 
         for col_name, sql in migrations:
@@ -243,9 +244,11 @@ def create_app(config_class=None):
     from app.routes.narrative_routes import narrative_bp
     from app.routes.companion_routes import companion_bp
     from app.routes.billing_routes import billing_bp
+    from app.routes.cron_routes import cron_bp
     app.register_blueprint(narrative_bp)
     app.register_blueprint(companion_bp)
     app.register_blueprint(billing_bp)
+    app.register_blueprint(cron_bp)
 
     from app.services.stripe_service import init_stripe
     init_stripe()

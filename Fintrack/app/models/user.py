@@ -26,6 +26,7 @@ class User(db.Model, UserMixin):
     other_commitments = db.Column(db.Numeric(10, 2), nullable=True)
     lifestyle_budget = db.Column(db.Numeric(10, 2), nullable=True)
     income_day = db.Column(db.Integer, nullable=True)
+    payday_notification_last_sent = db.Column(db.Date, nullable=True)
     employment_type = db.Column(db.String(30), default="full_time")
     factfind_completed = db.Column(db.Boolean, default=False)
     plan_wizard_complete = db.Column(db.Boolean, default=False)
