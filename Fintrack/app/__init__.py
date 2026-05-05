@@ -141,6 +141,9 @@ def create_app(config_class=None):
         migrations = [
             ("employment_type", "ALTER TABLE users ADD COLUMN employment_type VARCHAR(30) DEFAULT 'full_time'"),
             ("payday_notification_last_sent", "ALTER TABLE users ADD COLUMN payday_notification_last_sent DATE"),
+            ("checkin_reminder_1_sent", "ALTER TABLE users ADD COLUMN checkin_reminder_1_sent DATE"),
+            ("checkin_reminder_2_sent", "ALTER TABLE users ADD COLUMN checkin_reminder_2_sent DATE"),
+            ("checkin_reminder_3_sent", "ALTER TABLE users ADD COLUMN checkin_reminder_3_sent DATE"),
         ]
 
         for col_name, sql in migrations:

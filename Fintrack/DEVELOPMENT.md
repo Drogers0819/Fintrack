@@ -773,4 +773,91 @@ Suite count: **537 passing** (515 baseline that still pass today + 22 new). One 
 
 ---
 
+## 2026-05-05 — Missed check-in reminder ladder (Block 2 Task 2.2)
+
+### What I did
+
+Built the reminder ladder that catches users who miss a check-in after pay day. Three emails fire at decreasing-urgency intervals: day +3 ("Quick nudge"), day +7 ("Your plan is still here when you are"), day +14 ("We will stop here"). After day +14 we go quiet for the rest of the cycle. The next pay-day notification resets the ladder so the next month starts fresh.
+
+The retention logic that drove the calibration: users who miss check-ins are at high churn risk, but the wrong tone drives them away faster than silence. Each reminder is patient, not pushy. The day-14 email signals we're going to stop, not ramping up. The shape of the ladder is the load-bearing piece — get it wrong and the system makes churn worse, not better.
+
+- **Anchor on `payday_notification_last_sent`, not `income_day`.** The reminder ladder calculates "days since pay-day" from the date the pay-day notification actually fired, not from the user's `income_day` setting. This means the ladder is naturally tied to what the user saw in their inbox, even if their `income_day` changes mid-month, and we can't drift out of sync if the cron itself was late by a day.
+- **Three new nullable Date columns on `User`.** `checkin_reminder_1_sent`, `_2_sent`, `_3_sent`. Three columns rather than one packed JSON or one "ladder progress" enum because the test logic stays trivial (`is None` is the gate, the date is the audit trail) and SQL diagnostics in production stay readable. Added to the idempotent ALTER block in `app/__init__.py` so existing Postgres pre-2.2 databases pick them up on the next deploy.
+- **`process_checkin_reminders(today=None)` in `app/services/scheduling_service.py`.** Loads users with `payday_notification_last_sent IS NOT NULL`, computes `(today - anchor).days`, matches against the ladder schedule `((3, 1), (7, 2), (14, 3))`, and only fires the reminder whose corresponding `checkin_reminder_X_sent` is None. Each user matches at most one rung per run (the schedule is a tuple of disjoint days, not a range). Reuses the existing `_checkin_already_done` helper from Task 2.1 — same target-month logic, same skip rule. Returns `{users_notified, users_skipped, errors, reminder_breakdown}` where `reminder_breakdown` is `{1: n, 2: n, 3: n}` so the cron logs show which rungs hit on a given day.
+- **Cycle reset in `process_payday_notifications`.** When a new pay-day notification fires, the function now clears all three reminder fields back to None. Without this, a stamp from one cycle's day-7 reminder would silently block reminder 2 from ever firing again. This is a 4-line addition to an existing function; the test `TestCycleResetOnPayday::test_payday_resets_all_three_reminder_fields` proves the reset happens, and `test_post_reset_ladder_fires_in_new_cycle` proves end-to-end that a stamped April user gets a fresh May reminder 1 after May's pay-day notification fires.
+- **`/cron/checkin-reminders` POST endpoint** in `cron_routes.py`. Mirrors `/cron/payday-notifications` exactly: POST-only, `X-Cron-Secret` header, 503 if `CRON_SECRET` isn't configured, 401 on bad secret, 200 with JSON summary otherwise, top-level try/except returns 200 with errors so the external runner doesn't retry-storm.
+- **Three Jinja templates per rung — HTML + TXT.** `checkin_reminder_{1,2,3}.{html,txt}` in `app/templates/emails/`. Same envelope as `payday_notification.html`: max-width 600px, mobile-first single-column, all CSS inline, Cormorant Garamond serif heading with web-safe fallbacks, gold (`#C5A35D`) CTA button. Headings: "Quick nudge.", "Still here when you are.", "We will stop here." CTA on every reminder links to `/check-in?source=reminder` so PostHog can attribute conversions through this channel separately from `?source=payday`.
+- **Tone discipline check.** No em-dashes anywhere in user-facing copy (verified with a grep against the templates before commit). No urgency words, no "you're missing out", no "don't fall behind" framing. The day-14 email's job is to signal we're stopping, not to pile on. Every reminder uses the same warm voice as `payday_notification.html`.
+
+### Schema changes
+
+| Column | Type | Nullable | Purpose |
+|--------|------|---------|---------|
+| `users.checkin_reminder_1_sent` | `DATE` | yes | Day +3 reminder idempotency anchor |
+| `users.checkin_reminder_2_sent` | `DATE` | yes | Day +7 reminder idempotency anchor |
+| `users.checkin_reminder_3_sent` | `DATE` | yes | Day +14 reminder idempotency anchor |
+
+`db.create_all()` covers fresh DBs; the idempotent ALTER block in `app/__init__.py` covers existing Postgres.
+
+### New routes
+
+| Method | Path | Auth | Purpose |
+|--------|------|------|---------|
+| `POST` | `/cron/checkin-reminders` | `X-Cron-Secret` header | Daily reminder-ladder cron |
+
+### Events instrumented
+
+| Event | Where it fires | Properties |
+|-------|----------------|------------|
+| `checkin_reminder_sent` | `scheduling_service.process_checkin_reminders` after a successful send | `reminder_number` (1, 2, or 3), `days_since_payday` (3, 7, or 14) |
+
+The existing `checkin_started` event picks up `source="reminder"` for free — `?source=` flows through to the existing PostHog property without any route change needed.
+
+### Manual verification still needed (for Daniel)
+
+1. **Render env vars.** Confirm `RESEND_API_KEY`, `EMAIL_FROM`, `EMAIL_FROM_NAME`, `CRON_SECRET` are all still set. (Same set as Task 2.1; nothing new.)
+2. **Render cron job.** Two options:
+   - Option A: a separate Render cron service for the reminder endpoint, scheduled `0 9 * * *` (same time as the existing pay-day cron — there's no race because they touch different state).
+   - Option B: extend the existing `0 9 * * *` cron command to call both endpoints in sequence: `curl -X POST -H "X-Cron-Secret: $CRON_SECRET" https://claro-2.onrender.com/cron/payday-notifications && curl -X POST -H "X-Cron-Secret: $CRON_SECRET" https://claro-2.onrender.com/cron/checkin-reminders`
+3. **Smoke test the new cron.** Hit it manually with the secret header. Expect a 200 with `users_notified: 0`, `users_skipped: N`, `reminder_breakdown: {1: 0, 2: 0, 3: 0}` (no users will be at exactly day +3/+7/+14 unless a test account is set up).
+4. **End-to-end test account at day +3.** Pick a test user, set `payday_notification_last_sent` to 3 days ago, ensure no `CheckIn` row exists for the previous calendar month. Run the cron. Confirm: reminder 1 email lands, copy reads "Quick nudge", CTA opens `/check-in?source=reminder`, PostHog shows `checkin_reminder_sent` with `reminder_number=1, days_since_payday=3`, and `checkin_reminder_1_sent` is now today.
+5. **Mid-ladder stop.** Set up a second test account at day +5 with reminder 1 already stamped. Have them file a check-in for the previous calendar month. Wait until day +7. Run the cron. Confirm reminder 2 does NOT fire and `checkin_reminder_2_sent` stays None.
+
+### Tests
+
+24 new tests in `tests/test_checkin_reminders.py`:
+- Ladder timing (5): day +3 fires reminder 1, day +7 fires reminder 2, day +14 fires reminder 3, off-schedule days (1/2/4/8/13/15) skip, user without pay-day anchor is invisible.
+- Idempotency (2): same-day re-run is a no-op, send failure does NOT stamp the field.
+- Stop-on-completion (2): pre-existing CheckIn row blocks reminder 1, mid-ladder check-in stops reminders 2 and 3.
+- Cycle reset (2): pay-day notification clears all three reminder fields, end-to-end ladder runs fresh in the next cycle.
+- Analytics (1): `checkin_reminder_sent` fires with `reminder_number` and `days_since_payday`.
+- Cron endpoint (6): GET=405, missing config=503, missing header=401, wrong header=401, valid call returns summary with `reminder_breakdown` and `elapsed_ms`, top-level crash returns 200 with errors.
+- Email templates (6): HTML and TXT for all three rungs render with `first_name` and `checkin_url`, contain "Open my check-in", contain no em-dashes.
+
+Suite count: **561 passing** (537 baseline that still pass + 24 new). The same calendar-date-dependent failure documented in Task 2.1 (`test_anomaly.py::TestDetectCategorySpikes::test_no_spike`) still fails the same way; not introduced by this task.
+
+### Analytics taxonomy update
+
+Adding to the running list:
+
+| Event | Properties | Fires on |
+|-------|-----------|----------|
+| `checkin_reminder_sent` | `reminder_number` (1/2/3), `days_since_payday` (3/7/14) | Successful reminder send in `process_checkin_reminders` |
+
+`checkin_started` continues to record `source` — now also accepts `"reminder"` alongside the existing `"payday"` and `"direct"`.
+
+### What's deliberately NOT done
+
+- **No notification preferences / unsubscribe link.** Same as Task 2.1: every user with a pay-day anchor gets the ladder. Will be gated on a `notify_payday=True`-style flag when the preferences page ships in Block 3.
+- **No timezone handling.** Days are computed against UTC. Same compromise as Task 2.1; revisit when timezone awareness ships across the app.
+- **No retry of failed sends.** A failed reminder doesn't stamp the field, so the next cron run will retry — but only if the user is still on the same `days_since` rung, which they won't be on day 2. Practical effect: a transient Resend error means that rung gets skipped this cycle. Acceptable at MVP scale; revisit when we build a transactional-email outbox.
+- **No "is the user still active?" gate.** A user who deleted their account (account_deletion_requested or similar) can't appear because the cascade-delete already cleared their User row. Soft-delete patterns (suspended subscriptions, etc.) aren't filtered out separately yet — same shape as the pay-day cron and consistent with Task 2.1's scope.
+
+### Deviations from the prompt
+
+- **Subject line for reminder 1.** Prompt asked for "Quick nudge for your check-in" (used as the email subject) and the body uses "Hi {first_name}". The HTML heading I used inside the body is "Quick nudge." (the email subject and the rendered heading are different strings; the rendered heading mirrors the visual treatment in `payday_notification.html` which used "Pay day."). Same pattern for reminder 2 ("Still here when you are.") and reminder 3 ("We will stop here.").
+- **Reminder 1 final line.** Prompt body had "No rush." as a closing line on a paragraph after the CTA. I kept that placement; it reads a touch warmer than tucking it before the button.
+
+---
+
 *This journal is part of the FinTrack project. It documents genuine learning, not polished retrospection. Mistakes, confusion, and wrong turns are included deliberately — they're where the real growth happened.*

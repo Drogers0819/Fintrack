@@ -82,3 +82,48 @@ def payday_notifications():
     )
 
     return jsonify({**summary, "elapsed_ms": elapsed_ms}), 200
+
+
+@csrf.exempt
+@limiter.exempt
+@cron_bp.route("/checkin-reminders", methods=["POST"])
+def checkin_reminders():
+    secret = _resolve_cron_secret()
+    if not secret:
+        logger.error("Cron rejected: CRON_SECRET not configured on server")
+        return jsonify({"error": "cron_not_configured"}), 503
+
+    provided = request.headers.get("X-Cron-Secret", "")
+    if provided != secret:
+        logger.warning(
+            "Cron rejected: bad X-Cron-Secret (remote=%s)",
+            request.remote_addr,
+        )
+        return jsonify({"error": "unauthorized"}), 401
+
+    started = time.time()
+    logger.info("Cron started: checkin-reminders")
+
+    try:
+        from app.services.scheduling_service import process_checkin_reminders
+        summary = process_checkin_reminders()
+    except Exception as exc:  # noqa: BLE001
+        logger.exception("Cron checkin-reminders crashed: %s", exc)
+        return jsonify({
+            "users_notified": 0,
+            "users_skipped": 0,
+            "errors": [f"top_level: {exc!s}"],
+            "reminder_breakdown": {1: 0, 2: 0, 3: 0},
+        }), 200
+
+    elapsed_ms = int((time.time() - started) * 1000)
+    logger.info(
+        "Cron completed: checkin-reminders notified=%d skipped=%d errors=%d elapsed_ms=%d breakdown=%s",
+        summary.get("users_notified", 0),
+        summary.get("users_skipped", 0),
+        len(summary.get("errors", [])),
+        elapsed_ms,
+        summary.get("reminder_breakdown", {}),
+    )
+
+    return jsonify({**summary, "elapsed_ms": elapsed_ms}), 200

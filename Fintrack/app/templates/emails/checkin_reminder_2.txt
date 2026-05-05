@@ -1,0 +1,13 @@
+Still here when you are.
+
+Hi {{ first_name }},
+
+Life happens. Your plan doesn't expire. It picks up from wherever you are when you next check in.
+
+If you've had a busy week or things have shifted, that's fine. We're here when you're ready.
+
+Open my check-in: {{ checkin_url }}
+
+Claro
+
+You're receiving this because your pay day is set in your Claro profile. Update it any time from settings.

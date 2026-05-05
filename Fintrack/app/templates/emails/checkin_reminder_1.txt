@@ -1,0 +1,15 @@
+Quick nudge.
+
+Hi {{ first_name }},
+
+Your pay day was a few days ago. When you have 2 minutes, your check-in is ready whenever you are.
+
+Tell us what came in, what's gone out, and we'll keep your plan moving.
+
+Open my check-in: {{ checkin_url }}
+
+No rush.
+
+Claro
+
+You're receiving this because your pay day is set in your Claro profile. Update it any time from settings.

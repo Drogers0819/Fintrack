@@ -1,0 +1,13 @@
+We will stop here.
+
+Hi {{ first_name }},
+
+We've nudged a few times this month. We'll stop here.
+
+Your plan is waiting whenever you're ready to come back. Next pay day, we'll send the usual check-in reminder, and the cycle starts fresh.
+
+Open my check-in: {{ checkin_url }}
+
+Claro
+
+You're receiving this because your pay day is set in your Claro profile. Update it any time from settings.
