@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+{% block title %}Unexpected cost – Claro{% endblock %}
+
+{% block header_content %}
+<nav class="app-breadcrumb" aria-label="Breadcrumb">
+    <a href="{{ url_for('crisis.index') }}">Something's changed</a>
+    <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>
+    <span>Unexpected cost</span>
+</nav>
+{% endblock %}
+
+{% block content %}
+<div style="max-width: 560px;">
+
+    <div class="page-header" style="margin-bottom: 8px;">
+        <h1 style="font-family: 'Cormorant Garamond', Georgia, 'Times New Roman', serif; font-weight: 500;">An unexpected cost.</h1>
+    </div>
+    <p style="font-size: 0.92rem; color: var(--text-secondary); line-height: 1.65; margin: 0 0 24px;">
+        Tell us what came up and we'll show you exactly how the plan absorbs it.
+    </p>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% for category, message in messages %}
+        <div style="padding: 10px 14px; border-radius: 8px; margin-bottom: 16px; font-size: 0.85rem;
+                    {% if category == 'error' %}background: rgba(208, 75, 75, 0.08); color: var(--danger); border: 0.5px solid rgba(208, 75, 75, 0.2);{% else %}background: var(--card-bg); color: var(--text-secondary); border: 0.5px solid var(--card-border);{% endif %}">
+            {{ message }}
+        </div>
+        {% endfor %}
+    {% endwith %}
+
+    <form method="POST" action="{{ url_for('crisis.cost') }}" data-loading="true">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+        <div style="padding: 14px 0; border-bottom: 0.5px solid var(--glass-border-subtle);">
+            <div class="form-group" style="margin-bottom: 0;">
+                <label class="form-label" for="description">What's the cost for?</label>
+                <input type="text" id="description" name="description"
+                       class="form-input" maxlength="200" required
+                       placeholder="e.g. boiler repair, vet bill, car repair">
+            </div>
+        </div>
+
+        <div style="padding: 14px 0; border-bottom: 0.5px solid var(--glass-border-subtle);">
+            <div class="form-group" style="margin-bottom: 0;">
+                <label class="form-label" for="amount">How much?</label>
+                <input type="number" id="amount" name="amount"
+                       class="form-input" step="0.01" min="0.01" required
+                       placeholder="e.g. 320.00">
+            </div>
+        </div>
+
+        <div style="padding: 14px 0; border-bottom: 0.5px solid var(--glass-border-subtle);">
+            <div class="section-label" style="margin-top: 0; margin-bottom: 10px;">Have you already paid it?</div>
+            <div style="display: flex; gap: 16px;">
+                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 0.9rem; color: var(--text-primary);">
+                    <input type="radio" name="already_paid" value="yes" required> Yes
+                </label>
+                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 0.9rem; color: var(--text-primary);">
+                    <input type="radio" name="already_paid" value="no"> Not yet
+                </label>
+            </div>
+        </div>
+
+        <div style="padding: 14px 0;">
+            <div class="form-group" style="margin-bottom: 0;">
+                <label class="form-label" for="occurred_on">When?</label>
+                <input type="date" id="occurred_on" name="occurred_on"
+                       class="form-input" value="{{ today_iso }}"
+                       max="{{ today_iso }}" min="{{ max_backfill_iso }}">
+                <p style="font-size: 0.7rem; color: var(--text-tertiary); margin: 6px 0 0; line-height: 1.5;">Today, or up to 30 days back.</p>
+            </div>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 20px;">
+            <button type="submit" class="btn-primary btn-full" data-loading-text="Working out the impact...">See how my plan absorbs this</button>
+            <a href="{{ url_for('crisis.index') }}" style="text-align: center; font-size: 0.82rem; color: var(--text-tertiary); text-decoration: none;">Back</a>
+        </div>
+    </form>
+
+</div>
+{% endblock %}

@@ -5,3 +5,4 @@ from app.models.goal import Goal
 from app.models.budget import Budget
 from app.models.chat import ChatMessage
 from app.models.life_checkin import LifeCheckIn
+from app.models.crisis_event import CrisisEvent

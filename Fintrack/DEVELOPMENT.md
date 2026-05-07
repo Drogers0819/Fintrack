@@ -926,4 +926,117 @@ Suite count: **584 passing** (561 baseline + 22 new + 1 — the `test_anomaly` c
 
 ---
 
+## 2026-05-07 — Crisis flow entry points (Block 2 Task 2.4)
+
+### What I did
+
+Built the entry-point and routing layer for the crisis flow. A user whose life suddenly changes — lost job, unexpected cost, or just needs to step back — now has a single calm place to say "something's changed" and gets routed to the right next step. Three paths from one landing page, each capturing the data we need without making the user navigate.
+
+This task ships the routing and the data capture. The actual responses for the income and pause paths are placeholders that point at Tasks 2.5 (survival mode) and 2.6 (hardship pause). The cost path is fully wired — it reuses the existing `can_i_afford` planner helper to show real absorption numbers right now.
+
+The product principle: **the plan bends, never breaks**, extended to life events. A crisis is data the system needs to know about. Once Claro knows, it adapts.
+
+- **Three paths, not more.** The landing page (`/crisis`) has exactly three options. Crisis is the wrong moment to make users navigate a long list. Three is enough to cover the realistic cases (income drop, one-off cost, pause request) and the page footer offers `hello@getclaro.co.uk` for anything else. Adding a fourth option would make the page feel like an admin form; staying at three keeps it feeling like a conversation.
+- **`CrisisEvent` model — one table, multiple event types.** `crisis_events` discriminates on `event_type` (`lost_income` | `unexpected_cost` | `pause_requested`). NULLable columns per type rather than separate tables; at the scale of crisis events, the storage waste is trivial and the support / analytics queries stay one-line. Reserved `resolved_at` and `resolution_notes` columns for Task 2.5 / 2.6 follow-up. Production gets the table from `db.create_all()` (idempotent for new tables — no ALTER block needed) and the FK cascade is wired into the existing migration block in `app/__init__.py`.
+- **`crisis_service.py` — pure logic, route-agnostic.** `record_lost_income`, `record_unexpected_cost`, `record_pause_request`, and `calculate_cost_absorption`. The income service updates `User.monthly_income` only when the user provided a number; the "I don't know yet" branch leaves the field alone so the plan keeps using the previous figure until the user comes back with a value. `calculate_cost_absorption` wraps the existing `can_i_afford(plan, expense_name, amount)` helper from `planner_service.py:748` — no new planner code — and adds two extras: `surplus` (so the response template can show context) and `show_signposting` (true when cost > £500 OR > 50% of monthly surplus).
+- **`crisis_routes.py` — six routes.** `GET /crisis` (landing), `GET/POST /crisis/income` (lost-income form + submit), `GET/POST /crisis/cost` (cost form + submit + response render in same POST), `GET/POST /crisis/pause` (signposting page + fire-and-forget pause-event capture), and `POST /crisis/api/link-clicked` (click tracker matching the companion chip-click pattern). All `@login_required`. POSTs validate via the existing `validate_amount` and `sanitize_string` utilities; nonsense input is rejected with a flash redirect, never a write.
+- **Cost response uses real planner output.** When the user submits a cost, the response page reads `can_i_afford` and renders one of three messages: "your plan can absorb this cleanly" (impact none), "tight but doable" (impact minor — lifestyle + buffer), or "this cost is bigger than your plan can absorb in one go" (impact significant). No Claro-specific recommendation; just the planner saying what the plan can do.
+- **Income and pause are placeholders today.** Both render real templates with calm copy and proper signposting. The income response says "we're building survival mode that'll auto-simplify your goals; for now we've recorded the new income and you can adjust manually". The pause response says "we're building a self-service hardship pause; for now email support and we'll work it out one-to-one". Both responses include free regulated UK signposting (StepChange, MoneyHelper, Citizens Advice; Samaritans and Mind on the pause page).
+- **Two access points, neither in primary nav.** The "Something's changed?" item lives in the profile popover (`base.html`) alongside "Get help" — present on every authenticated page without overweighting it. The contextual line on `/overview` reads "If something's changed, tell us here" — quiet, discoverable, the primary entry path.
+- **Click-tracking JS added once to `base.html`.** A delegated event listener fires `crisis_link_clicked` for any anchor with `class="js-crisis-link"` and reads `data-crisis-location` for the source name. Both the popover entry and the overview contextual link use the same hook. `keepalive: true` lets the request survive the page navigation, mirroring the companion chip-click pattern.
+
+### FCA boundary review
+
+I went through every piece of user-facing copy with the "would a regulator flag this?" eye. The boundary I held to: **we record what happened, we update the plan inside Claro, we point at free regulated resources. We never recommend a financial product, suggest a debt arrangement, or tell someone what to do with money outside Claro.**
+
+Specific calls:
+- The cost response says "this cost is bigger than your plan can absorb in one go." That's a statement about the plan, not advice. The follow-up signposting points at StepChange and MoneyHelper if the user wants advice — we don't try to give it.
+- The income placeholder says "your plan keeps running with the new income figure and you can adjust your goals manually". No prescription on which goals to drop or whether to take on debt; the user decides.
+- The pause page says "free help is available" and lists Samaritans, Mind, StepChange. No phrasing that pretends Claro provides the help.
+- All resource links use `target="_blank" rel="noopener noreferrer"` and aren't paid placements — they're the canonical free UK resources.
+
+### Schema changes
+
+| Table | Column | Type | Notes |
+|-------|--------|------|-------|
+| `crisis_events` (new) | `id` | `INTEGER PK` | |
+| | `user_id` | `INTEGER FK users.id` | `ON DELETE CASCADE` (Postgres + SQLite via FK pragma) |
+| | `event_type` | `VARCHAR(20)` | `lost_income`, `unexpected_cost`, `pause_requested` |
+| | `income_change_type` | `VARCHAR(30)` | nullable; `lost_income` only |
+| | `new_monthly_income` | `NUMERIC(10,2)` | nullable; `lost_income` only |
+| | `income_unknown` | `BOOLEAN` | default false |
+| | `cost_description` | `VARCHAR(200)` | nullable; `unexpected_cost` only |
+| | `cost_amount` | `NUMERIC(10,2)` | nullable; `unexpected_cost` only |
+| | `cost_already_paid` | `BOOLEAN` | nullable; `unexpected_cost` only |
+| | `occurred_on` | `DATE` | nullable |
+| | `created_at` | `DATETIME` | default `datetime.utcnow` |
+| | `resolved_at` | `DATETIME` | nullable; reserved for Task 2.5 / 2.6 |
+| | `resolution_notes` | `TEXT` | nullable; reserved for Task 2.5 / 2.6 |
+
+`db.create_all()` covers fresh DBs; the table is brand new so no idempotent-ALTER entries are needed — only the FK cascade row in the existing migration block.
+
+### New routes
+
+| Method | Path | Auth | Purpose |
+|--------|------|------|---------|
+| `GET` | `/crisis/` | login | Landing page, three options |
+| `GET` | `/crisis/income` | login | Lost-income form |
+| `POST` | `/crisis/income` | login | Submit + render response |
+| `GET` | `/crisis/cost` | login | Cost form |
+| `POST` | `/crisis/cost` | login | Submit + render response with real absorption |
+| `GET` | `/crisis/pause` | login | Pause signposting page |
+| `POST` | `/crisis/pause` | login | Fire-and-forget pause-event capture |
+| `POST` | `/crisis/api/link-clicked` | login | Fire-and-forget click tracker |
+
+### Events instrumented
+
+| Event | Where it fires | Properties |
+|-------|----------------|------------|
+| `crisis_landing_viewed` | `GET /crisis` | `source` (`overview`, `popover`, or `direct`) |
+| `crisis_income_submitted` | `POST /crisis/income` after write | `change_type`, `income_unknown` |
+| `crisis_cost_submitted` | `POST /crisis/cost` after write | `amount`, `already_paid`, `absorbable`, `impact` |
+| `crisis_pause_viewed` | `GET /crisis/pause` | (none) |
+| `crisis_pause_requested` | `POST /crisis/pause` after write | (none) |
+| `crisis_link_clicked` | `POST /crisis/api/link-clicked` | `location` (`overview`, `popover`) |
+
+### Why pause is intentionally NOT self-service
+
+A self-service pause button is the kind of thing that looks easy until you ship it. The interesting questions — how long should the pause be, do we ringfence the user's data, do we hold their plan state, what happens to their goal balances, do we still send pay-day emails during the pause — all need answers we don't have yet. Forcing one-to-one email conversations for the first cohort means we get those answers from real users before we automate the wrong thing. Task 2.6 builds the self-service version after we've handled enough manual pauses to know the right shape.
+
+### Manual verification still needed (for Daniel)
+
+1. **Popover access.** Open any authenticated page, click the profile avatar, confirm the new "Something's changed?" item renders in the popover with the new icon. Click it — should land on `/crisis` and PostHog should fire `crisis_link_clicked` with `location=popover` plus `crisis_landing_viewed` with `source=popover`.
+2. **Overview contextual link.** Visit `/overview`. Confirm the small "If something's changed, tell us here" line renders just before the plan whisper card. Click it — `crisis_link_clicked` with `location=overview`, then `crisis_landing_viewed` with `source=overview`.
+3. **Lost income end-to-end.** Click "I've lost income". Pick a radio option, enter a new monthly income, leave the date as today. Submit. Confirm the response page renders with the StepChange / MoneyHelper / Citizens Advice list. In the DB, confirm `monthly_income` updated and a `crisis_events` row exists with `event_type='lost_income'`. PostHog: `crisis_income_submitted` fired with `change_type` and `income_unknown=false`.
+4. **Income unknown branch.** Repeat step 3 but tick "I don't know yet" and leave the income blank. Submit. Confirm `monthly_income` is unchanged and the new event has `income_unknown=true`, `new_monthly_income=NULL`.
+5. **Unexpected cost.** Click "I have an unexpected cost". Enter "boiler repair", £320, "Not yet", today. Submit. Confirm the response page shows the cost in a card and a real absorption message (one of "absorb cleanly" / "tight but doable" / "bigger than your plan can absorb"). With £320 < £500 and (assuming surplus > £640), no signposting box should appear. Now repeat with £800 — signposting should appear.
+6. **Pause page.** Click "I just need to pause". Confirm signposting renders with Samaritans phone number, Mind link, StepChange link, and a working `mailto:hello@getclaro.co.uk` email button. Click "Email support" — your mail client should open with the pre-filled subject AND a `crisis_pause_requested` event fires (a row also lands in `crisis_events`).
+7. **Negative cases.** Try submitting `/crisis/income` with no radio selected, no income and no "unknown" tick, or a negative monthly income — each should redirect with a flash error and no `crisis_events` row should be written.
+8. **PostHog audit.** After steps 1-6, confirm all six new events appear in PostHog with the right properties.
+
+### Tests
+
+24 new tests in `tests/test_crisis_flow.py`:
+- Service `record_lost_income` (2): updates `monthly_income` when value provided, leaves it alone when `income_unknown=True`.
+- Service `record_unexpected_cost` (1): creates event without mutating user.
+- Service `record_pause_request` (1): creates event with correct type.
+- Service `calculate_cost_absorption` (3): absorbable cost returns affordable, large cost (>£500) triggers signposting, cost >50% of small surplus triggers signposting.
+- Auth gating (2): landing redirects when anonymous, income POST redirects when anonymous.
+- Landing (2): renders three options, fires `crisis_landing_viewed` with the right `source`.
+- Income route (5): GET renders form, POST creates event + updates `monthly_income`, invalid `change_type` rejected, missing income+unknown rejected, future `occurred_on` rejected.
+- Cost route (3): GET renders form, POST creates event + renders response with real numbers, negative amount rejected, blank description rejected.
+- Pause route (2): GET renders signposting + mailto, POST creates event with `event_type=pause_requested`.
+- Link-click endpoint (2): POST fires `crisis_link_clicked` with location, requires login.
+
+Suite count: **608 passing** (583 baseline + 24 new + 1 — `test_anomaly` calendar flake currently green; on other dates expect 607).
+
+### Deviations from the prompt
+
+- **Footer link placement.** Prompt said "footer link in the main layout". The app has no `<footer>` element on authenticated pages — it has a sidebar shell with a profile popover that's effectively the persistent footer. I added the "Something's changed?" item there, alongside the existing "Get help" mailto. Same calm-presence behaviour the prompt asked for, fitting the existing UI shape.
+- **Pause page POST.** Prompt described pause as a GET-only page that surfaces a mailto. I added a parallel `POST /crisis/pause` (204 fire-and-forget) so clicking "Email support" creates a `crisis_events` row alongside opening the user's mail client — gives support the row when the email lands, not just analytics. The mailto behaviour itself is unchanged.
+- **Mailto address.** Prompt and Task 2.1 use `hello@getclaro.co.uk`. The pre-existing "Get help" popover link still points at `hello@clarofinance.co.uk`. I left that unchanged (out of scope) but every new crisis-flow link uses the correct `hello@getclaro.co.uk` address. Flagged for a small follow-up cleanup.
+- **No `__init__.py` ALTER block entry.** The CrisisEvent table is brand new, so `db.create_all()` handles it idempotently. ALTER block entries are only needed when adding columns to existing tables. Added the FK cascade entry to the existing Postgres-only migration list.
+
+---
+
 *This journal is part of the FinTrack project. It documents genuine learning, not polished retrospection. Mistakes, confusion, and wrong turns are included deliberately — they're where the real growth happened.*

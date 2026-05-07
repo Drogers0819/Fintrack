@@ -124,6 +124,7 @@ def create_app(config_class=None):
         from app.models.chat import ChatMessage
         from app.models.life_checkin import LifeCheckIn
         from app.models.checkin import CheckIn, CheckInEntry
+        from app.models.crisis_event import CrisisEvent
 
         db.create_all()
 
@@ -180,6 +181,7 @@ def create_app(config_class=None):
                 ("checkins", "user_id", "users", "CASCADE"),
                 ("checkin_entries", "checkin_id", "checkins", "CASCADE"),
                 ("checkin_entries", "goal_id", "goals", "SET NULL"),
+                ("crisis_events", "user_id", "users", "CASCADE"),
             ]
 
             for table, column, ref_table, desired_rule in cascade_targets:
@@ -248,10 +250,12 @@ def create_app(config_class=None):
     from app.routes.companion_routes import companion_bp
     from app.routes.billing_routes import billing_bp
     from app.routes.cron_routes import cron_bp
+    from app.routes.crisis_routes import crisis_bp
     app.register_blueprint(narrative_bp)
     app.register_blueprint(companion_bp)
     app.register_blueprint(billing_bp)
     app.register_blueprint(cron_bp)
+    app.register_blueprint(crisis_bp)
 
     from app.services.stripe_service import init_stripe
     init_stripe()

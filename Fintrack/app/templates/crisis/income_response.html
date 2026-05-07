@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block title %}Plan updated – Claro{% endblock %}
+
+{% block header_content %}
+<span class="app-header-title">Plan updated</span>
+{% endblock %}
+
+{% block content %}
+<div style="max-width: 560px;">
+
+    <div class="page-header" style="margin-bottom: 8px;">
+        <h1 style="font-family: 'Cormorant Garamond', Georgia, 'Times New Roman', serif; font-weight: 500;">Got it.</h1>
+    </div>
+    <p style="font-size: 0.95rem; color: var(--text-primary); line-height: 1.65; margin: 0 0 14px;">
+        We've recorded the change. Your plan will reflect your new situation the next time you open it.
+    </p>
+    <p style="font-size: 0.88rem; color: var(--text-secondary); line-height: 1.7; margin: 0 0 24px;">
+        We're building a survival mode that automatically simplifies your goals when income drops. It's not quite ready, so for now your plan keeps running with the new income figure and you can adjust your goals manually if you need to.
+    </p>
+
+    <div style="padding: 16px 18px; border-radius: 12px; background: var(--card-bg); border: 0.5px solid var(--card-border); margin-bottom: 24px;">
+        <div class="section-label" style="margin-top: 0; margin-bottom: 8px;">Free help if you need it now</div>
+        <p style="font-size: 0.82rem; color: var(--text-secondary); line-height: 1.7; margin: 0 0 10px;">
+            These are free, regulated UK resources. Claro doesn't take a cut.
+        </p>
+        <ul style="margin: 0; padding-left: 18px; font-size: 0.85rem; color: var(--text-secondary); line-height: 1.85;">
+            <li><a href="https://www.stepchange.org" target="_blank" rel="noopener noreferrer" style="color: var(--text-primary); text-decoration: underline; text-underline-offset: 2px;">StepChange</a>. Free debt advice.</li>
+            <li><a href="https://www.moneyhelper.org.uk" target="_blank" rel="noopener noreferrer" style="color: var(--text-primary); text-decoration: underline; text-underline-offset: 2px;">MoneyHelper</a>. Free, government-backed money guidance.</li>
+            <li><a href="https://www.citizensadvice.org.uk" target="_blank" rel="noopener noreferrer" style="color: var(--text-primary); text-decoration: underline; text-underline-offset: 2px;">Citizens Advice</a>. Free advice on benefits, work, and housing.</li>
+        </ul>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 10px;">
+        <a href="{{ url_for('pages.overview') }}" class="btn-primary btn-full" style="text-decoration: none; text-align: center;">Take me to my updated plan</a>
+        <a href="mailto:hello@getclaro.co.uk?subject=Income%20change%20support" style="text-align: center; font-size: 0.82rem; color: var(--text-tertiary); text-decoration: none;">Email us if you'd like to talk it through</a>
+    </div>
+
+</div>
+{% endblock %}

@@ -139,6 +139,17 @@
         </div>
         {% endif %}
 
+        {# Contextual crisis link — calm presence, no urgency #}
+        {% if not is_frozen %}
+        <p style="font-size: 0.78rem; color: var(--text-tertiary); line-height: 1.6; margin: 0 0 14px;">
+            If something's changed,
+            <a href="{{ url_for('crisis.index') }}?source=overview"
+               class="js-crisis-link"
+               data-crisis-location="overview"
+               style="color: var(--text-secondary); text-decoration: underline; text-underline-offset: 2px;">tell us here</a>.
+        </p>
+        {% endif %}
+
         {# Plan whisper card — gold left border #}
         {% if plan_summary and smart_plan and not smart_plan.error and not is_frozen %}
         <div class="slim-card slim-card--whisper">

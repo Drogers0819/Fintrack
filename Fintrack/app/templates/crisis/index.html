@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block title %}Something's changed – Claro{% endblock %}
+
+{% block header_content %}
+<span class="app-header-title">Something's changed</span>
+{% endblock %}
+
+{% block content %}
+<div style="max-width: 560px;">
+
+    <div class="page-header" style="margin-bottom: 8px;">
+        <h1 style="font-family: 'Cormorant Garamond', Georgia, 'Times New Roman', serif; font-weight: 500;">Something's changed?</h1>
+    </div>
+    <p style="font-size: 0.92rem; color: var(--text-secondary); line-height: 1.65; margin: 0 0 28px;">
+        Tell us what's happened and we'll bring your plan up to date with you.
+    </p>
+
+    <div style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 28px;">
+
+        <a href="{{ url_for('crisis.income') }}"
+           style="display: block; text-decoration: none; padding: 18px 20px; border-radius: 12px; background: var(--card-bg); border: 0.5px solid var(--card-border);">
+            <div style="font-size: 1rem; color: var(--text-primary); font-weight: 500; margin-bottom: 4px;">I've lost income</div>
+            <div style="font-size: 0.82rem; color: var(--text-tertiary); line-height: 1.55;">A job change, reduced hours, or income that's dropped for any reason.</div>
+        </a>
+
+        <a href="{{ url_for('crisis.cost') }}"
+           style="display: block; text-decoration: none; padding: 18px 20px; border-radius: 12px; background: var(--card-bg); border: 0.5px solid var(--card-border);">
+            <div style="font-size: 1rem; color: var(--text-primary); font-weight: 500; margin-bottom: 4px;">I have an unexpected cost</div>
+            <div style="font-size: 0.82rem; color: var(--text-tertiary); line-height: 1.55;">A boiler, a car, a vet bill, anything you didn't plan for.</div>
+        </a>
+
+        <a href="{{ url_for('crisis.pause') }}"
+           style="display: block; text-decoration: none; padding: 18px 20px; border-radius: 12px; background: var(--card-bg); border: 0.5px solid var(--card-border);">
+            <div style="font-size: 1rem; color: var(--text-primary); font-weight: 500; margin-bottom: 4px;">I just need to pause</div>
+            <div style="font-size: 0.82rem; color: var(--text-tertiary); line-height: 1.55;">Step back from Claro for a while. Your plan stays where it is.</div>
+        </a>
+
+    </div>
+
+    <p style="font-size: 0.78rem; color: var(--text-tertiary); line-height: 1.6; margin: 0;">
+        None of these fit? Email us at <a href="mailto:hello@getclaro.co.uk?subject=Something%20changed" style="color: var(--text-secondary); text-decoration: underline; text-underline-offset: 2px;">hello@getclaro.co.uk</a> and we'll figure it out together.
+    </p>
+
+</div>
+{% endblock %}

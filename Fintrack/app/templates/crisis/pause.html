@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+{% block title %}Need to pause – Claro{% endblock %}
+
+{% block header_content %}
+<nav class="app-breadcrumb" aria-label="Breadcrumb">
+    <a href="{{ url_for('crisis.index') }}">Something's changed</a>
+    <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>
+    <span>Pause</span>
+</nav>
+{% endblock %}
+
+{% block content %}
+<div style="max-width: 560px;">
+
+    <div class="page-header" style="margin-bottom: 8px;">
+        <h1 style="font-family: 'Cormorant Garamond', Georgia, 'Times New Roman', serif; font-weight: 500;">Sometimes life needs space.</h1>
+    </div>
+    <p style="font-size: 0.95rem; color: var(--text-primary); line-height: 1.65; margin: 0 0 14px;">
+        We get it.
+    </p>
+    <p style="font-size: 0.88rem; color: var(--text-secondary); line-height: 1.7; margin: 0 0 24px;">
+        We're building a hardship pause that lets you suspend your subscription for up to 60 days while keeping your plan and data intact. We're not quite there yet, so for now we'll work it out with you one-to-one.
+    </p>
+
+    <div style="padding: 16px 18px; border-radius: 12px; background: var(--card-bg); border: 0.5px solid var(--card-border); margin-bottom: 18px;">
+        <div class="section-label" style="margin-top: 0; margin-bottom: 8px;">What we can do right now</div>
+        <p style="font-size: 0.85rem; color: var(--text-secondary); line-height: 1.75; margin: 0 0 12px;">
+            Email us and we'll work something out with you on a case-by-case basis. Whatever you need, your plan and data stay where they are.
+        </p>
+        <a id="emailSupportLink"
+           href="mailto:hello@getclaro.co.uk?subject=I%20need%20to%20pause%20my%20Claro%20account"
+           class="btn-primary btn-full"
+           style="text-decoration: none; text-align: center; display: inline-block;">
+            Email support
+        </a>
+    </div>
+
+    <div style="padding: 16px 18px; border-radius: 12px; background: var(--card-bg); border: 0.5px solid var(--card-border); margin-bottom: 24px;">
+        <div class="section-label" style="margin-top: 0; margin-bottom: 8px;">If you're going through something hard</div>
+        <p style="font-size: 0.82rem; color: var(--text-secondary); line-height: 1.7; margin: 0 0 10px;">
+            Free help is available, any time:
+        </p>
+        <ul style="margin: 0; padding-left: 18px; font-size: 0.85rem; color: var(--text-secondary); line-height: 1.9;">
+            <li><strong style="color: var(--text-primary); font-weight: 500;">Samaritans</strong>. Free, 24/7. Call <a href="tel:116123" style="color: var(--text-primary); text-decoration: underline; text-underline-offset: 2px;">116 123</a> or email <a href="mailto:jo@samaritans.org" style="color: var(--text-primary); text-decoration: underline; text-underline-offset: 2px;">jo@samaritans.org</a></li>
+            <li><a href="https://www.mind.org.uk" target="_blank" rel="noopener noreferrer" style="color: var(--text-primary); text-decoration: underline; text-underline-offset: 2px;">Mind</a>. Mental-health support.</li>
+            <li><a href="https://www.stepchange.org" target="_blank" rel="noopener noreferrer" style="color: var(--text-primary); text-decoration: underline; text-underline-offset: 2px;">StepChange</a>. If money worries are part of it.</li>
+        </ul>
+    </div>
+
+    <p style="font-size: 0.9rem; color: var(--text-secondary); line-height: 1.7; margin: 0 0 24px;">
+        Whatever you decide, your plan is still here whenever you come back.
+    </p>
+
+    <div style="display: flex; flex-direction: column; gap: 10px;">
+        <a href="{{ url_for('pages.overview') }}" style="text-align: center; font-size: 0.82rem; color: var(--text-tertiary); text-decoration: none;">Take me back to my plan</a>
+    </div>
+
+</div>
+
+<script>
+(function () {
+    var link = document.getElementById('emailSupportLink');
+    if (!link) return;
+    link.addEventListener('click', function () {
+        try {
+            fetch('{{ url_for("crisis.pause") }}', {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': '{{ csrf_token() }}',
+                    'Content-Type': 'application/json',
+                },
+                body: '{}',
+                keepalive: true,
+            });
+        } catch (e) {}
+    });
+})();
+</script>
+{% endblock %}
