@@ -1742,6 +1742,26 @@ def settings():
     return render_template("settings.html")
 
 
+@page_bp.route("/settings/survival-mode/activate", methods=["POST"])
+@login_required
+def activate_survival_mode_route():
+    from app.services.survival_mode_service import activate_survival_mode
+    if not current_user.survival_mode_active:
+        activate_survival_mode(current_user, reason="manual")
+        flash("Survival mode is on. Your plan is now focused on essentials.", "success")
+    return redirect(url_for("pages.settings"))
+
+
+@page_bp.route("/settings/survival-mode/deactivate", methods=["POST"])
+@login_required
+def deactivate_survival_mode_route():
+    from app.services.survival_mode_service import deactivate_survival_mode
+    if current_user.survival_mode_active:
+        deactivate_survival_mode(current_user)
+        flash("You're back on the standard plan.", "success")
+    return redirect(url_for("pages.settings"))
+
+
 @page_bp.route("/settings/delete-account", methods=["GET", "POST"])
 @login_required
 def delete_account():

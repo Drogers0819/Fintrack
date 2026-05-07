@@ -145,6 +145,8 @@ def create_app(config_class=None):
             ("checkin_reminder_1_sent", "ALTER TABLE users ADD COLUMN checkin_reminder_1_sent DATE"),
             ("checkin_reminder_2_sent", "ALTER TABLE users ADD COLUMN checkin_reminder_2_sent DATE"),
             ("checkin_reminder_3_sent", "ALTER TABLE users ADD COLUMN checkin_reminder_3_sent DATE"),
+            ("survival_mode_active", "ALTER TABLE users ADD COLUMN survival_mode_active BOOLEAN DEFAULT FALSE NOT NULL"),
+            ("survival_mode_started_at", "ALTER TABLE users ADD COLUMN survival_mode_started_at TIMESTAMP"),
         ]
 
         for col_name, sql in migrations:
@@ -156,6 +158,26 @@ def create_app(config_class=None):
                 except Exception as e:
                     db.session.rollback()
                     print(f"Migration skipped {col_name}: {e}")
+
+        # Goals table — is_essential added in Block 2 Task 2.5
+        try:
+            existing_goal_columns = [col["name"] for col in inspector.get_columns("goals")]
+        except Exception:
+            existing_goal_columns = []
+
+        goal_migrations = [
+            ("is_essential", "ALTER TABLE goals ADD COLUMN is_essential BOOLEAN DEFAULT FALSE NOT NULL"),
+        ]
+
+        for col_name, sql in goal_migrations:
+            if col_name not in existing_goal_columns:
+                try:
+                    db.session.execute(text(sql))
+                    db.session.commit()
+                    print(f"Migration: added goals.{col_name}")
+                except Exception as e:
+                    db.session.rollback()
+                    print(f"Migration skipped goals.{col_name}: {e}")
 
         # ── Foreign-key cascade migration (Postgres only) ──
         # Production needs ON DELETE CASCADE on every FK referencing

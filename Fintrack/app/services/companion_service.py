@@ -154,6 +154,14 @@ def _build_user_context(user):
     employment_type = user.employment_type or "full_time"
     parts.append(f"Employment type: {employment_type}")
     parts.append(f"Income stability: {'stable' if employment_type == 'full_time' else 'variable'}")
+    if getattr(user, "survival_mode_active", False):
+        parts.append(
+            "Survival mode: on. The user's plan is currently simplified to "
+            "essentials only because their income recently dropped or they "
+            "asked for a simpler plan. Be matter-of-fact about this — it's "
+            "just where they are right now, not a problem to solve. Do not "
+            "suggest increasing contributions to non-essential goals."
+        )
     if user.monthly_income:
         parts.append(f"Monthly income: £{float(user.monthly_income):,.0f}")
     if user.rent_amount:

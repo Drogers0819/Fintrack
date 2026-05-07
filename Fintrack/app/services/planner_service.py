@@ -48,6 +48,18 @@ def generate_financial_plan(user_profile, goals, debts=None, upcoming_expenses=N
     essentials = rent + bills + groceries + transport + subscriptions + other
     surplus = income - essentials
 
+    # Survival mode short-circuit: produces a schema-identical plan
+    # with non-essentials paused and lifestyle reduced to the survival
+    # floor. Runs even when surplus <= 0 because the floor is a fixed
+    # number, not a fraction of surplus.
+    if user_profile.get("survival_mode_active"):
+        return _generate_survival_plan(
+            income=income, rent=rent, bills=bills, groceries=groceries,
+            transport=transport, subscriptions=subscriptions, other=other,
+            essentials=essentials, surplus=surplus,
+            goals=goals, debts=debts,
+        )
+
     if surplus <= 0:
         return {
             "error": "Your essential costs exceed your income. No surplus available for savings.",
@@ -86,8 +98,199 @@ def generate_financial_plan(user_profile, goals, debts=None, upcoming_expenses=N
             p["monthly_amount"] for p in pots if p["type"] not in ("lifestyle", "buffer")
         ), 2),
         "phase_count": len(phases),
-        "current_phase": phases[0] if phases else None
+        "current_phase": phases[0] if phases else None,
+        "survival_mode": False,
     }
+
+
+# ─── SURVIVAL MODE BRANCH ───────────────────────────────────
+
+def _generate_survival_plan(*, income, rent, bills, groceries, transport,
+                            subscriptions, other, essentials, surplus,
+                            goals, debts):
+    """Simplified plan when user.survival_mode_active is True.
+
+    Goals: only essentials (is_essential=True OR debt-by-name OR
+    emergency-by-name) carry a contribution; everything else is paused
+    (monthly_amount=0, marked with _paused_for_survival=True so the
+    overview can render them muted).
+
+    Lifestyle: replaced with the survival floor (max(20% of income, £400))
+    rather than the standard 15%-of-surplus calculation.
+
+    Buffer: zero in survival mode — we're not building a buffer when
+    income just dropped; getting through the month is enough.
+
+    Output schema: identical to the standard plan output, plus
+    `survival_mode: True` and `survival_floor` for templates that
+    want to surface the number explicitly.
+    """
+    from app.services.survival_mode_service import (
+        SURVIVAL_LIFESTYLE_FRACTION,
+        SURVIVAL_LIFESTYLE_HARD_FLOOR,
+    )
+
+    survival_floor = max(income * SURVIVAL_LIFESTYLE_FRACTION,
+                         SURVIVAL_LIFESTYLE_HARD_FLOOR)
+
+    today = date.today()
+
+    pots = []
+
+    # Debts — minimum payments only. Use min_payment if provided, else 0
+    # (we never invent a debt allocation beyond what the user told us).
+    if debts:
+        for i, debt in enumerate(debts):
+            target = float(debt.get("amount", 0))
+            current = float(debt.get("current", 0))
+            already_cleared = bool(target) and current >= target
+            min_pay = float(debt.get("min_payment", 0))
+            pots.append({
+                "name": debt.get("name", f"Debt {i+1}"),
+                "type": "debt",
+                "target": target,
+                "current": current,
+                "monthly_amount": 0 if already_cleared else min_pay,
+                "min_payment": min_pay,
+                "deadline": None,
+                "priority": 0,
+                "completed": already_cleared,
+                "completed_month": 0 if already_cleared else None,
+                "goal_id": debt.get("goal_id"),
+            })
+
+    # Goals — pause non-essentials, keep essentials at their existing
+    # monthly_allocation if set, otherwise zero.
+    user_goals = _parse_goals(goals or [], today)
+    raw_goals_by_id = {g.get("id") or g.get("goal_id"): g for g in (goals or [])}
+    for parsed in user_goals:
+        target = parsed.get("target") or 0
+        current = parsed.get("current") or 0
+        already_completed = bool(target) and current >= target
+        gid = parsed.get("goal_id")
+        raw = raw_goals_by_id.get(gid, {})
+
+        is_essential = bool(raw.get("is_essential")) or _is_essential_by_name(parsed["name"])
+
+        # Essential goals keep whatever monthly_allocation the user set
+        # (or zero if none). Non-essentials drop to zero entirely.
+        if is_essential and not already_completed:
+            allocation = float(raw.get("monthly_allocation") or 0)
+        else:
+            allocation = 0
+
+        pots.append({
+            "name": parsed["name"],
+            "type": parsed.get("pot_type", "savings"),
+            "target": target,
+            "current": current,
+            "monthly_amount": allocation,
+            "deadline": parsed.get("deadline"),
+            "months_until_deadline": parsed.get("months_until_deadline"),
+            "priority": 2,
+            "completed": already_completed,
+            "completed_month": 0 if already_completed else None,
+            "goal_id": gid,
+            "_paused_for_survival": not is_essential and not already_completed,
+        })
+
+    # Lifestyle pot at the survival floor.
+    pots.append({
+        "name": "Lifestyle & family",
+        "type": "lifestyle",
+        "target": None,
+        "current": 0,
+        "monthly_amount": round(survival_floor, 2),
+        "deadline": None,
+        "priority": 900,
+        "completed": False,
+        "goal_id": None,
+    })
+
+    # Buffer at zero — no buffer building during survival.
+    pots.append({
+        "name": "Buffer",
+        "type": "buffer",
+        "target": None,
+        "current": 0,
+        "monthly_amount": 0,
+        "deadline": None,
+        "priority": 999,
+        "completed": False,
+        "goal_id": None,
+    })
+
+    # Run the same simulation path so monthly_projections / phases keep
+    # the same schema. Phases will be sparse (essentials only) but that
+    # is the correct output for this state.
+    phases, monthly_projections = _simulate_phases(pots, max(surplus, 0))
+    alerts = _survival_alerts(survival_floor)
+
+    pot_dicts = [_pot_to_dict(p) for p in pots]
+    # Carry the paused-for-survival flag through the dict conversion so
+    # templates can mute the row.
+    for original, dumped in zip(pots, pot_dicts):
+        if original.get("_paused_for_survival"):
+            dumped["paused_for_survival"] = True
+
+    return {
+        "income": round(income, 2),
+        "essentials": round(essentials, 2),
+        "essentials_breakdown": {
+            "rent": round(rent, 2),
+            "bills": round(bills, 2),
+            "groceries": round(groceries, 2),
+            "transport": round(transport, 2),
+            "subscriptions": round(subscriptions, 2),
+            "other_commitments": round(other, 2),
+        },
+        "surplus": round(surplus, 2),
+        "pots": pot_dicts,
+        "phases": phases,
+        "monthly_projections": monthly_projections,
+        "alerts": alerts,
+        "lifestyle_monthly": round(survival_floor, 2),
+        "buffer_monthly": 0,
+        "total_goal_allocation": round(sum(
+            p["monthly_amount"] for p in pots if p["type"] not in ("lifestyle", "buffer")
+        ), 2),
+        "phase_count": len(phases),
+        "current_phase": phases[0] if phases else None,
+        "survival_mode": True,
+        "survival_floor": round(survival_floor, 2),
+    }
+
+
+def _is_essential_by_name(name):
+    """Heuristic backup for the is_essential flag. Emergency funds and
+    debt-by-name are essential by default — users have already named
+    these things and we shouldn't make them re-tag to keep contributions
+    flowing in survival mode."""
+    if not name:
+        return False
+    lower = name.lower()
+    if _is_debt_goal(lower):
+        return True
+    return any(term in lower for term in ("emergency", "rainy day", "safety net"))
+
+
+def _is_emergency(name):
+    if not name:
+        return False
+    lower = name.lower()
+    return any(term in lower for term in ("emergency", "rainy day", "safety net"))
+
+
+def _survival_alerts(survival_floor):
+    return [{
+        "type": "survival_mode",
+        "severity": "info",
+        "message": (
+            f"Survival mode is on. Lifestyle reduced to "
+            f"£{survival_floor:,.0f}/month. Non-essential goals are paused. "
+            f"Switch back to standard mode in settings when things change."
+        ),
+    }]
 
 
 # ─── POT BUILDING ───────────────────────────────────────────

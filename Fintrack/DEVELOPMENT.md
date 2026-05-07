@@ -1039,4 +1039,89 @@ Suite count: **608 passing** (583 baseline + 24 new + 1 — `test_anomaly` calen
 
 ---
 
+## 2026-05-07 — Survival mode for the planner (Block 2 Task 2.5)
+
+### What I did
+
+Built survival mode: the planner branch that activates when a user's income drops meaningfully (or they manually flip the switch from settings). When survival mode is on, non-essential goal contributions automatically pause, lifestyle reduces to a survival floor, and the plan focuses on essentials only. The product principle "the plan bends, never breaks" gets its most explicit expression here — a user whose income drops 40% doesn't need a stern warning, they need the plan to adapt automatically and quietly.
+
+The implementation is a branch *inside* the existing planner, not a separate planner. That was the key constraint: anything that consumes `generate_financial_plan()` (overview, plan page, check-in pre-population, companion, can_i_afford, the cost-absorption helper) had to keep working without changes. The survival branch produces a plan dict that is schema-identical to the standard plan, plus two extra keys (`survival_mode: True`, `survival_floor`).
+
+- **`app/services/survival_mode_service.py` — new file.** Four functions: `should_auto_activate(user, new_income)` (returns True for >= 25% drop with safety bail-outs for missing baseline / unknown income / already-active), `activate_survival_mode(user, reason)` (flips the flag, stamps `survival_mode_started_at`, fires `survival_mode_activated`), `deactivate_survival_mode(user)` (clears the flag but keeps the timestamp as a historical record), and `get_survival_floor(user)` (`max(income * 0.20, £400)`). Module-level constants `INCOME_DROP_THRESHOLD = 0.25`, `SURVIVAL_LIFESTYLE_FRACTION = 0.20`, `SURVIVAL_LIFESTYLE_HARD_FLOOR = 400.0` so the planner branch and tests reference the same numbers.
+- **Planner branch in `generate_financial_plan`.** A 6-line gate at the top of the function reads `user_profile["survival_mode_active"]` and short-circuits to `_generate_survival_plan(...)` before any of the standard pot-building runs. The new `_generate_survival_plan` function builds a `pots` list with debts at minimum payments, essential goals at their existing `monthly_allocation`, non-essential goals at zero (with `_paused_for_survival=True` so the dict version surfaces a `paused_for_survival: True` flag for templates), lifestyle pot at the survival floor, and buffer at zero. Runs through the same `_simulate_phases` and `_pot_to_dict` machinery so the output schema matches.
+- **Schema-compatibility test.** `TestPlannerSurvivalMode::test_survival_plan_has_same_top_level_keys` builds a standard plan and a survival plan from comparable inputs, takes the set of top-level keys from each, and asserts the survival plan contains every standard key. Cheap, future-proof, and catches the most likely regression: someone adds a key to the standard planner and forgets the survival branch.
+- **Essential goals — explicit flag plus heuristic backup.** Added `Goal.is_essential` (Boolean, default False, idempotent ALTER). Users can explicitly mark a goal as essential. The planner branch also treats anything that matches the existing debt-name heuristic (`_is_debt_goal`) or the new emergency-name heuristic (Emergency / Rainy day / Safety net) as essential automatically. This means existing users don't have to go and re-tag their emergency fund and debts to keep contributions flowing in survival mode — those goals are essential by name, not by flag.
+- **Auto-activation hook in `crisis_service.record_lost_income`.** The hook runs *before* mutating `user.monthly_income` (otherwise the comparison baseline is gone). When `should_auto_activate` returns True, `activate_survival_mode(user, reason="income_drop")` flips the flag and stamps the timestamp before the income write commits. The function returns the `CrisisEvent` with a transient attribute `survival_mode_just_activated` so the route can read it without a follow-up query and pass it to the response template.
+- **Crisis income response template.** Now branches on `survival_mode_just_activated`. If True: "We've also simplified your plan to focus on essentials only. Non-essential goals are paused. We'll keep it that way until you tell us things have changed in settings." If False (small drop or unknown income): "Your plan keeps running with the new income figure. If you'd like a simpler plan that focuses on essentials only, you can switch to survival mode in settings."
+- **Manual toggle in settings.** New "Survival mode" collapsible section in `settings.html`. When inactive: header "Need a simpler plan?" with a one-line explanation and a "Switch to survival mode" button posting to `/settings/survival-mode/activate`. When active: header "Survival mode is on" with the activation date and a "Switch back to standard mode" button posting to `/settings/survival-mode/deactivate`. Both routes flip the flag, flash a calm one-line message, redirect back to settings.
+- **Overview banner.** Above the contextual crisis link, a small calm banner appears when `current_user.survival_mode_active`: "Survival mode is on. Plan simplified to essentials." with a Roman-Gold left edge and a "Switch back to standard mode" link to settings. Subtle, informational, not alarming.
+- **Companion light touch.** Appended a single context line in `_build_user_context` when `user.survival_mode_active`: "Survival mode: on. The user's plan is currently simplified to essentials only because their income recently dropped or they asked for a simpler plan. Be matter-of-fact about this — it's just where they are right now, not a problem to solve. Do not suggest increasing contributions to non-essential goals." The static system prompt and routing/caching machinery stay untouched.
+
+### Critical compatibility statement
+
+The planner's output schema is unchanged. The survival branch returns a dict with every key the standard planner returns, plus two additive keys (`survival_mode`, `survival_floor`). All existing planner consumers — overview, plan page, check-in pre-population, companion, `can_i_afford`, `calculate_cost_absorption` from Task 2.4 — work unmodified. The full test suite is 636 passing, including every test under those code paths.
+
+### Schema changes
+
+| Table | Column | Type | Notes |
+|-------|--------|------|-------|
+| `users` | `survival_mode_active` | `BOOLEAN NOT NULL DEFAULT FALSE` | Idempotent ALTER block |
+| `users` | `survival_mode_started_at` | `TIMESTAMP` | Nullable; preserved across deactivations as historical record |
+| `goals` | `is_essential` | `BOOLEAN NOT NULL DEFAULT FALSE` | New idempotent ALTER block for goals |
+
+### New routes
+
+| Method | Path | Auth | Purpose |
+|--------|------|------|---------|
+| `POST` | `/settings/survival-mode/activate` | login | Manual entry to survival mode |
+| `POST` | `/settings/survival-mode/deactivate` | login | Manual exit back to standard plan |
+
+### Events instrumented
+
+| Event | Where it fires | Properties |
+|-------|----------------|------------|
+| `survival_mode_activated` | `activate_survival_mode` | `reason` (`manual` or `income_drop`) |
+| `survival_mode_deactivated` | `deactivate_survival_mode` | (none) |
+| `crisis_income_submitted` | (existing event, new property) | adds `survival_mode_just_activated` (bool) |
+
+### Why no auto-deactivate
+
+Auto-deactivation when income recovers feels like the obvious next step but it's intentionally deferred. The interesting questions — what counts as "recovered" (current income matches the pre-drop amount? Or 80% of it? Three consecutive months above some threshold?), what happens to paused goals (do contributions resume at the old level or scale to the new income?), do we ask the user before flipping back or just do it, what if they got a bonus rather than a salary increase — all need answers we don't have yet. Manual exit only for now means we get those answers from real conversations before automating the wrong rule. Block 5 candidate.
+
+### FCA boundary review
+
+Survival mode is a planner state that the user opts into (via crisis flow auto-activation or the settings toggle) and opts out of (via the settings toggle). Nothing in this task tells the user how to handle creditors, what to do about debts they can't pay, or whether to seek any specific kind of help — that signposting was Task 2.4's job and lives in the crisis-flow templates. Survival mode itself only does three things: pauses non-essential contributions, sets lifestyle to a survival floor, focuses the plan on essentials. All three are plan adjustments inside Claro. The companion's added context line is matter-of-fact ("just where they are right now, not a problem to solve") and explicitly tells the model not to push goal contributions during survival mode. No advice creep.
+
+### Manual verification still needed (for Daniel)
+
+1. Set up a test account with `monthly_income = 2000`. Visit `/crisis/income`, pick a radio option, submit `new_monthly_income = 1400` (30% drop), today's date. Confirm the response page now reads "We've also simplified your plan to focus on essentials only..." instead of the older copy.
+2. Navigate to `/overview`. Confirm the calm "Survival mode is on. Plan simplified to essentials." banner appears above the contextual crisis line, with a working "Switch back to standard mode" link.
+3. Open the goals list / dashboard goal cards. Confirm non-essential goals show £0/month contributions; emergency fund and any debt goals continue to receive contributions.
+4. Visit `/settings`, expand the "Survival mode is on" section, click "Switch back to standard mode". Confirm the flash message renders and the overview banner disappears on the next page load.
+5. From a fresh test account with no prior crisis event, open `/settings`, expand "Need a simpler plan?", click "Switch to survival mode". Confirm same banner appears.
+6. PostHog: confirm `survival_mode_activated` fired twice — once with `reason=income_drop` (step 1) and once with `reason=manual` (step 5). `survival_mode_deactivated` fired once (step 4). `crisis_income_submitted` carries `survival_mode_just_activated: true` for the auto-activation case.
+7. Optional: open `/companion` while survival mode is on, ask "should I save more for my house deposit?". Confirm the response stays calm and matter-of-fact and does not push goal contributions.
+
+### Tests
+
+28 new tests in `tests/test_survival_mode.py`:
+- `should_auto_activate` (6): 30% drop → True, 10% drop → False, exactly 25% → True, no previous income → False, unknown new income → False, already active → False (no double-fire).
+- `activate_survival_mode` / `deactivate_survival_mode` (3): activate sets flag + timestamp, deactivate clears flag but keeps timestamp, activate fires `survival_mode_activated` with `reason`.
+- `get_survival_floor` (2): 20% of high income, £400 hard floor for low income.
+- Planner integration (7): standard mode returns `survival_mode: False`, survival mode returns `survival_mode: True` and `survival_floor`, survival schema has every standard key, non-essentials paused with `paused_for_survival: True`, emergency fund essential by name (heuristic backup), lifestyle set to survival floor and buffer is zero, alerts include `survival_mode` entry.
+- Auto-activation via crisis (4): 30% drop activates, 10% drop does not, unknown income does not, event fires with `reason=income_drop`.
+- Manual toggle routes (4): activate flips + redirects, deactivate clears + redirects, both require login.
+- Companion awareness (2): user-context mentions survival mode when active, omits it when inactive.
+
+Suite count: **636 passing** (607 deterministic baseline + 28 new + 1 — `test_anomaly` calendar flake currently green; on other dates expect 635).
+
+### Deviations from the prompt
+
+- **Goal essential detection — heuristic backup added.** Prompt said use `is_essential=True` as the gate. I added that field as the explicit flag, but the planner also treats debt-name and emergency-name goals as essential automatically. Without that, every existing user who entered survival mode would see their emergency fund and debt contributions drop to zero — they'd have to retroactively go tick `is_essential` on each goal. The heuristic backup keeps existing data working sensibly without forcing migration UX.
+- **`paused_for_survival` flag on pot dicts.** Not in the prompt's output spec, but the overview / goals templates need a way to render paused goals muted versus completed goals. Adding the flag is the minimum surface area to keep `monthly_amount: 0` distinguishable from "this goal is done".
+- **Buffer pot drops to zero in survival mode.** The standard planner has both lifestyle and buffer pots; the prompt only addressed lifestyle. Setting buffer to zero is consistent with "we're not building a buffer when income just dropped" and matches the spirit of survival mode's "essentials only" framing. Calling it out explicitly so it's visible in review.
+- **`survival_mode: False` in standard plan output.** Strictly additive, but means any consumer that reads `plan.get("survival_mode")` gets a clean True/False rather than `True/None`. Negligible cost; small clarity win.
+
+---
+
 *This journal is part of the FinTrack project. It documents genuine learning, not polished retrospection. Mistakes, confusion, and wrong turns are included deliberately — they're where the real growth happened.*

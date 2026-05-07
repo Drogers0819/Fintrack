@@ -14,9 +14,15 @@
     <p style="font-size: 0.95rem; color: var(--text-primary); line-height: 1.65; margin: 0 0 14px;">
         We've recorded the change. Your plan will reflect your new situation the next time you open it.
     </p>
+    {% if survival_mode_just_activated %}
     <p style="font-size: 0.88rem; color: var(--text-secondary); line-height: 1.7; margin: 0 0 24px;">
-        We're building a survival mode that automatically simplifies your goals when income drops. It's not quite ready, so for now your plan keeps running with the new income figure and you can adjust your goals manually if you need to.
+        We've also simplified your plan to focus on essentials only. Non-essential goals are paused. We'll keep it that way until you tell us things have changed in settings.
     </p>
+    {% else %}
+    <p style="font-size: 0.88rem; color: var(--text-secondary); line-height: 1.7; margin: 0 0 24px;">
+        Your plan keeps running with the new income figure. If you'd like a simpler plan that focuses on essentials only, you can switch to survival mode in settings.
+    </p>
+    {% endif %}
 
     <div style="padding: 16px 18px; border-radius: 12px; background: var(--card-bg); border: 0.5px solid var(--card-border); margin-bottom: 24px;">
         <div class="section-label" style="margin-top: 0; margin-bottom: 8px;">Free help if you need it now</div>

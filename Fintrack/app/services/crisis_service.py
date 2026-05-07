@@ -36,13 +36,23 @@ def record_lost_income(
     """Write a `lost_income` event and update the user's monthly_income
     if a new value was provided.
 
+    Returns the event with `survival_mode_just_activated` attached as a
+    transient attribute (not persisted) so the route can read it
+    without a follow-up query.
+
     `income_unknown=True` is the "I don't know yet" path: we still write
     the event so the system knows something changed, but we leave
     monthly_income alone so the plan keeps using the previous figure
-    until the user comes back with a number.
+    until the user comes back with a number. The auto-activation gate
+    (Block 2 Task 2.5) only fires when we have a real new income figure
+    to compare against.
     """
     from app import db
     from app.models.crisis_event import CrisisEvent
+    from app.services.survival_mode_service import (
+        activate_survival_mode,
+        should_auto_activate,
+    )
 
     event = CrisisEvent(
         user_id=user.id,
@@ -52,13 +62,24 @@ def record_lost_income(
         occurred_on=occurred_on,
     )
 
+    survival_just_activated = False
+
     if not income_unknown and new_monthly_income is not None:
         amount = Decimal(str(new_monthly_income))
         event.new_monthly_income = amount
+        # Auto-activation runs BEFORE we mutate user.monthly_income —
+        # otherwise the comparison baseline is gone.
+        if should_auto_activate(user, amount):
+            activate_survival_mode(user, reason="income_drop")
+            survival_just_activated = True
         user.monthly_income = amount
 
     db.session.add(event)
     db.session.commit()
+
+    # Transient attribute the route reads to decide whether to flag the
+    # response template. Not stored in the DB.
+    event.survival_mode_just_activated = survival_just_activated
     return event
 
 

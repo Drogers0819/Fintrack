@@ -30,6 +30,8 @@ class User(db.Model, UserMixin):
     checkin_reminder_1_sent = db.Column(db.Date, nullable=True)
     checkin_reminder_2_sent = db.Column(db.Date, nullable=True)
     checkin_reminder_3_sent = db.Column(db.Date, nullable=True)
+    survival_mode_active = db.Column(db.Boolean, default=False, nullable=False)
+    survival_mode_started_at = db.Column(db.DateTime, nullable=True)
     employment_type = db.Column(db.String(30), default="full_time")
     factfind_completed = db.Column(db.Boolean, default=False)
     plan_wizard_complete = db.Column(db.Boolean, default=False)
@@ -127,7 +129,8 @@ class User(db.Model, UserMixin):
             "monthly_surplus": self.monthly_surplus,
             "factfind_completed": self.factfind_completed,
             "plan_wizard_complete": self.plan_wizard_complete,
-            "theme": self.theme
+            "theme": self.theme,
+            "survival_mode_active": bool(self.survival_mode_active),
         }
 
     def __repr__(self):

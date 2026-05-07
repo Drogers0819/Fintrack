@@ -108,7 +108,7 @@ def income():
             flash("Pick a date today or up to 30 days back.", "error")
             return redirect(url_for("crisis.income"))
 
-        record_lost_income(
+        event = record_lost_income(
             current_user,
             change_type=change_type,
             new_monthly_income=new_income_value,
@@ -116,12 +116,20 @@ def income():
             income_unknown=income_unknown,
         )
 
+        survival_just_activated = bool(
+            getattr(event, "survival_mode_just_activated", False)
+        )
+
         track_event(current_user.id, "crisis_income_submitted", {
             "change_type": change_type,
             "income_unknown": income_unknown,
+            "survival_mode_just_activated": survival_just_activated,
         })
 
-        return render_template("crisis/income_response.html")
+        return render_template(
+            "crisis/income_response.html",
+            survival_mode_just_activated=survival_just_activated,
+        )
 
     return render_template(
         "crisis/income.html",

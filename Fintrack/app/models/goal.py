@@ -14,6 +14,7 @@ class Goal(db.Model):
     deadline = db.Column(db.Date, nullable=True)
     priority_rank = db.Column(db.Integer, default=1)
     status = db.Column(db.String(20), default="active")
+    is_essential = db.Column(db.Boolean, default=False, nullable=False)
     created_at = db.Column(db.DateTime, server_default=db.func.now())
 
     def _calculate_progress(self):
@@ -34,6 +35,7 @@ class Goal(db.Model):
             "deadline": self.deadline.isoformat() if self.deadline else None,
             "priority_rank": self.priority_rank,
             "status": self.status,
+            "is_essential": bool(self.is_essential),
             "created_at": self.created_at.isoformat() if self.created_at else None,
             "progress_percent": self._calculate_progress()
         }

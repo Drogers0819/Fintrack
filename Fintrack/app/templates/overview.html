@@ -139,6 +139,19 @@
         </div>
         {% endif %}
 
+        {# Survival mode banner — calm Roman-Gold accent, no urgency #}
+        {% if current_user.survival_mode_active %}
+        <div data-survival-mode-banner
+             style="display: flex; align-items: flex-start; gap: 12px; padding: 12px 14px; margin: 0 0 18px; background: var(--card-bg); border: 0.5px solid var(--card-border); border-left: 3px solid var(--roman-gold); border-radius: 10px;">
+            <div style="flex: 1; min-width: 0;">
+                <div style="font-size: 0.78rem; color: var(--text-primary); font-weight: 500; line-height: 1.55;">Survival mode is on. Plan simplified to essentials.</div>
+                <div style="font-size: 0.72rem; color: var(--text-tertiary); line-height: 1.6; margin-top: 4px;">
+                    <a href="{{ url_for('pages.settings') }}" style="color: var(--text-secondary); text-decoration: underline; text-underline-offset: 2px;">Switch back to standard mode</a>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
         {# Contextual crisis link — calm presence, no urgency #}
         {% if not is_frozen %}
         <p style="font-size: 0.78rem; color: var(--text-tertiary); line-height: 1.6; margin: 0 0 14px;">
