@@ -273,11 +273,13 @@ def create_app(config_class=None):
     from app.routes.billing_routes import billing_bp
     from app.routes.cron_routes import cron_bp
     from app.routes.crisis_routes import crisis_bp
+    from app.routes.admin_routes import admin_bp
     app.register_blueprint(narrative_bp)
     app.register_blueprint(companion_bp)
     app.register_blueprint(billing_bp)
     app.register_blueprint(cron_bp)
     app.register_blueprint(crisis_bp)
+    app.register_blueprint(admin_bp)
 
     from app.services.stripe_service import init_stripe
     init_stripe()

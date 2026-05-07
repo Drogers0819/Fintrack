@@ -141,7 +141,25 @@ DYNAMIC_CONTEXT_TEMPLATE = """## What you know about this user
 {user_context}
 
 ## Their current plan
-{plan_context}"""
+{plan_context}
+
+## Free regulated UK resources you may suggest
+Only suggest one of these by name when the user's situation indicates it
+would genuinely help. Do not suggest unprompted in unrelated conversations.
+Never recommend a paid product or any resource not on this list.
+{signposting_list}"""
+
+
+def _build_signposting_block() -> str:
+    """Render the canonical signposting library as a short bulleted list
+    the model can name. Built dynamically from get_all_resources() so the
+    prompt stays in sync with the library."""
+    from app.services.signposting_library import get_all_resources
+
+    lines = []
+    for resource in get_all_resources():
+        lines.append(f"- {resource['name']} ({resource['description']})")
+    return "\n".join(lines)
 
 
 # ─── CONTEXT BUILDERS ─────────────────────────────────────────
@@ -382,9 +400,11 @@ def chat(user, message, plan=None, conversation_history=None):
     # plan) is appended uncached.
     user_context = _build_user_context(user)
     plan_context = _build_plan_context(plan)
+    signposting_list = _build_signposting_block()
     dynamic_system = DYNAMIC_CONTEXT_TEMPLATE.format(
         user_context=user_context,
-        plan_context=plan_context
+        plan_context=plan_context,
+        signposting_list=signposting_list,
     )
 
     # Select model based on query complexity

@@ -1124,4 +1124,102 @@ Suite count: **636 passing** (607 deterministic baseline + 28 new + 1 — `test_
 
 ---
 
+## 2026-05-07 — Signposting library (Block 2 Task 2.7)
+
+### What I did
+
+Built the signposting library: a single canonical Python module that holds every free regulated UK resource Claro signposts to. Templates and the companion now pull from this module rather than hardcoding strings, so descriptions, URLs, and phone numbers can change in one place. The library is the foundation for any future context-aware signposting (companion suggesting StepChange when debt comes up, for example) without that logic being scattered.
+
+The product principle is sharp here: signposting is safety infrastructure. If we accidentally link to a defunct service, give a wrong phone number, or recommend something inappropriate, real users in distress hit dead ends. Centralising the data makes it auditable and version-controlled, and the import-time validation means a malformed library is a loud Flask boot failure rather than a quiet runtime bug.
+
+- **`app/services/signposting_library.py` — new module.** Tuple of 8 resource dicts plus a `CATEGORIES` enum. Pure module, no Flask dependencies, importable in tests in isolation. `get_resource(id)`, `get_resources_for_category(cat)`, `get_resources_for_categories([...])` (deduplicated), `get_all_resources()`. Validation runs at import time via `_validate_library()`: every resource has the required fields, every URL starts with `https://`, every category is in the enum, every id is unique, every entry is `free=True`. Any malformed entry raises `ValueError` and prevents the app from booting.
+- **8-resource starting set.** StepChange (debt, general_money), MoneyHelper (general_money, benefits), Citizens Advice (benefits, housing, general_money), National Debtline (debt), Samaritans (mental_health, with phone + email), Mind (mental_health), GamCare (gambling, mental_health), Shelter (housing). Every entry verified manually before commit: URLs reach the canonical homepage, phone numbers match the published numbers on each charity's contact page, descriptions are matter-of-fact ("Free debt advice and debt management plans" rather than "Get back on track with expert debt advice today").
+- **Category taxonomy.** `debt`, `general_money`, `benefits`, `housing`, `mental_health`, `gambling`, `relationships`. The last is a placeholder reserved for future financial-abuse / relationship-related signposting; no resources tagged yet, and a test explicitly excludes it from the "every category has at least one resource" guarantee.
+- **`_partials/signposting_list.html` — new shared partial.** Renders a `<ul>` of resources with proper external-link hardening (`target="_blank"`, `rel="noopener noreferrer"`), optional `tel:` link when `phone` is set, optional `mailto:` link when `email` is set. The partial owns the row markup; surrounding cards stay in the calling template, so visual treatment is unchanged from before.
+- **Three crisis templates refactored.** `crisis/income_response.html`, `crisis/cost_response.html`, and `crisis/pause.html` now `{% include "_partials/signposting_list.html" %}` and receive resource lists from the route handlers. Visible output matches the pre-refactor output very closely — same resources, same descriptions, same surrounding cards. Differences are surface-level: pause page Samaritans is no longer a `<strong>` row (the partial handles phone+email rendering uniformly), and Mind's hyphen between "Mental" and "health" is now a regular space (the partial uses the library description directly).
+- **Companion light-touch awareness.** `_build_signposting_block()` in `companion_service.py` builds a bulleted list of resource names + descriptions from `get_all_resources()`. Appended to `DYNAMIC_CONTEXT_TEMPLATE` (not the static cached prompt — adding it there would invalidate the cache breakpoint). The dynamic block now includes a "Free regulated UK resources you may suggest" section instructing the model to suggest specific named resources when the user's situation indicates it would help, never paid products, never anything not on the list. The list stays in sync automatically because it's built each call.
+- **`/admin/signposting` audit page.** New `admin_bp` blueprint at `app/routes/admin_routes.py`, gated by `_require_founder` decorator that 404s anyone whose email isn't `daniel.rogers19@hotmail.com`. The 404 (rather than 403) is deliberate — civilians shouldn't even know the route exists. Read-only table with columns for name+id, description, categories, phone+email, regulator. Lives at `app/templates/admin/signposting_audit.html` matching the Obsidian Vault aesthetic.
+
+### Critical compatibility statement
+
+The crisis-flow templates render the same resources for the same situations, with effectively the same visible output. All Task 2.4 tests still pass. The companion service kept its cache-control breakpoint on the static prompt; the resource list is in the dynamic block which gets rebuilt per call anyway. No schema changes. No new dependencies.
+
+### Schema changes
+
+None.
+
+### New routes
+
+| Method | Path | Auth | Purpose |
+|--------|------|------|---------|
+| `GET` | `/admin/signposting` | login + founder email match | Read-only library audit |
+
+### The 8-resource starting set (for spot-check)
+
+| ID | Name | URL | Categories | Phone | Email | Regulator |
+|----|------|-----|------------|-------|-------|-----------|
+| stepchange | StepChange | https://www.stepchange.org | debt, general_money | . | . | FCA |
+| moneyhelper | MoneyHelper | https://www.moneyhelper.org.uk | general_money, benefits | . | . | Government |
+| citizens_advice | Citizens Advice | https://www.citizensadvice.org.uk | benefits, housing, general_money | . | . | Charity |
+| national_debtline | National Debtline | https://www.nationaldebtline.org | debt | 0808 808 4000 | . | FCA |
+| samaritans | Samaritans | https://www.samaritans.org | mental_health | 116 123 | jo@samaritans.org | Charity |
+| mind | Mind | https://www.mind.org.uk | mental_health | 0300 123 3393 | . | Charity |
+| gamcare | GamCare | https://www.gamcare.org.uk | gambling, mental_health | 0808 8020 133 | . | Charity |
+| shelter | Shelter | https://www.shelter.org.uk | housing | 0808 800 4444 | . | Charity |
+
+### Refactor coverage
+
+| Surface | Before | After |
+|---------|--------|-------|
+| `crisis/income_response.html` | 3 hardcoded resource `<li>`s | `{% include %}` partial driven by `get_resources_for_categories(["debt", "general_money", "benefits"])` |
+| `crisis/cost_response.html` | 2 hardcoded resource `<li>`s under `show_signposting` gate | Same gate, now `{% include %}` partial driven by `get_resources_for_categories(["debt", "general_money"])` |
+| `crisis/pause.html` | 3 hardcoded resource `<li>`s incl. Samaritans phone+email | `{% include %}` partial driven by `get_resources_for_categories(["mental_health", "debt"])` — phone+email rendered uniformly by the partial |
+| `companion_service.DYNAMIC_CONTEXT_TEMPLATE` | No signposting awareness | New "Free regulated UK resources you may suggest" section built dynamically from `get_all_resources()` |
+| `crisis/index.html` | Mailto link only, no resource list | Unchanged (no resources to refactor) |
+| `emails/checkin_reminder_*.{html,txt}` | No resources | Unchanged (verified during audit) |
+
+### FCA boundary review
+
+Every entry in the library is free at point of use, regulated where applicable (FCA for debt advice from StepChange and National Debtline; charity regulators for the rest), and selected because it's appropriate for a specific situation. No paid products. No Claro-affiliate links. No commercial referrals. No specific financial product recommendations. The companion's added prompt section explicitly tells the model: "Only suggest one of these by name when the user's situation indicates it would genuinely help. Do not suggest unprompted in unrelated conversations. Never recommend a paid product or any resource not on this list."
+
+### Manual verification still needed (for Daniel)
+
+1. Visit `/admin/signposting` while logged in as `daniel.rogers19@hotmail.com`. Confirm all 8 resources render in the table with correct URLs, descriptions, phone numbers, and regulator labels.
+2. Verify each URL by clicking through — confirm none 404 and each lands on the canonical org homepage.
+3. As a non-founder test account, hit `/admin/signposting` — should 404 (not 403, not redirect to login).
+4. Visit `/crisis/income`, submit any change. On the response page, confirm StepChange / MoneyHelper / Citizens Advice all render with their canonical URLs and descriptions. External links should open in a new tab.
+5. Visit `/crisis/pause`. Confirm Samaritans (with phone link `116 123` and email `jo@samaritans.org`), Mind, and StepChange all render. Click the phone — should trigger the call dialog on mobile.
+6. Trigger `/crisis/cost` with an amount over £500 (e.g. £800 boiler repair). Confirm the "Need help with this?" card appears with StepChange and MoneyHelper. Confirm a £100 cost does NOT show the card.
+7. Open the companion (Pro+ test account), ask "I'm worried about my debt, what should I do?". Confirm the model can mention StepChange or National Debtline by name when contextually appropriate, and stays calm and matter-of-fact. Confirm it does NOT proactively offer signposting on unrelated questions ("how does the buffer pot work?").
+
+### Tests
+
+18 new tests in `tests/test_signposting_library.py`:
+- Library structure (7): unique IDs, https URLs, categories in enum, required fields present, every real category has at least one resource, every resource is free, starting set has at least 8 entries.
+- Lookups (5): get_resource hit / miss, get_resources_for_category hit / unknown, get_resources_for_categories deduplicates GamCare across gambling+mental_health.
+- Template integration (3): pause page renders mental_health + debt resources with external-link hardening, income response renders debt+general+benefits resources, partial renders both phone and email when present (Samaritans).
+- Admin gate (3): founder email gets 200, non-founder logged-in user gets 404, anonymous user gets redirect/401/404.
+
+Suite count: **654 passing** (635 deterministic baseline + 18 new + 1 — `test_anomaly` calendar flake currently green; on other dates expect 653).
+
+### Why a Python module instead of a database table
+
+At 8 resources with the data changing rarely, a DB table is overhead with no payoff: every page load would do a query, the data wouldn't be version-controlled, schema migrations would be needed for additions, and the audit trail would be in a logs table rather than `git log`. The Python module keeps the data on the same review path as code (PRs reviewed before merge), gives free version control, and adds a startup-time validation step that would be more awkward in a DB-driven shape. If the library grows past ~50 entries or starts being edited by non-developers, that calculus flips.
+
+### Limitations and what's deliberately NOT done
+
+- **Admin auth is a hardcoded email match.** No `User.is_admin` column or `@admin_required` decorator exists yet. When the founder team adds a second admin or builds more admin tooling, the right move is a real `is_admin` boolean + decorator + ACL — flagged here because today's gate is the minimum viable.
+- **No resource availability monitoring.** Nothing checks whether the URLs are still live or the phone numbers are still answered. The library is verified manually before commit; ongoing monitoring is a Block 7 hardening item if needed.
+- **No full admin CRUD.** The audit page is read-only. Adding / editing / deleting happens in code and ships via PR. Keeps the change log durable and the review path tight.
+- **No context-aware companion signposting.** The companion has access to the library and the prompt instructs it to suggest resources when contextually appropriate, but there's no automatic "user mentioned debt → inject StepChange into the response" pipeline. That's a post-launch enhancement once we see how the model uses the list naturally.
+
+### Deviations from the prompt
+
+- **Samaritans email field.** The prompt's library schema has `phone` only. Samaritans has both a phone (`116 123`) and an email (`jo@samaritans.org`) and the existing pause page surfaced both. Dropping the email would have been a regression, so I added an optional `email` field to the schema. The partial renders email only when set; existing 7 resources have `email=None`.
+- **Admin gate returns 404, not 403.** Prompt said "403 or redirect". 404 hides the route's existence from civilian logged-in users — small security-through-obscurity win at zero cost. Test asserts 404 for the non-founder case.
+- **`relationships` category as placeholder.** Prompt mentioned it as a placeholder; I included it in `CATEGORIES` so the taxonomy is complete from day one. The "every category has at least one resource" test explicitly excludes it.
+- **Admin route under a new `admin` blueprint, not nested under `pages`.** Cleaner namespace and gives the founder team a clear home for any future admin endpoint without touching the public routes file.
+
+---
+
 *This journal is part of the FinTrack project. It documents genuine learning, not polished retrospection. Mistakes, confusion, and wrong turns are included deliberately — they're where the real growth happened.*

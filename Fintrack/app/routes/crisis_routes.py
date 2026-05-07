@@ -33,6 +33,7 @@ from app.services.crisis_service import (
     record_pause_request,
     record_unexpected_cost,
 )
+from app.services.signposting_library import get_resources_for_categories
 from app.utils.validators import sanitize_string, validate_amount
 
 logger = logging.getLogger(__name__)
@@ -129,6 +130,9 @@ def income():
         return render_template(
             "crisis/income_response.html",
             survival_mode_just_activated=survival_just_activated,
+            resources=get_resources_for_categories(
+                ["debt", "general_money", "benefits"]
+            ),
         )
 
     return render_template(
@@ -191,6 +195,7 @@ def cost():
             already_paid=already_paid,
             absorption=absorption,
             event_id=event.id,
+            resources=get_resources_for_categories(["debt", "general_money"]),
         )
 
     return render_template(
@@ -216,7 +221,10 @@ def pause():
         return ("", 204)
 
     track_event(current_user.id, "crisis_pause_viewed", {})
-    return render_template("crisis/pause.html")
+    return render_template(
+        "crisis/pause.html",
+        resources=get_resources_for_categories(["mental_health", "debt"]),
+    )
 
 
 # ─── Click tracker for the contextual entry points ───────────

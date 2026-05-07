@@ -1,0 +1,29 @@
+{# Signposting resource list — pulled from app.services.signposting_library
+   via a route handler. Renders matter-of-fact: name, description, optional
+   phone link, optional email link. Every external link opens in a new
+   tab with the noopener+noreferrer hardening.
+
+   Required context:
+     resources — list of resource dicts from get_resources_for_category(...)
+                 or get_resources_for_categories([...]).
+
+   Match the surrounding visual treatment by wrapping the include in the
+   existing card markup; this partial only owns the <ul> and <li> rows.
+#}
+<ul style="margin: 0; padding-left: 18px; font-size: 0.85rem; color: var(--text-secondary); line-height: 1.85;">
+    {% for resource in resources %}
+    <li>
+        <a href="{{ resource.url }}" target="_blank" rel="noopener noreferrer"
+           style="color: var(--text-primary); text-decoration: underline; text-underline-offset: 2px;">{{ resource.name }}</a>.
+        {{ resource.description }}.
+        {%- if resource.phone %}
+        Call <a href="tel:{{ resource.phone | replace(' ', '') }}"
+                style="color: var(--text-primary); text-decoration: underline; text-underline-offset: 2px;">{{ resource.phone }}</a>{% if resource.email %} or email <a href="mailto:{{ resource.email }}"
+                style="color: var(--text-primary); text-decoration: underline; text-underline-offset: 2px;">{{ resource.email }}</a>{% endif %}.
+        {%- elif resource.email %}
+        Email <a href="mailto:{{ resource.email }}"
+                 style="color: var(--text-primary); text-decoration: underline; text-underline-offset: 2px;">{{ resource.email }}</a>.
+        {%- endif %}
+    </li>
+    {% endfor %}
+</ul>

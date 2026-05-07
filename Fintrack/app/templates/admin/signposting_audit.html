@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% block title %}Signposting audit – Claro admin{% endblock %}
+
+{% block header_content %}<span class="app-header-title">Signposting library</span>{% endblock %}
+
+{% block content %}
+<div style="max-width: 920px;">
+
+    <div class="page-header" style="margin-bottom: 8px;">
+        <h1 style="font-family: 'Cormorant Garamond', Georgia, 'Times New Roman', serif; font-weight: 500;">Signposting library</h1>
+    </div>
+    <p style="font-size: 0.88rem; color: var(--text-secondary); line-height: 1.65; margin: 0 0 6px;">
+        Read-only audit. Edits live in <code style="font-size: 0.78rem; color: var(--text-tertiary);">app/services/signposting_library.py</code> and ship via PR.
+    </p>
+    <p style="font-size: 0.78rem; color: var(--text-tertiary); line-height: 1.6; margin: 0 0 24px;">
+        {{ resources | length }} resources. Categories: {{ categories | join(", ") }}.
+    </p>
+
+    <div style="overflow-x: auto;">
+        <table style="width: 100%; border-collapse: collapse; font-size: 0.85rem; color: var(--text-primary);">
+            <thead>
+                <tr style="text-align: left; border-bottom: 1px solid var(--card-border);">
+                    <th style="padding: 10px 8px; font-weight: 500; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.06em; font-size: 0.7rem;">Name</th>
+                    <th style="padding: 10px 8px; font-weight: 500; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.06em; font-size: 0.7rem;">Description</th>
+                    <th style="padding: 10px 8px; font-weight: 500; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.06em; font-size: 0.7rem;">Categories</th>
+                    <th style="padding: 10px 8px; font-weight: 500; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.06em; font-size: 0.7rem;">Phone</th>
+                    <th style="padding: 10px 8px; font-weight: 500; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.06em; font-size: 0.7rem;">Regulator</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for resource in resources %}
+                <tr style="border-bottom: 0.5px solid var(--glass-border-subtle);">
+                    <td style="padding: 12px 8px; vertical-align: top;">
+                        <a href="{{ resource.url }}" target="_blank" rel="noopener noreferrer"
+                           style="color: var(--text-primary); text-decoration: underline; text-underline-offset: 2px;">{{ resource.name }}</a>
+                        <div style="font-size: 0.72rem; color: var(--text-tertiary); margin-top: 2px;">{{ resource.id }}</div>
+                    </td>
+                    <td style="padding: 12px 8px; vertical-align: top; color: var(--text-secondary);">{{ resource.description }}</td>
+                    <td style="padding: 12px 8px; vertical-align: top; font-size: 0.78rem; color: var(--text-secondary);">{{ resource.categories | join(", ") }}</td>
+                    <td style="padding: 12px 8px; vertical-align: top; font-size: 0.82rem; color: var(--text-secondary);">
+                        {% if resource.phone %}{{ resource.phone }}{% else %}<span style="color: var(--text-tertiary);">.</span>{% endif %}
+                        {% if resource.email %}<div style="font-size: 0.72rem; color: var(--text-tertiary);">{{ resource.email }}</div>{% endif %}
+                    </td>
+                    <td style="padding: 12px 8px; vertical-align: top; font-size: 0.78rem; color: var(--text-secondary);">{{ resource.regulated_by }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+</div>
+{% endblock %}
