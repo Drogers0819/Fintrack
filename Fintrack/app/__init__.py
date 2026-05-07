@@ -125,6 +125,7 @@ def create_app(config_class=None):
         from app.models.life_checkin import LifeCheckIn
         from app.models.checkin import CheckIn, CheckInEntry
         from app.models.crisis_event import CrisisEvent
+        from app.models.subscription_event import SubscriptionEvent
 
         db.create_all()
 
@@ -147,6 +148,8 @@ def create_app(config_class=None):
             ("checkin_reminder_3_sent", "ALTER TABLE users ADD COLUMN checkin_reminder_3_sent DATE"),
             ("survival_mode_active", "ALTER TABLE users ADD COLUMN survival_mode_active BOOLEAN DEFAULT FALSE NOT NULL"),
             ("survival_mode_started_at", "ALTER TABLE users ADD COLUMN survival_mode_started_at TIMESTAMP"),
+            ("subscription_paused_until", "ALTER TABLE users ADD COLUMN subscription_paused_until TIMESTAMP"),
+            ("last_pause_started_at", "ALTER TABLE users ADD COLUMN last_pause_started_at TIMESTAMP"),
         ]
 
         for col_name, sql in migrations:
@@ -204,6 +207,7 @@ def create_app(config_class=None):
                 ("checkin_entries", "checkin_id", "checkins", "CASCADE"),
                 ("checkin_entries", "goal_id", "goals", "SET NULL"),
                 ("crisis_events", "user_id", "users", "CASCADE"),
+                ("subscription_events", "user_id", "users", "CASCADE"),
             ]
 
             for table, column, ref_table, desired_rule in cascade_targets:

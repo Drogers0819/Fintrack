@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block title %}Confirm pause – Claro{% endblock %}
+
+{% block header_content %}
+<nav class="app-breadcrumb" aria-label="Breadcrumb">
+    <a href="{{ url_for('crisis.pause') }}">Pause</a>
+    <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>
+    <span>Confirm</span>
+</nav>
+{% endblock %}
+
+{% block content %}
+<div style="max-width: 560px;">
+
+    <div class="page-header" style="margin-bottom: 8px;">
+        <h1 style="font-family: 'Cormorant Garamond', Georgia, 'Times New Roman', serif; font-weight: 500;">Confirm pause</h1>
+    </div>
+    <p style="font-size: 0.92rem; color: var(--text-secondary); line-height: 1.65; margin: 0 0 24px;">
+        You're about to pause your Claro subscription for {{ duration_days }} days.
+    </p>
+
+    <div style="padding: 16px 18px; border-radius: 12px; background: var(--card-bg); border: 0.5px solid var(--card-border); margin-bottom: 24px;">
+        <div class="section-label" style="margin-top: 0; margin-bottom: 10px;">What happens</div>
+        <ul style="margin: 0; padding-left: 18px; font-size: 0.86rem; color: var(--text-secondary); line-height: 1.85;">
+            <li><strong style="color: var(--text-primary); font-weight: 500;">Today.</strong> Nothing changes. You keep full access.</li>
+            <li><strong style="color: var(--text-primary); font-weight: 500;">Your next billing date.</strong> You won't be charged.</li>
+            <li><strong style="color: var(--text-primary); font-weight: 500;">{{ resume_date.strftime("%d %B %Y") }}.</strong> Billing resumes automatically.</li>
+        </ul>
+        <p style="font-size: 0.78rem; color: var(--text-tertiary); line-height: 1.6; margin: 14px 0 0;">
+            You can end the pause early any time from settings.
+        </p>
+    </div>
+
+    <form method="POST" action="{{ url_for('crisis.pause_confirm') }}" data-loading="true">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input type="hidden" name="duration_days" value="{{ duration_days }}">
+        <div style="display: flex; flex-direction: column; gap: 10px;">
+            <button type="submit" class="btn-primary btn-full" data-loading-text="Pausing...">Confirm pause</button>
+            <a href="{{ url_for('crisis.pause') }}" style="text-align: center; font-size: 0.82rem; color: var(--text-tertiary); text-decoration: none;">Cancel</a>
+        </div>
+    </form>
+
+</div>
+{% endblock %}

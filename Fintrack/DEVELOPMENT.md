@@ -1222,4 +1222,117 @@ At 8 resources with the data changing rarely, a DB table is overhead with no pay
 
 ---
 
+## 2026-05-08 — Hardship subscription pause (Block 2 Task 2.6)
+
+### What I did
+
+Replaced the placeholder pause page with the real self-service hardship pause. A user in financial distress can now pause their Stripe subscription for 30 or 60 days, keep full access to Claro, and have billing auto-resume at the end of the pause via webhook. They can end the pause early from settings. They can pause once every six months. Every state change writes a SubscriptionEvent audit row.
+
+This is the highest-stakes piece of Block 2 — it touches Stripe state on accounts that are paying real money. The discipline I held to: every Stripe call wrapped, every state change written to an audit table, webhook idempotency enforced via a unique constraint on `stripe_event_id`, and every test path against a fully-mocked Stripe SDK so the suite never makes real API calls.
+
+The product principle: "the plan bends, never breaks" applied to billing. A user whose income drops doesn't have to choose between Claro and rent. Pause is the third option.
+
+- **`app/services/pause_service.py` — new module.** `is_pause_eligible`, `calculate_resume_date`, `initiate_pause`, `manually_resume_pause`, `handle_scheduled_resume_webhook`. Pure-Python where possible, route-agnostic. Every Stripe call wrapped in `try/except`; failures return error dicts rather than raising. Defensive logging uses `user.id`, never email.
+- **Eligibility gate.** Six rejection reasons in priority order: `no_subscription` (canceled or no `stripe_subscription_id`), `free_tier`, `trial`, `in_dunning` (status `past_due`), `already_paused`, `recently_paused` (last pause within 180 days). Eligible = active paid tier (`pro`, `pro_plus`, `joint`) AND `subscription_status = "active"` AND no current pause AND last pause >= 6 months ago.
+- **6-month rate limit.** `last_pause_started_at` is the anchor. The number is calibrated to discourage rolling pauses while leaving room for a second pause in genuine extended hardship. The "Need longer than 60 days?" mailto preserves the manual escape hatch from Task 2.4 — support handles edge cases case-by-case.
+- **Stripe API: `pause_collection`.** Pause via `stripe.Subscription.modify(sub_id, pause_collection={"behavior": "void", "resumes_at": <unix_ts>})`. Manual resume via `stripe.Subscription.modify(sub_id, pause_collection="")`. `behavior="void"` means invoices generated during the pause are voided rather than carried over — no surprise charges when billing resumes. `resumes_at` is computed as the end of the last day of the pause (23:59:59 UTC) so a midday submission gets the full duration the user picked, not something off by 8 hours.
+- **`SubscriptionEvent` audit model — new table.** One row per pause-related state change: `paused`, `resumed_scheduled`, `resumed_manual`, `pause_failed`. Captures `pause_duration_days`, `pause_started_at`, `pause_ends_at`, plus a `metadata_json` Text column for debugging context. `stripe_event_id` carries a unique constraint that doubles as the webhook idempotency anchor — duplicate deliveries hit `IntegrityError`, which the handler catches and treats as "already processed". `Text` (not JSON / JSONB) keeps the model boot identical between SQLite and Postgres.
+- **Webhook auto-resume detection.** Stripe fires `customer.subscription.updated` with `pause_collection` in `previous_attributes` when a paused sub auto-resumes. The existing dispatcher at `billing_routes._handle_event` previously dropped `previous_attributes` (it only forwarded `data.object`); I extended it to pass `previous_attributes` and `event.id` into `_handle_subscription_updated`, which then calls `handle_scheduled_resume_webhook(user, stripe_event_id)` when the transition is detected. Backwards-compatible: existing handlers receive the new keyword arguments via `*` and ignore them.
+- **Two-step confirmation flow.** GET `/crisis/pause` → form (or ineligible page); GET `/crisis/pause/confirm?duration_days=30` → confirmation interstitial; POST `/crisis/pause/confirm` → executes the pause via the service. The confirmation step exists because pause modifies billing — a deliberate moment of pause (no pun) before a state change that could matter to the user later. Both the GET and POST branches re-check eligibility so a stale tab can't be used to pause after eligibility expired.
+- **Templates.** `crisis/pause.html` rewritten from the placeholder to the real form (kept the "Sometimes life needs space." heading from Task 2.4 — right tone anyway). New `crisis/pause_confirm.html`, `crisis/pause_success.html`, `crisis/pause_ineligible.html`. The ineligible template branches on the rejection reason: trial users get trial-specific copy, dunning users get a billing-portal CTA, recently-paused users get the next-available date, no-subscription / catchall users get a simple message. All variants include the universal "Email us" fallback and the signposting partial from Task 2.7 below the main copy. No em-dashes anywhere.
+- **Settings section.** A new "Subscription paused" collapsible section in `settings.html` (matching the survival-mode toggle pattern from Task 2.5) renders only when `current_user.subscription_paused_until` is set. Shows the resume date and a "Resume billing now" form button posting to `/settings/subscription/resume`.
+
+### Critical compatibility statement
+
+The existing Stripe webhook dispatcher and four pre-existing handlers (`checkout.session.completed`, `customer.subscription.deleted`, `invoice.paid`, `invoice.payment_failed`) work unchanged. I extended `_handle_subscription_updated` to accept two new keyword arguments (`previous_attributes`, `stripe_event_id`); the dispatcher passes them, but their absence on a hand-call would just leave the auto-resume path inert. The Task 2.4 `POST /crisis/pause` route — fire-and-forget tracker for support-mailto clicks — is preserved exactly. The `test_crisis_flow.py::TestCrisisPauseRoute::test_get_renders_signposting` test passes after a small ineligible-template tweak so the universal "Email us" line is on every branch.
+
+### Schema changes
+
+| Table | Column | Type | Notes |
+|-------|--------|------|-------|
+| `users` | `subscription_paused_until` | `TIMESTAMP` | Nullable; cleared by webhook auto-resume or manual resume |
+| `users` | `last_pause_started_at` | `TIMESTAMP` | Nullable; anchors the 6-month rate limit; preserved across resumes |
+| `subscription_events` (new) | `id`, `user_id`, `event_type`, `stripe_subscription_id`, `stripe_event_id` (unique), `pause_duration_days`, `pause_started_at`, `pause_ends_at`, `metadata_json`, `created_at` | mixed | New audit table; FK cascade on user_id (Postgres) + ORM cascade (SQLite) |
+
+User columns added via the idempotent `ALTER` block. New table created via `db.create_all()`. FK cascade row added to the existing Postgres migration list.
+
+### New routes
+
+| Method | Path | Auth | Purpose |
+|--------|------|------|---------|
+| `GET` | `/crisis/pause` | login | Form (eligible) or ineligible page |
+| `POST` | `/crisis/pause` | login | (existing — fire-and-forget pause-requested tracker for mailto clicks) |
+| `GET` | `/crisis/pause/confirm` | login | Confirmation interstitial; reads `duration_days` from query string |
+| `POST` | `/crisis/pause/confirm` | login | Executes the pause via `initiate_pause` |
+| `POST` | `/settings/subscription/resume` | login | Manual early end of an active pause |
+
+### Webhook handler logic
+
+`customer.subscription.updated` now reads `previous_attributes` from the event payload. When `pause_collection` was previously set and is now None on the subscription object, the dispatcher calls `handle_scheduled_resume_webhook(user, event.id)`. The service is idempotent: a duplicate delivery hits the `stripe_event_id` unique constraint, the `IntegrityError` is caught, and the handler returns False without re-mutating state.
+
+### Events instrumented
+
+| Event | Where it fires | Properties |
+|-------|----------------|------------|
+| `subscription_paused` | `initiate_pause` after Stripe success | `duration_days`, `resumes_at` |
+| `subscription_resumed` | `handle_scheduled_resume_webhook` (auto) and `manually_resume_pause` (manual) | `reason` (`scheduled` or `manual`) |
+| `subscription_pause_failed` | Route handler when `initiate_pause` returns success=False | `duration_days`, `error` |
+| `crisis_pause_viewed` | (existing event, new properties) | adds `eligible` (bool), `reason` (rejection reason or null) |
+
+### Idempotency review
+
+Three layers:
+
+1. **Webhook**: `stripe_event_id` unique constraint on `subscription_events`. Duplicate Stripe deliveries hit `IntegrityError`; the handler catches it and returns False without mutating user state.
+2. **Pause initiation**: the eligibility gate rejects an `already_paused` user (`subscription_paused_until is not None`). A double-clicked pause form on a paused account fails the second eligibility check before ever calling Stripe.
+3. **Manual resume**: returns `not_paused` error early when `subscription_paused_until is None`, so a double-clicked resume button on an already-resumed account is a no-op.
+
+### Stripe test mode confirmation
+
+All testing was against the mocked Stripe SDK — `patch("stripe.Subscription.modify", ...)` and `patch("stripe.Webhook.construct_event", ...)` (where webhook signature verification matters). No code path makes real Stripe API calls in the test suite. The local development server uses whatever `STRIPE_SECRET_KEY` is in `.env` — `sk_test_*` for dev work. **Live mode (`sk_live_*`) has not been touched by this code yet.** Daniel's first verification step against live Stripe state is a deliberate manual run before launch; this commit does not contact live Stripe.
+
+### Manual verification still needed (for Daniel — Stripe test mode only)
+
+1. **Test mode confirmation.** In Stripe Dashboard, ensure you're viewing test mode (toggle top-right). Confirm `STRIPE_SECRET_KEY` in your local `.env` starts with `sk_test_`. Do NOT run any of the steps below against `sk_live_*`.
+2. **Active subscription setup.** In Stripe test mode, create a test customer and subscription using a test card (e.g. `4242 4242 4242 4242`). Confirm the user record in the local DB has `stripe_customer_id`, `stripe_subscription_id`, `subscription_status="active"`, `subscription_tier` in `{pro, pro_plus, joint}`.
+3. **Pause form renders.** Visit `/crisis/pause`. Confirm the form shows with two duration radios (30 / 60). Confirm Samaritans / Mind / StepChange render in the signposting section. Confirm the "Need longer than 60 days?" mailto is present.
+4. **Walk the confirmation flow.** Pick 30 days, submit. Confirm you land on `/crisis/pause/confirm?duration_days=30`. Confirm the page shows the date 30 days out. Click "Confirm pause". Confirm you land on `pause_success.html` with the resume date.
+5. **Stripe state.** Open Stripe Dashboard → the test subscription. Confirm it now has `pause_collection.behavior = "void"` and `pause_collection.resumes_at` matches the resume date you picked.
+6. **DB audit row.** `SELECT * FROM subscription_events WHERE user_id = <test_user>;` should show one row with `event_type="paused"`, `pause_duration_days=30`, `pause_started_at` and `pause_ends_at` populated.
+7. **PostHog.** Confirm `subscription_paused` fired with `duration_days: 30` and an ISO `resumes_at`.
+8. **Auto-resume webhook.** In Stripe Dashboard, edit the subscription's `resumes_at` to a past timestamp (or use the Dashboard's "test webhook delivery" tooling). Replay the resulting `customer.subscription.updated` event. Confirm: a `resumed_scheduled` row exists in `subscription_events` with the matching `stripe_event_id`, `subscription_paused_until` is NULL on the user, and PostHog shows `subscription_resumed` with `reason: "scheduled"`.
+9. **Idempotency test.** Replay the same webhook delivery a second time. Confirm: still only one `resumed_scheduled` row in the DB (the `stripe_event_id` unique constraint did its job), no second `subscription_resumed` event fires in PostHog.
+10. **Manual resume.** Re-pause the test account, then visit `/settings`. Confirm "Subscription paused" section renders with the resume date. Click "Resume billing now". Confirm: `subscription_paused_until` clears, a `resumed_manual` row lands in `subscription_events`, the Stripe subscription's `pause_collection` is back to None, PostHog fires `subscription_resumed` with `reason: "manual"`.
+11. **6-month rate limit.** Immediately try to pause again. Confirm `/crisis/pause` renders the `recently_paused` ineligible page with the next-available date computed from `last_pause_started_at + 180 days`.
+12. **Trial / dunning ineligibility.** Toggle the test account into trial state and dunning state separately and confirm each ineligible variant renders the appropriate copy and does NOT show the form.
+
+### Tests
+
+36 new tests in `tests/test_subscription_pause.py`:
+- Eligibility (8): active eligible, trial, free, canceled, recently paused, paused 7 months ago eligible, in dunning, currently paused.
+- Initiation (7): 30-day correct date, 60-day correct date, invalid duration rejected, audit row written, Stripe failure path (no `paused` row, `pause_failed` row, user state untouched), `last_pause_started_at` set, ineligible user rejected without calling Stripe.
+- Manual resume (4): clears `subscription_paused_until`, writes `resumed_manual` audit row, returns `not_paused` for unpaused user, Stripe failure preserves paused state.
+- Webhook (6): direct `handle_scheduled_resume_webhook` clears state and writes audit, duplicate delivery is idempotent (one row only), already-resumed user records audit but doesn't re-mutate, dispatcher detects `pause_collection` clearing, dispatcher ignores non-pause updates, dispatcher handles unknown user gracefully.
+- Routes (11): eligible form renders with mailto, ineligible trial copy, ineligible dunning copy, confirm GET renders, confirm GET with invalid duration redirects, confirm POST initiates pause and renders success, confirm POST handles Stripe failure, settings resume button clears pause, all routes require login, settings shows pause section when paused, settings omits section when not paused.
+
+Suite count: **690 passing** (653 deterministic baseline + 36 new + 1 — `test_anomaly` calendar flake currently green; on other dates expect 689). One existing test (`test_crisis_flow.py::TestCrisisPauseRoute::test_get_renders_signposting`) needed the universal-mailto line added to the ineligible template to keep passing — that test's user has no Stripe subscription so it now lands on the ineligible page; the original placeholder always rendered the mailto, and we preserved that contract.
+
+### What's deliberately NOT done
+
+- **Pause-end emails.** No notification when a pause is approaching its end ("your subscription resumes in 3 days"). Deferred to Block 3's email lifecycle work.
+- **Welcome-back email.** No email when the pause auto-resumes either. Same deferral.
+- **Partial refunds.** The pause starts from the next billing cycle, not retroactively. A user who pauses 5 days into a 30-day cycle still pays for that month. We don't refund the unused portion. This is the standard Stripe `pause_collection` shape and aligns with how most SaaS handles pauses; if real users push back, revisit.
+- **Per-tier pause logic.** A user on Coach pauses the full subscription. There's no "pause Coach but keep Plan" mechanic. Out of scope; would require add-on architecture that doesn't exist.
+- **Auto-deactivation when income recovers.** Survival mode (Task 2.5) and the pause are independent flags. A user could be on survival mode AND have an active pause. We don't link them automatically. Manual transitions only for now.
+
+### Deviations from the prompt
+
+- **Stripe ineligibility — `already_paused` reason added.** The prompt listed `no_subscription`, `trial`, `free_tier`, `recently_paused`, `in_dunning`. I added `already_paused` (when `subscription_paused_until` is in the future) because without it, a user could land on the form via a stale tab and double-pause. The ineligible template handles this branch with copy that points them at settings.
+- **`free_tier` and `no_subscription` collapse to `no_subscription` in the priority order.** A user with `tier="free"` and no `stripe_subscription_id` hits `no_subscription` first because the explicit subscription-ID check runs before the tier check. The eligibility test for the free-tier case asserts `reason in ("no_subscription", "free_tier")` to accept either ordering — I chose to surface the most informative reason first, and a free-tier user without a Stripe subscription has nothing to pause regardless.
+- **Two-step pause flow uses GET → POST.** Prompt described a confirmation page; my implementation uses a GET form on the pause page that submits via GET to the confirmation page (with `duration_days` in the query string), then a POST form on the confirmation page that executes. Cleaner than carrying the duration through hidden POST fields with no state mutation in between.
+- **POST `/crisis/pause` from Task 2.4 preserved.** The fire-and-forget mailto-click tracker that writes `pause_requested` `CrisisEvent` rows still exists. The new mailto links in the rewritten templates point to the same endpoint. The existing test (`test_post_creates_pause_event`) continues to pass.
+- **`metadata_json` rather than `metadata`.** SQLAlchemy's declarative base reserves `metadata` as an attribute; `metadata_json` is the prompt-specified name and avoids the collision.
+
+---
+
 *This journal is part of the FinTrack project. It documents genuine learning, not polished retrospection. Mistakes, confusion, and wrong turns are included deliberately — they're where the real growth happened.*

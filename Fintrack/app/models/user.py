@@ -32,6 +32,8 @@ class User(db.Model, UserMixin):
     checkin_reminder_3_sent = db.Column(db.Date, nullable=True)
     survival_mode_active = db.Column(db.Boolean, default=False, nullable=False)
     survival_mode_started_at = db.Column(db.DateTime, nullable=True)
+    subscription_paused_until = db.Column(db.DateTime, nullable=True)
+    last_pause_started_at = db.Column(db.DateTime, nullable=True)
     employment_type = db.Column(db.String(30), default="full_time")
     factfind_completed = db.Column(db.Boolean, default=False)
     plan_wizard_complete = db.Column(db.Boolean, default=False)

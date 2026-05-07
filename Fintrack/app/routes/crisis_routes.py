@@ -211,19 +211,101 @@ def cost():
 @crisis_bp.route("/pause", methods=["GET", "POST"])
 @login_required
 def pause():
-    """GET renders the page; POST records the pause-requested event so
-    support has a row when the user emails. The mailto link in the
-    template is the actual handoff — there's no self-service pause yet
-    (Task 2.6)."""
+    """GET renders the self-service pause flow when eligible, an
+    explanatory ineligible page otherwise. POST is the fire-and-forget
+    tracker fired by the email-support mailto link — kept from Task
+    2.4 so support still gets a row when a user asks for a longer
+    pause via email."""
+    from app.services.pause_service import (
+        is_pause_eligible,
+        next_pause_available_date,
+    )
+
     if request.method == "POST":
         record_pause_request(current_user)
         track_event(current_user.id, "crisis_pause_requested", {})
         return ("", 204)
 
-    track_event(current_user.id, "crisis_pause_viewed", {})
+    eligible, reason = is_pause_eligible(current_user)
+    track_event(current_user.id, "crisis_pause_viewed", {
+        "eligible": eligible,
+        "reason": reason,
+    })
+
+    resources = get_resources_for_categories(["mental_health", "debt"])
+
+    if not eligible:
+        next_available = next_pause_available_date(current_user)
+        return render_template(
+            "crisis/pause_ineligible.html",
+            reason=reason,
+            next_available=next_available,
+            resources=resources,
+        )
+
     return render_template(
         "crisis/pause.html",
-        resources=get_resources_for_categories(["mental_health", "debt"]),
+        resources=resources,
+        allowed_durations=(30, 60),
+    )
+
+
+@crisis_bp.route("/pause/confirm", methods=["GET", "POST"])
+@login_required
+def pause_confirm():
+    """GET shows the confirmation interstitial; POST executes the
+    pause via the service. Both branches re-check eligibility so a
+    user can't pause via a stale tab after their state changed."""
+    from app.services.pause_service import (
+        ALLOWED_DURATIONS_DAYS,
+        calculate_resume_date,
+        initiate_pause,
+        is_pause_eligible,
+    )
+    from datetime import datetime as _dt
+
+    raw_duration = (
+        request.form.get("duration_days")
+        if request.method == "POST"
+        else request.args.get("duration_days")
+    )
+    try:
+        duration_days = int(raw_duration or 0)
+    except (TypeError, ValueError):
+        duration_days = 0
+
+    if duration_days not in ALLOWED_DURATIONS_DAYS:
+        flash("Pick how long you'd like to pause.", "error")
+        return redirect(url_for("crisis.pause"))
+
+    eligible, reason = is_pause_eligible(current_user)
+    if not eligible:
+        return redirect(url_for("crisis.pause"))
+
+    if request.method == "POST":
+        result = initiate_pause(current_user, duration_days)
+        if not result["success"]:
+            track_event(current_user.id, "subscription_pause_failed", {
+                "duration_days": duration_days,
+                "error": result.get("error"),
+            })
+            flash(
+                "We couldn't pause your subscription right now. Try again in a few minutes.",
+                "error",
+            )
+            return redirect(url_for("crisis.pause"))
+        return render_template(
+            "crisis/pause_success.html",
+            duration_days=duration_days,
+            resume_date=result["resume_date"],
+        )
+
+    # GET — render the confirmation page.
+    resume_date = calculate_resume_date(_dt.utcnow(), duration_days)
+    return render_template(
+        "crisis/pause_confirm.html",
+        duration_days=duration_days,
+        resume_date=resume_date,
     )
 
 

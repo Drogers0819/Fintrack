@@ -1762,6 +1762,22 @@ def deactivate_survival_mode_route():
     return redirect(url_for("pages.settings"))
 
 
+@page_bp.route("/settings/subscription/resume", methods=["POST"])
+@login_required
+def resume_subscription_route():
+    """Manual early end of a hardship pause from settings."""
+    from app.services.pause_service import manually_resume_pause
+
+    result = manually_resume_pause(current_user)
+    if result["success"]:
+        flash("Your subscription is back on. Billing resumes from your next cycle.", "success")
+    elif result.get("error") == "not_paused":
+        flash("Your subscription isn't paused.", "info")
+    else:
+        flash("We couldn't resume your subscription right now. Try again in a few minutes.", "error")
+    return redirect(url_for("pages.settings"))
+
+
 @page_bp.route("/settings/delete-account", methods=["GET", "POST"])
 @login_required
 def delete_account():

@@ -117,7 +117,13 @@ def _handle_event(event):
     if event_type == "checkout.session.completed":
         _handle_checkout_completed(data)
     elif event_type == "customer.subscription.updated":
-        _handle_subscription_updated(data)
+        # Subscription updates carry previous_attributes and the
+        # event id, both needed by the pause auto-resume detection.
+        _handle_subscription_updated(
+            data,
+            previous_attributes=event.get("data", {}).get("previous_attributes") or {},
+            stripe_event_id=event.get("id"),
+        )
     elif event_type == "customer.subscription.deleted":
         _handle_subscription_deleted(data)
     elif event_type == "invoice.paid":
@@ -194,11 +200,26 @@ def _handle_checkout_completed(session):
     })
 
 
-def _handle_subscription_updated(subscription):
+def _handle_subscription_updated(subscription, *, previous_attributes=None, stripe_event_id=None):
+    previous_attributes = previous_attributes or {}
     customer_id = subscription.get("customer")
     user = _user_from_customer(customer_id)
     if not user:
         return
+
+    # Auto-resume detection: Stripe sends customer.subscription.updated
+    # with pause_collection in previous_attributes when a paused
+    # subscription auto-resumes at the resumes_at timestamp. The
+    # service is idempotent on stripe_event_id, so duplicate
+    # deliveries are no-ops.
+    was_paused = "pause_collection" in previous_attributes
+    is_now_paused = subscription.get("pause_collection") is not None
+    if was_paused and not is_now_paused:
+        try:
+            from app.services.pause_service import handle_scheduled_resume_webhook
+            handle_scheduled_resume_webhook(user, stripe_event_id or "")
+        except Exception:  # noqa: BLE001
+            logger.exception("Pause resume webhook handler failed for user %s", user.id)
 
     price_id = _first_price_id(subscription)
     if price_id:

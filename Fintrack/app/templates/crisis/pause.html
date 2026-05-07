@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}Need to pause – Claro{% endblock %}
+{% block title %}Pause your subscription – Claro{% endblock %}
 
 {% block header_content %}
 <nav class="app-breadcrumb" aria-label="Breadcrumb">
@@ -19,21 +19,48 @@
         We get it.
     </p>
     <p style="font-size: 0.88rem; color: var(--text-secondary); line-height: 1.7; margin: 0 0 24px;">
-        We're building a hardship pause that lets you suspend your subscription for up to 60 days while keeping your plan and data intact. We're not quite there yet, so for now we'll work it out with you one-to-one.
+        Pause your Claro subscription for up to 60 days. You'll keep full access to your plan, your data, your goals. We just stop charging you until you're ready.
     </p>
 
-    <div style="padding: 16px 18px; border-radius: 12px; background: var(--card-bg); border: 0.5px solid var(--card-border); margin-bottom: 18px;">
-        <div class="section-label" style="margin-top: 0; margin-bottom: 8px;">What we can do right now</div>
-        <p style="font-size: 0.85rem; color: var(--text-secondary); line-height: 1.75; margin: 0 0 12px;">
-            Email us and we'll work something out with you on a case-by-case basis. Whatever you need, your plan and data stay where they are.
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% for category, message in messages %}
+        <div style="padding: 10px 14px; border-radius: 8px; margin-bottom: 16px; font-size: 0.85rem;
+                    {% if category == 'error' %}background: rgba(208, 75, 75, 0.08); color: var(--danger); border: 0.5px solid rgba(208, 75, 75, 0.2);{% else %}background: var(--card-bg); color: var(--text-secondary); border: 0.5px solid var(--card-border);{% endif %}">
+            {{ message }}
+        </div>
+        {% endfor %}
+    {% endwith %}
+
+    <form method="GET" action="{{ url_for('crisis.pause_confirm') }}" data-loading="true">
+        <div style="padding: 14px 0; border-bottom: 0.5px solid var(--glass-border-subtle);">
+            <div class="section-label" style="margin-top: 0; margin-bottom: 10px;">How long?</div>
+            <div style="display: flex; flex-direction: column; gap: 10px;">
+                {% for days in allowed_durations %}
+                <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; font-size: 0.9rem; color: var(--text-primary);">
+                    <input type="radio" name="duration_days" value="{{ days }}" {% if loop.first %}required{% endif %}>
+                    {{ days }} days
+                </label>
+                {% endfor %}
+            </div>
+        </div>
+
+        <p style="font-size: 0.78rem; color: var(--text-tertiary); line-height: 1.6; margin: 14px 0 24px;">
+            When pause ends, you'll be charged your normal monthly rate again. No surprise charges.
         </p>
+
+        <div style="display: flex; flex-direction: column; gap: 10px;">
+            <button type="submit" class="btn-primary btn-full" data-loading-text="Loading...">Pause my subscription</button>
+            <a href="{{ url_for('pages.overview') }}" style="text-align: center; font-size: 0.82rem; color: var(--text-tertiary); text-decoration: none;">Back to my plan</a>
+        </div>
+    </form>
+
+    <p style="font-size: 0.78rem; color: var(--text-tertiary); line-height: 1.6; margin: 24px 0 24px;">
+        Need longer than 60 days? Email
         <a id="emailSupportLink"
-           href="mailto:hello@getclaro.co.uk?subject=I%20need%20to%20pause%20my%20Claro%20account"
-           class="btn-primary btn-full"
-           style="text-decoration: none; text-align: center; display: inline-block;">
-            Email support
-        </a>
-    </div>
+           href="mailto:hello@getclaro.co.uk?subject=I%20need%20to%20pause%20my%20Claro%20account%20for%20longer"
+           style="color: var(--text-secondary); text-decoration: underline; text-underline-offset: 2px;">hello@getclaro.co.uk</a>
+        and we'll work something out.
+    </p>
 
     <div style="padding: 16px 18px; border-radius: 12px; background: var(--card-bg); border: 0.5px solid var(--card-border); margin-bottom: 24px;">
         <div class="section-label" style="margin-top: 0; margin-bottom: 8px;">If you're going through something hard</div>
@@ -41,14 +68,6 @@
             Free help is available, any time:
         </p>
         {% include "_partials/signposting_list.html" %}
-    </div>
-
-    <p style="font-size: 0.9rem; color: var(--text-secondary); line-height: 1.7; margin: 0 0 24px;">
-        Whatever you decide, your plan is still here whenever you come back.
-    </p>
-
-    <div style="display: flex; flex-direction: column; gap: 10px;">
-        <a href="{{ url_for('pages.overview') }}" style="text-align: center; font-size: 0.82rem; color: var(--text-tertiary); text-decoration: none;">Take me back to my plan</a>
     </div>
 
 </div>

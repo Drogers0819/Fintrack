@@ -6,3 +6,4 @@ from app.models.budget import Budget
 from app.models.chat import ChatMessage
 from app.models.life_checkin import LifeCheckIn
 from app.models.crisis_event import CrisisEvent
+from app.models.subscription_event import SubscriptionEvent

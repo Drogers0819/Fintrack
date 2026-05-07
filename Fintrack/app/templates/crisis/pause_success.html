@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block title %}Subscription paused – Claro{% endblock %}
+
+{% block header_content %}<span class="app-header-title">Paused</span>{% endblock %}
+
+{% block content %}
+<div style="max-width: 560px;">
+
+    <div class="page-header" style="margin-bottom: 8px;">
+        <h1 style="font-family: 'Cormorant Garamond', Georgia, 'Times New Roman', serif; font-weight: 500;">You're paused.</h1>
+    </div>
+    <p style="font-size: 0.95rem; color: var(--text-primary); line-height: 1.65; margin: 0 0 14px;">
+        Until {{ resume_date.strftime("%d %B %Y") }}. We'll see you then.
+    </p>
+    <p style="font-size: 0.88rem; color: var(--text-secondary); line-height: 1.7; margin: 0 0 24px;">
+        Your plan, goals, and data stay where they are. You'll keep full access during the pause. Billing resumes automatically on the resume date, and you can end the pause early from settings any time.
+    </p>
+
+    <div style="display: flex; flex-direction: column; gap: 10px;">
+        <a href="{{ url_for('pages.overview') }}" class="btn-primary btn-full" style="text-decoration: none; text-align: center;">Take me to my plan</a>
+        <a href="{{ url_for('pages.settings') }}" style="text-align: center; font-size: 0.82rem; color: var(--text-tertiary); text-decoration: none;">Manage from settings</a>
+    </div>
+
+</div>
+{% endblock %}

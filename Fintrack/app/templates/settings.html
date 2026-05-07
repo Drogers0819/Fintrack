@@ -91,6 +91,31 @@
     </div>
 </div>
 
+{% if current_user.subscription_paused_until %}
+<!-- Subscription pause — only renders while a pause is active -->
+<div style="padding: 16px 0; border-top: 0.5px solid var(--glass-border);">
+    <button class="settings-toggle" onclick="toggleSettings('subscription-pause')" aria-expanded="true">
+        <div style="display: flex; align-items: center; gap: 10px;">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="opacity: 0.5;"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>
+            <span style="font-size: 0.9rem; color: var(--text-primary);">Subscription paused</span>
+        </div>
+        <svg id="chevron-subscription-pause" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="opacity: 0.4; transition: transform 0.2s; transform: rotate(90deg);"><path d="M9 18l6-6-6-6"/></svg>
+    </button>
+    <div id="panel-subscription-pause" style="padding-top: 16px; border-top: 0.5px solid var(--glass-border); margin-top: 12px;">
+        <p style="font-size: 0.82rem; color: var(--text-secondary); line-height: 1.7; margin: 0 0 6px;">
+            Your subscription is paused. Billing resumes automatically on {{ current_user.subscription_paused_until.strftime("%d %B %Y") }}.
+        </p>
+        <p style="font-size: 0.72rem; color: var(--text-tertiary); margin: 0 0 14px;">
+            You keep full access during the pause. End the pause early and billing resumes from your next cycle.
+        </p>
+        <form method="POST" action="{{ url_for('pages.resume_subscription_route') }}" style="margin: 0;">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button type="submit" class="btn-primary btn-sm" data-loading-text="Resuming...">Resume billing now</button>
+        </form>
+    </div>
+</div>
+{% endif %}
+
 <!-- App theme — primary mobile shell variant -->
 <div style="padding: 16px 0; border-top: 0.5px solid var(--glass-border);">
     <button class="settings-toggle" onclick="toggleSettings('app-theme')" aria-expanded="true">
@@ -412,7 +437,7 @@
 
 <script>
 function toggleSettings(key) {
-    var keys = ['profile', 'survival-mode', 'app-theme', 'appearance', 'billing', 'account'];
+    var keys = ['profile', 'survival-mode', 'subscription-pause', 'app-theme', 'appearance', 'billing', 'account'];
     keys.forEach(function(k) {
         var p = document.getElementById('panel-' + k);
         var c = document.getElementById('chevron-' + k);

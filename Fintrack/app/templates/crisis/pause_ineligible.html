@@ -1,0 +1,93 @@
+{% extends "base.html" %}
+{% block title %}Pause – Claro{% endblock %}
+
+{% block header_content %}
+<nav class="app-breadcrumb" aria-label="Breadcrumb">
+    <a href="{{ url_for('crisis.index') }}">Something's changed</a>
+    <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>
+    <span>Pause</span>
+</nav>
+{% endblock %}
+
+{% block content %}
+<div style="max-width: 560px;">
+
+    <div class="page-header" style="margin-bottom: 8px;">
+        <h1 style="font-family: 'Cormorant Garamond', Georgia, 'Times New Roman', serif; font-weight: 500;">Sometimes life needs space.</h1>
+    </div>
+
+    {% if reason == "no_subscription" or reason == "free_tier" %}
+    <p style="font-size: 0.92rem; color: var(--text-secondary); line-height: 1.7; margin: 0 0 24px;">
+        You're not currently on a paid plan, so there's nothing to pause. Whatever's going on, your data stays where it is and you can pick the plan back up whenever you're ready.
+    </p>
+    {% elif reason == "trial" %}
+    <p style="font-size: 0.92rem; color: var(--text-secondary); line-height: 1.7; margin: 0 0 24px;">
+        You're on a free trial right now, so there's nothing to pause. The trial ends on its own; you only start paying if you decide to. If life's changed in the meantime and you'd rather not move to paid, you can simply not enter a card.
+    </p>
+    {% elif reason == "in_dunning" %}
+    <p style="font-size: 0.92rem; color: var(--text-secondary); line-height: 1.7; margin: 0 0 14px;">
+        Your subscription has a payment issue we should sort first. Once that's resolved, we can talk about pausing if you still need to.
+    </p>
+    <div style="display: flex; flex-direction: column; gap: 10px; margin: 0 0 24px;">
+        <a href="{{ url_for('billing.billing_portal') }}" class="btn-primary btn-full" style="text-decoration: none; text-align: center;">Open billing settings</a>
+    </div>
+    {% elif reason == "already_paused" %}
+    <p style="font-size: 0.92rem; color: var(--text-secondary); line-height: 1.7; margin: 0 0 14px;">
+        Your subscription is already paused. You can manage it from settings.
+    </p>
+    <div style="display: flex; flex-direction: column; gap: 10px; margin: 0 0 24px;">
+        <a href="{{ url_for('pages.settings') }}" class="btn-primary btn-full" style="text-decoration: none; text-align: center;">Open settings</a>
+    </div>
+    {% elif reason == "recently_paused" %}
+    <p style="font-size: 0.92rem; color: var(--text-secondary); line-height: 1.7; margin: 0 0 14px;">
+        You paused recently. Pause is available again
+        {% if next_available %}from {{ next_available.strftime("%d %B %Y") }}{% else %}in a few months{% endif %}.
+    </p>
+    {% else %}
+    <p style="font-size: 0.92rem; color: var(--text-secondary); line-height: 1.7; margin: 0 0 24px;">
+        Pause isn't available on your account right now.
+    </p>
+    {% endif %}
+
+    <p style="font-size: 0.78rem; color: var(--text-tertiary); line-height: 1.6; margin: 0 0 24px;">
+        Need to talk it through? Email
+        <a id="emailSupportLink"
+           href="mailto:hello@getclaro.co.uk?subject=My%20Claro%20account"
+           style="color: var(--text-secondary); text-decoration: underline; text-underline-offset: 2px;">hello@getclaro.co.uk</a>
+        and we'll work something out.
+    </p>
+
+    <div style="padding: 16px 18px; border-radius: 12px; background: var(--card-bg); border: 0.5px solid var(--card-border); margin-bottom: 24px;">
+        <div class="section-label" style="margin-top: 0; margin-bottom: 8px;">If you're going through something hard</div>
+        <p style="font-size: 0.82rem; color: var(--text-secondary); line-height: 1.7; margin: 0 0 10px;">
+            Free help is available, any time:
+        </p>
+        {% include "_partials/signposting_list.html" %}
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 10px;">
+        <a href="{{ url_for('pages.overview') }}" style="text-align: center; font-size: 0.82rem; color: var(--text-tertiary); text-decoration: none;">Take me back to my plan</a>
+    </div>
+
+</div>
+
+<script>
+(function () {
+    var link = document.getElementById('emailSupportLink');
+    if (!link) return;
+    link.addEventListener('click', function () {
+        try {
+            fetch('{{ url_for("crisis.pause") }}', {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': '{{ csrf_token() }}',
+                    'Content-Type': 'application/json',
+                },
+                body: '{}',
+                keepalive: true,
+            });
+        } catch (e) {}
+    });
+})();
+</script>
+{% endblock %}
