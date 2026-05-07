@@ -964,11 +964,21 @@ def _checkin_view_state(today, existing, edit_mode=False):
 @login_required
 def checkin():
     from app.models.checkin import CheckIn, CheckInEntry
+    from app.services.checkin_service import (
+        get_forgiveness_target,
+        is_within_retroactive_window,
+    )
 
     today = date.today()
 
-    # Determine which month to check in for (previous month)
-    if today.month == 1:
+    # Forgiveness gate runs first. If the user qualifies, both GET and
+    # POST target the missed month, not the current cycle's month. If
+    # not, fall through to the existing previous-month default.
+    forgiveness_target = get_forgiveness_target(current_user, today)
+
+    if forgiveness_target is not None:
+        checkin_year, checkin_month = forgiveness_target
+    elif today.month == 1:
         checkin_month = 12
         checkin_year = today.year - 1
     else:
@@ -1018,6 +1028,32 @@ def checkin():
                 pot["planned"] = actual_map[pot["name"]]
 
     if request.method == "POST":
+        # Forgiveness POSTs include hidden target_year/target_month and
+        # must (a) match the freshly-computed forgiveness target — never
+        # trust the form values — and (b) sit inside the 60-day window.
+        # If validation fails we send the user back to /check-in where
+        # they'll either get the standard form (now in window) or the
+        # scheduled state.
+        posted_year = request.form.get("target_year")
+        posted_month = request.form.get("target_month")
+        is_late_submission = bool(posted_year and posted_month)
+
+        if is_late_submission:
+            try:
+                posted_year_int = int(posted_year)
+                posted_month_int = int(posted_month)
+            except (TypeError, ValueError):
+                flash("That submission isn't valid. Try again from the check-in page.", "error")
+                return redirect(url_for("pages.checkin"))
+
+            if forgiveness_target != (posted_year_int, posted_month_int):
+                flash("That check-in is no longer pending. We've taken you back to your current state.", "info")
+                return redirect(url_for("pages.checkin"))
+
+            if not is_within_retroactive_window(posted_year_int, posted_month_int, today):
+                flash("That check-in is outside the catch-up window. We've taken you back to your current state.", "info")
+                return redirect(url_for("pages.checkin"))
+
         # Delete existing record if re-submitting (edit mode)
         if existing:
             from app.models.checkin import CheckInEntry as CIEntry
@@ -1099,7 +1135,13 @@ def checkin():
             "month": checkin_month,
             "year": checkin_year,
             "pots_count": len(pots_for_checkin),
+            "was_late": is_late_submission,
         })
+
+        if is_late_submission:
+            flash("You're back in sync. We'll see you on your next pay day.", "success")
+            return redirect(url_for("pages.overview"))
+
         flash("Check-in complete. Your plan has been updated.", "success")
         return redirect(url_for("pages.checkin"))
 
@@ -1109,13 +1151,23 @@ def checkin():
     ).order_by(CheckIn.year.desc(), CheckIn.month.desc()).limit(6).all()
 
     view_state = _checkin_view_state(today, existing, edit_mode=edit_mode)
+    # Forgiveness takes precedence over the 'scheduled' state — the user
+    # qualifies because they missed the cycle, so we surface the form
+    # rather than telling them their next check-in is weeks away.
+    if forgiveness_target is not None and view_state["state"] == "scheduled":
+        view_state = {"state": "forgiveness"}
+        track_event(current_user.id, "forgiveness_state_shown", {
+            "target_year": checkin_year,
+            "target_month": checkin_month,
+        })
+
     source = request.args.get("source")
-    if view_state["state"] == "form":
+    if view_state["state"] in ("form", "forgiveness"):
         track_event(current_user.id, "checkin_started", {
             "month": checkin_month,
             "year": checkin_year,
             "edit_mode": edit_mode,
-            "source": source if source in ("payday",) else "direct",
+            "source": source if source in ("payday", "reminder") else "direct",
         })
 
     next_checkin_str = None
@@ -1144,6 +1196,9 @@ def checkin():
         next_checkin_str=next_checkin_str,
         next_checkin_days=next_checkin_days,
         completed_at_str=completed_at_str,
+        forgiveness_target_year=checkin_year if forgiveness_target else None,
+        forgiveness_target_month=checkin_month if forgiveness_target else None,
+        forgiveness_target_label=checkin_month_name if forgiveness_target else None,
     )
 
 # ─── SURPLUS REVEAL (Onboarding) ─────────────────────────────

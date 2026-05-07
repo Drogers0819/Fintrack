@@ -860,4 +860,70 @@ Adding to the running list:
 
 ---
 
+## 2026-05-07 — Forgiveness flow for missed check-ins (Block 2 Task 2.3)
+
+### What I did
+
+Built the fourth state of the check-in page: forgiveness. When a user gets nudged by the reminder ladder (Task 2.2) and finally lands on `/check-in` outside the standard last-3-days window, they no longer see "Your next check-in is on [date]" — they see a calm header acknowledging the missed window once, then the standard form pre-populated for the missed month with the submit button rephrased to "Catch up my plan". Submitting writes the CheckIn against the missed month, fires `checkin_completed` with `was_late: True`, and redirects to `/overview` with "You're back in sync. We'll see you on your next pay day."
+
+The product principle this operationalises: **the plan bends, never breaks**. A late check-in is data arriving when it arrives, not a failure. The UI absorbs that without judgement and gets out of the way.
+
+- **`get_forgiveness_target(user, today)` in a new `app/services/checkin_service.py`.** Pure function, returns `(year, month)` or `None`. Three gates, applied in order:
+  1. Outside the last-3-days standard window (mirrors `_checkin_view_state` window math so the two stay in lockstep).
+  2. At least one of `checkin_reminder_{1,2,3}_sent` is set — i.e. the user got nudged by the ladder. This keeps brand-new users and users still inside their first cycle out of the flow.
+  3. No `CheckIn` exists for the previous calendar month, AND either the most recent `CheckIn` is older than the previous month, OR the user has no `CheckIn` history at all and `payday_notification_last_sent` is at least 14 days old.
+- **Most-recent-month-only.** The function always returns `(prev_year, prev_month)` when forgiveness applies. A user who missed three months in a row sees forgiveness for last month only; older misses stay missed and the plan adapts forward from now. Deeper retroactive editing creates more cognitive load than retention payoff, and it would also conflict with how `Goal.current_amount` is mutated on submit (we'd be re-applying contributions out of order).
+- **`is_within_retroactive_window` defends against stale forms.** A user who left `/check-in` open across a cycle boundary and then submits the old form must not write a CheckIn for last cycle's month. 60-day cap; rejected on POST with a flash redirect to `/check-in` so the user lands on the current state.
+- **Form partial extraction.** The check-in form moved from inline in `checkin.html` into `app/templates/checkin/_form.html`. The form takes optional `submit_text`, `target_year`, `target_month` context vars — both the standard form state (default "Confirm check-in", no hidden inputs) and the forgiveness state ("Catch up my plan", with hidden `target_year`/`target_month`) include the same partial. Same form markup, same loading-text wiring, same CSRF token. This sets up Task 2.5 (survival mode) to reuse the partial again rather than copy-pasting markup a third time.
+- **Route changes in `page_routes.py`.**
+  - `get_forgiveness_target()` runs first; if it returns a target, both GET and POST swap the `(checkin_month, checkin_year)` to the missed month rather than the default `today.month - 1`.
+  - GET: when `_checkin_view_state` would return `'scheduled'` and forgiveness applies, we override to a new `'forgiveness'` view state and fire `forgiveness_state_shown` with `target_year` / `target_month`.
+  - POST: hidden `target_year` and `target_month` form fields trigger late-submission validation. We re-run `get_forgiveness_target` on submit and reject if the returned target doesn't match the posted values; we also reject any target outside `is_within_retroactive_window`. Trust the freshly-computed target, never the form values.
+  - `checkin_completed` now carries `was_late` (boolean). Late submissions redirect to `/overview` with the "back in sync" flash; on-time submissions keep the existing redirect to `/check-in` with the existing flash.
+  - Bonus fix while I was here: the `?source=` whitelist at the `checkin_started` track call now accepts `"reminder"` as well as `"payday"`. Task 2.2 added `?source=reminder` to the reminder-ladder CTAs but the route was still collapsing it to `"direct"` for PostHog. Now the funnel can attribute conversions through the reminder channel separately.
+- **TODO removal.** The TODO at `_checkin_view_state` ("Block 2 — forgiveness flow: a user who missed a check-in two or more months back is invisible here…") is now resolved by `get_forgiveness_target`. The TODO comment can come out in a follow-up cleanup; it's still descriptively accurate, so leaving it for now does no harm.
+
+### New events
+
+| Event | Where it fires | Properties |
+|-------|----------------|------------|
+| `forgiveness_state_shown` | `/check-in` GET when forgiveness state renders | `target_year`, `target_month` |
+| `checkin_completed` | (existing event, now with new property) | adds `was_late` (bool) |
+
+### Manual verification still needed (for Daniel)
+
+1. Set up a test account: `payday_notification_last_sent = today − 22 days`, `checkin_reminder_1_sent = today − 19 days`, no `CheckIn` rows for the previous month.
+2. Visit `/check-in` outside the standard window. Confirm the forgiveness header reads "You missed last month's check-in. That's fine." and the form below has the previous-month label, "Catch up my plan" submit button, and the standard pots pre-populated.
+3. Inspect the rendered HTML: hidden `target_year` and `target_month` should be set to the previous calendar month.
+4. Submit the form with the pre-populated values. Confirm the redirect lands on `/overview` with the "back in sync" flash and a `CheckIn` row exists for the previous month with the right entries.
+5. Hit `/overview` after submission and confirm the plan recalculates without errors and goal balances reflect the contributions just filed.
+6. Check PostHog: `forgiveness_state_shown` fired on the GET with `target_year` / `target_month`; `checkin_completed` fired on the POST with `was_late: true`.
+7. Sanity check: visit `/check-in` again. Should now show `"already filed"` for the previous month — forgiveness state should NOT re-render.
+8. Negative case: register a fresh account with no payday notification ever. Visit `/check-in` outside the window. Confirm the existing scheduled state ("Your next check-in is on…") still renders — forgiveness must not show for fresh users.
+
+### Tests
+
+22 new tests in `tests/test_forgiveness_flow.py`:
+- Detection (9): in-window returns None, no reminders ever returns None, brand-new user returns None, history-with-april-filed returns None, missed-april-with-reminder returns April, missed-april-no-history-payday-old returns April, missed-april-no-history-payday-recent returns None, multiple missed months returns only most recent, January wraparound (Dec previous-year).
+- Retroactive window (3): recent target accepted, beyond 60 days rejected, invalid month rejected.
+- Route rendering (4): GET renders forgiveness state and tracks event, event carries target props, GET without forgiveness renders scheduled state, in-window does not show forgiveness header.
+- Submission (6): writes CheckIn for target month with redirect to /overview, fires `checkin_completed` with `was_late: True`, on-time submission carries `was_late: False`, user no longer qualifies → reject + zero CheckIns written, target outside 60-day window → reject, garbage target values → reject.
+
+Suite count: **584 passing** (561 baseline + 22 new + 1 — the `test_anomaly` calendar-date-dependent flake happens to pass on today's date; on other dates it'll go back to 583).
+
+### What's deliberately NOT done
+
+- **No "edit a forgiveness CheckIn" path.** Once the user submits the late check-in, it's a normal `CheckIn` row. Re-edits go through the existing `?edit=1` flow exactly like any other CheckIn — no special handling. The forgiveness state is for the gap between "missed" and "filed", and ends the moment we have a row.
+- **No multi-month catch-up.** Confirmed in scope. Older misses stay missed; if a user has gaps spanning multiple cycles, they file the most recent one through forgiveness and the rest are absorbed by plan adaptation rather than retroactive editing.
+- **No special-case copy in the form partial for forgiveness.** The form looks identical between standard and forgiveness states except for the submit button text. The forgiveness header carries the framing; the form itself stays neutral. Adds zero per-field complexity.
+- **No notification preferences influence.** Per Task 2.1/2.2 deferral, every user with a payday anchor and reminders qualifies — gated only by the detection rules. The unsubscribe / notification preferences page (Block 3) will plumb a `notify_payday`-style flag into the reminder ladder, which by extension gates who can land here.
+
+### Deviations from the prompt
+
+- **Form extraction location.** Prompt said `app/templates/checkin/_form.html`. Done as specified — created the new `app/templates/checkin/` directory and the partial inside it. No deviation, just confirming.
+- **`view_state == "forgiveness"` branch placement.** Prompt template snippet showed `{% if view_state == "forgiveness" %}` as a top-level branch. I added it as `{% elif view_state == "forgiveness" %}` after the no-plan branch and before the `scheduled` branch, matching the existing chain in `checkin.html`. This is the natural shape — the no-plan branch must run first because forgiveness for a user without a plan would render an empty form.
+- **`forgiveness_target_label` template variable.** Added a small extra context var (the human-friendly month name like "April 2026") so the forgiveness header has a date label without the template having to do month-name lookup. Used as the small uppercase tag above the heading.
+
+---
+
 *This journal is part of the FinTrack project. It documents genuine learning, not polished retrospection. Mistakes, confusion, and wrong turns are included deliberately — they're where the real growth happened.*

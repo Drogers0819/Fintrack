@@ -1,0 +1,66 @@
+{# Standard check-in form. Used by:
+   - checkin.html form state (default `submit_text`: "Confirm check-in")
+   - checkin.html forgiveness state (`submit_text`: "Catch up my plan",
+     plus hidden target_year/target_month inputs)
+   - Future: Task 2.5 survival mode will reuse this same partial.
+
+   Required context:
+     pots, variable_income, current_monthly_income, checkin_month
+   Optional:
+     submit_text (default "Confirm check-in")
+     target_year, target_month (forgiveness state only — adds hidden inputs)
+#}
+{% set _submit_text = submit_text or "Confirm check-in" %}
+<form method="POST" action="{{ url_for('pages.checkin') }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    {% if target_year and target_month %}
+    <input type="hidden" name="target_year" value="{{ target_year }}">
+    <input type="hidden" name="target_month" value="{{ target_month }}">
+    {% endif %}
+
+    {% if variable_income %}
+    <div style="padding: 14px 0; border-bottom: 0.5px solid var(--glass-border-subtle);">
+        <div class="section-label" style="margin-top: 0; margin-bottom: 6px;">Income this month</div>
+        <div class="form-group" style="margin-bottom: 4px;">
+            <label class="form-label" for="actual_income">What was your take-home this month?</label>
+            <input type="number" id="actual_income" name="actual_income"
+                   class="form-input" step="0.01" min="0.01"
+                   value="{{ '{:.2f}'.format(current_monthly_income) if current_monthly_income else '' }}"
+                   placeholder="e.g. 1700.00">
+        </div>
+        <p style="font-size: 0.7rem; color: var(--text-tertiary); margin: 4px 0 0; line-height: 1.5;">Your plan will adjust based on this month's actual income.</p>
+    </div>
+    {% endif %}
+
+    {% for pot in pots %}
+    <div style="padding: 14px 0; {% if not loop.last %}border-bottom: 0.5px solid var(--glass-border-subtle);{% endif %}">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+            <div>
+                <span style="font-size: 0.9rem; color: var(--text-primary);">{{ pot.name | replace(' (must-hit)', '') | replace('Lifestyle & family', 'Lifestyle spending') | replace('Buffer', 'Safety net') }}</span>
+                {% if pot.paused %}
+                <span style="font-size: 0.6rem; padding: 1px 6px; border-radius: 4px; background: var(--glass-border-subtle); color: var(--text-tertiary); margin-left: 6px;">paused in plan</span>
+                {% endif %}
+                {% if pot.target %}
+                <span style="font-size: 0.7rem; color: var(--text-tertiary); margin-left: 6px;">£{{ "{:,.0f}".format(pot.current) }} of £{{ "{:,.0f}".format(pot.target) }}</span>
+                {% endif %}
+            </div>
+            <span style="font-size: 0.75rem; color: var(--text-tertiary);">Plan: £{{ "{:,.0f}".format(pot.planned) }}/mo</span>
+        </div>
+        <div class="form-group" style="margin-bottom: 0;">
+            <label class="form-label" for="actual_{{ pot.name | replace(' ', '_') }}">Amount saved (£)</label>
+            <input type="number" id="actual_{{ pot.name | replace(' ', '_') }}"
+                   name="actual_{{ pot.name | replace(' ', '_') }}"
+                   class="form-input" step="0.01" min="0"
+                   value="{{ '{:.2f}'.format(pot.planned) }}"
+                   placeholder="e.g. 250.00">
+        </div>
+    </div>
+    {% endfor %}
+
+    <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 20px;">
+        <button type="submit" class="btn-primary btn-full" data-loading-text="Saving your check-in...">{{ _submit_text }}</button>
+        {% if request.args.get('edit') != '1' %}
+        <a href="{{ url_for('pages.overview') }}" style="text-align: center; font-size: 0.82rem; color: var(--text-tertiary); text-decoration: none;">Cancel</a>
+        {% endif %}
+    </div>
+</form>
