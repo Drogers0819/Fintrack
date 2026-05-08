@@ -88,7 +88,7 @@
                     <span class="slim-goal-name" style="color:var(--text-primary);">{{ g.name | replace(' (must-hit)', '') }}</span>
                 </a>
                 {% if g.monthly_allocation %}
-                <span class="slim-goal-mo">£{{ "{:,.0f}".format(g.monthly_allocation) }}/mo</span>
+                <span class="slim-goal-mo">£{{ "{:,.0f}".format(g.monthly_allocation) }} per month</span>
                 {% endif %}
             </div>
 

@@ -566,7 +566,7 @@
                         <div class="goal-text">
                             <div class="goal-name">{{ g.name }}</div>
                             <div class="goal-meta">
-                                {% if g.monthly_allocation %}£{{ "{:,.0f}".format(g.monthly_allocation | float) }}/mo · {% endif %}
+                                {% if g.monthly_allocation %}£{{ "{:,.0f}".format(g.monthly_allocation | float) }} per month · {% endif %}
                                 {% if tgt > 0 %}£{{ "{:,.0f}".format(cur) }} of £{{ "{:,.0f}".format(tgt) }}{% else %}In progress{% endif %}
                             </div>
                         </div>

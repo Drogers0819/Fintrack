@@ -125,7 +125,7 @@
         {% if smart_plan and not smart_plan.error and not is_frozen %}
         <div class="slim-stats">
             <div class="slim-stat">
-                <div class="slim-stat__label">Surplus / mo</div>
+                <div class="slim-stat__label">Monthly surplus</div>
                 <div class="slim-stat__value">£{{ "{:,.0f}".format(plan_surplus_value) }}</div>
             </div>
             <div class="slim-stat">
@@ -208,7 +208,7 @@
                     <div class="slim-goal-body">
                         <div class="slim-goal-row1">
                             <span class="slim-goal-name">{{ pot.name | replace(' (must-hit)', '') }}</span>
-                            <span class="slim-goal-mo">£{{ "{:,.0f}".format(pot.monthly_amount) }}/mo</span>
+                            <span class="slim-goal-mo">£{{ "{:,.0f}".format(pot.monthly_amount) }} per month</span>
                         </div>
                         {% if pot.target and not pot.completed %}
                           {% if _is_debt %}
@@ -217,7 +217,7 @@
                             <div class="slim-progress"><span style="width: {{ _remaining_pct }}%; background: var(--goal-stroke-debt);"></span></div>
                             <div class="slim-goal-row2">
                                 <span>£{{ "{:,.0f}".format(_remaining) }} left to clear</span>
-                                {% if pot.months_to_target is defined %}<span>{{ pot.months_to_target }} mo to go</span>{% endif %}
+                                {% if pot.months_to_target is defined %}<span>{{ pot.months_to_target }} months remaining</span>{% endif %}
                             </div>
                           {% else %}
                             {% set _pct = ((pot.current / pot.target) * 100) | round(1) %}
@@ -231,7 +231,7 @@
                             <div class="slim-progress"><span style="width: {{ _pct }}%; background: {{ _bar }};"></span></div>
                             <div class="slim-goal-row2">
                                 <span>£{{ "{:,.0f}".format(pot.current) }} of £{{ "{:,.0f}".format(pot.target) }}</span>
-                                {% if pot.months_to_target is defined %}<span>{{ pot.months_to_target }} mo to go</span>{% endif %}
+                                {% if pot.months_to_target is defined %}<span>{{ pot.months_to_target }} months remaining</span>{% endif %}
                             </div>
                           {% endif %}
                         {% elif pot.completed %}

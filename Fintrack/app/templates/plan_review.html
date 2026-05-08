@@ -53,7 +53,7 @@
             <div class="section-label" style="margin-top: 0; margin-bottom: 6px;">Available for your goals</div>
             <div style="display: flex; align-items: baseline; gap: 4px;">
                 <span style="font-size: 2rem; font-weight: 600; color: var(--text-primary); font-variant-numeric: tabular-nums; line-height: 1;">£{{ "{:,.0f}".format(plan.surplus) }}</span>
-                <span style="font-size: 0.8rem; color: var(--text-tertiary); font-weight: 400;">/mo</span>
+                <span style="font-size: 0.8rem; color: var(--text-tertiary); font-weight: 400;">per month</span>
             </div>
         </div>
     </div>
@@ -83,7 +83,7 @@
                 {% endif %}
                 <span style="font-size: 0.85rem; color: var(--text-primary); font-weight: 500;">{{ item.name | replace(' (must-hit)', '') }}</span>
             </div>
-            <span style="font-size: 0.9rem; font-weight: 600; color: var(--text-primary); font-variant-numeric: tabular-nums;">£{{ "{:,.0f}".format(item.monthly) }}/mo</span>
+            <span style="font-size: 0.9rem; font-weight: 600; color: var(--text-primary); font-variant-numeric: tabular-nums;">£{{ "{:,.0f}".format(item.monthly) }} per month</span>
         </div>
         {% if item.target %}
         <div style="font-size: 0.72rem; color: var(--text-tertiary); margin-bottom: 4px; padding-left: 22px;">

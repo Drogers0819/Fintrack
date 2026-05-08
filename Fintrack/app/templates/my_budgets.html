@@ -38,7 +38,7 @@
     <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 0;
         {% if not loop.last %}border-bottom: 0.5px solid var(--glass-border);{% endif %}">
         <span class="merchant-name" style="font-size: 0.85rem;">{{ s.merchant }}</span>
-        <span style="font-size: 0.8rem; color: var(--text-secondary);">£{{ "{:,.2f}".format(s.monthly_cost) }}/mo</span>
+        <span style="font-size: 0.8rem; color: var(--text-secondary);">£{{ "{:,.2f}".format(s.monthly_cost) }} per month</span>
     </div>
     {% endfor %}
 </div>

@@ -43,7 +43,7 @@
     <div style="padding: 14px 0 12px 0; border-bottom: 0.5px solid var(--glass-border);">
         <div style="display: flex; justify-content: space-between; align-items: baseline;">
             <span style="font-size: 0.85rem; color: var(--text-primary);">Essentials</span>
-            <span style="font-size: 0.85rem; color: var(--text-primary); font-weight: 500; font-variant-numeric: tabular-nums;">£{{ "{:,.2f}".format(smart_plan.essentials) }}/mo</span>
+            <span style="font-size: 0.85rem; color: var(--text-primary); font-weight: 500; font-variant-numeric: tabular-nums;">£{{ "{:,.2f}".format(smart_plan.essentials) }} per month</span>
         </div>
         <div style="font-size: 0.7rem; color: var(--text-tertiary); margin-top: 3px;">
             Rent £{{ "{:,.2f}".format(smart_plan.essentials_breakdown.rent) }} · Bills £{{ "{:,.2f}".format(smart_plan.essentials_breakdown.bills) }}{% if smart_plan.essentials_breakdown.groceries > 0 %} · Groceries £{{ "{:,.2f}".format(smart_plan.essentials_breakdown.groceries) }}{% endif %}{% if smart_plan.essentials_breakdown.transport > 0 %} · Transport £{{ "{:,.2f}".format(smart_plan.essentials_breakdown.transport) }}{% endif %}
@@ -73,7 +73,7 @@
                 {% endif %}
             </div>
             <div style="display: flex; align-items: center; gap: 6px;">
-                <span style="font-size: 0.85rem; color: var(--text-primary); font-weight: 500; font-variant-numeric: tabular-nums;">£{{ "{:,.2f}".format(pot.monthly_amount) }}/mo</span>
+                <span style="font-size: 0.85rem; color: var(--text-primary); font-weight: 500; font-variant-numeric: tabular-nums;">£{{ "{:,.2f}".format(pot.monthly_amount) }} per month</span>
                 {% if pot.goal_id %}
                 <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--text-tertiary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>
                 {% endif %}
@@ -111,7 +111,7 @@
     <div style="padding: 18px 0 14px 0; border-top: 1px solid var(--glass-border); margin-top: 6px;">
         <div style="display: flex; justify-content: space-between; align-items: baseline;">
             <span style="font-size: 0.85rem; color: var(--text-primary); font-weight: 500;">Total allocated</span>
-            <span style="font-size: 1.1rem; color: var(--text-primary); font-weight: 600; font-variant-numeric: tabular-nums;">£{{ "{:,.2f}".format(smart_plan.surplus) }}/mo</span>
+            <span style="font-size: 1.1rem; color: var(--text-primary); font-weight: 600; font-variant-numeric: tabular-nums;">£{{ "{:,.2f}".format(smart_plan.surplus) }} per month</span>
         </div>
     </div>
 </div>

@@ -194,7 +194,7 @@
     <!-- Custom subscription -->
     <div style="display: flex; gap: 8px; align-items: stretch; margin-bottom: 14px;">
         <input type="text" id="custom-sub-name" class="form-input" placeholder="Other subscription" style="flex: 1;">
-        <input type="number" id="custom-sub-cost" class="form-input form-input-sm" placeholder="£/mo" step="0.01" min="0" style="width: 88px;">
+        <input type="number" id="custom-sub-cost" class="form-input form-input-sm" placeholder="£/month" step="0.01" min="0" style="width: 88px;">
         <button type="button" onclick="addCustomSub()" class="btn-secondary btn-sm" style="white-space: nowrap; align-self: stretch;">Add</button>
     </div>
 
@@ -244,7 +244,7 @@
         <div id="pay-input-{{ p.id }}" style="display: none;">
             <div style="display: flex; align-items: center; gap: 10px; padding: 8px 14px; border-radius: 8px; background: var(--surface-subtle); border: 0.5px solid var(--glass-border);">
                 <span style="font-size: 0.78rem; color: var(--text-secondary); flex: 1;">{{ p.label }}</span>
-                <input type="number" class="form-input form-input-sm payment-amount" data-id="{{ p.id }}" placeholder="£/mo" step="0.01" min="0" oninput="updatePaymentTotal()" style="width: 90px;">
+                <input type="number" class="form-input form-input-sm payment-amount" data-id="{{ p.id }}" placeholder="£/month" step="0.01" min="0" oninput="updatePaymentTotal()" style="width: 90px;">
             </div>
         </div>
         {% endfor %}
@@ -252,7 +252,7 @@
         <!-- Custom payment -->
         <div style="display: flex; gap: 8px; align-items: stretch; margin-top: 4px;">
             <input type="text" id="custom-pay-name" class="form-input" placeholder="Other payment (e.g. car finance, ISA, pension)" style="flex: 1;">
-            <input type="number" id="custom-pay-cost" class="form-input form-input-sm" placeholder="£/mo" step="0.01" min="0" style="width: 88px;">
+            <input type="number" id="custom-pay-cost" class="form-input form-input-sm" placeholder="£/month" step="0.01" min="0" style="width: 88px;">
             <button type="button" onclick="addCustomPayment()" class="btn-secondary btn-sm" style="white-space: nowrap; align-self: stretch;">Add</button>
         </div>
 
@@ -418,7 +418,7 @@ function renderCustomSubs() {
     customSubs.forEach(function(s, i) {
         var div = document.createElement('div');
         div.className = 'custom-sub-item';
-        div.innerHTML = '<span>' + s.name + ' <span style="color:var(--text-tertiary);font-size:0.7rem;">£' + fmtGBP(s.cost) + '/mo</span></span>' +
+        div.innerHTML = '<span>' + s.name + ' <span style="color:var(--text-tertiary);font-size:0.7rem;">£' + fmtGBP(s.cost) + ' per month</span></span>' +
             '<button type="button" class="custom-sub-remove" onclick="removeCustomSub(' + i + ')">✕</button>';
         container.appendChild(div);
     });
@@ -478,7 +478,7 @@ function renderCustomPayments() {
     customPayments.forEach(function(p, i) {
         var div = document.createElement('div');
         div.className = 'custom-sub-item';
-        div.innerHTML = '<span>' + p.name + ' <span style="color:var(--text-tertiary);font-size:0.7rem;">£' + fmtGBP(p.cost) + '/mo</span></span>' +
+        div.innerHTML = '<span>' + p.name + ' <span style="color:var(--text-tertiary);font-size:0.7rem;">£' + fmtGBP(p.cost) + ' per month</span></span>' +
             '<button type="button" class="custom-sub-remove" onclick="removeCustomPayment(' + i + ')">✕</button>';
         container.appendChild(div);
     });

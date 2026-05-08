@@ -9,7 +9,7 @@
     <h1>Your plan is ready.</h1>
     {% if plan and plan.surplus %}
     <p style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 8px; line-height: 1.6;">
-        Claro's mapped out <strong style="color: var(--text-primary);">£{{ "{:,.0f}".format(plan.surplus) }}/mo</strong> toward your goals. Start your trial to keep it on track.
+        Claro's mapped out <strong style="color: var(--text-primary);">£{{ "{:,.0f}".format(plan.surplus) }} per month</strong> toward your goals. Start your trial to keep it on track.
     </p>
     {% else %}
     <p style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 8px;">Start your trial to unlock your full financial plan.</p>
@@ -24,7 +24,7 @@
     <div style="display: flex; justify-content: space-between; align-items: center; padding: 6px 0;">
         <span style="font-size: 0.82rem; color: var(--text-secondary);">{{ pot.name | replace(' (must-hit)', '') }}</span>
         <div style="text-align: right;">
-            <span style="font-size: 0.82rem; color: var(--text-primary); font-weight: 500; font-variant-numeric: tabular-nums;">£{{ "{:,.0f}".format(pot.monthly_amount) }}/mo</span>
+            <span style="font-size: 0.82rem; color: var(--text-primary); font-weight: 500; font-variant-numeric: tabular-nums;">£{{ "{:,.0f}".format(pot.monthly_amount) }} per month</span>
             {% if pot.months_to_target %}
             <span style="font-size: 0.68rem; color: var(--text-tertiary); margin-left: 8px;">~{{ pot.months_to_target }} month{{ 's' if pot.months_to_target != 1 else '' }}</span>
             {% endif %}
@@ -46,7 +46,7 @@
         {
             "slug": "plan",
             "name": "Claro Plan",
-            "price": "£9.99/mo",
+            "price": "£9.99 per month",
             "tagline": "Your core financial plan, kept on track.",
             "features": [
                 "Full financial plan with monthly tracking",
@@ -57,7 +57,7 @@
         {
             "slug": "coach",
             "name": "Claro Coach",
-            "price": "£16.99/mo",
+            "price": "£16.99 per month",
             "tagline": "Plan + AI companion that actually knows you.",
             "features": [
                 "Everything in Claro Plan",
@@ -69,7 +69,7 @@
         {
             "slug": "duo",
             "name": "Claro Duo",
-            "price": "£24.99/mo",
+            "price": "£24.99 per month",
             "tagline": "Coach for two — align your money together.",
             "features": [
                 "Everything in Claro Coach",

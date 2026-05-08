@@ -42,7 +42,7 @@
             <div class="form-group" style="{% if not loop.last %}margin-bottom: 16px;{% else %}margin-bottom: 0;{% endif %}">
                 <label class="form-label" style="display: flex; justify-content: space-between;">
                     <span>{{ g.name | replace(' (must-hit)', '') }}</span>
-                    <span style="color: var(--text-tertiary); font-weight: 400;">currently £{{ "{:,.2f}".format(g.monthly_allocation) }}/mo</span>
+                    <span style="color: var(--text-tertiary); font-weight: 400;">currently £{{ "{:,.2f}".format(g.monthly_allocation) }} per month</span>
                 </label>
                 <input type="number" name="goal_{{ g.id }}" class="form-input" step="1" min="0"
                        value="{{ g.monthly_allocation | int }}">
@@ -113,7 +113,7 @@
             </span>
         </div>
         <div style="font-size: 0.75rem; color: var(--text-tertiary);">
-            £{{ "{:,.2f}".format(c.current_allocation) }}/mo · £{{ "{:,.2f}".format(c.proposed_allocation) }}/mo proposed
+            £{{ "{:,.2f}".format(c.current_allocation) }} per month · £{{ "{:,.2f}".format(c.proposed_allocation) }} per month proposed
             {% if c.proposed_date and c.proposed_date != "N/A" %} · on track for {{ c.proposed_date }}{% endif %}
         </div>
     </div>
