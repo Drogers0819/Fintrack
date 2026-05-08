@@ -333,6 +333,15 @@
             {% endif %}
         </div>
 
+        {% if todays_whisper %}
+        <div class="slim-side-card" style="border-left: 3px solid var(--roman-gold);">
+            <div class="slim-side-card__title">TODAY'S WHISPER</div>
+            <div style="font-family: var(--font-serif), 'Cormorant Garamond', Georgia, serif; font-style: italic; font-size: 0.95rem; line-height: 1.6; color: var(--text-primary); margin-top: 8px;">
+                {{ todays_whisper }}
+            </div>
+        </div>
+        {% endif %}
+
         {% if plan_phase %}
         <div class="slim-side-card">
             <div class="slim-side-card__title">Plan phase</div>

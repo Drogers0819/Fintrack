@@ -135,5 +135,116 @@ class User(db.Model, UserMixin):
             "survival_mode_active": bool(self.survival_mode_active),
         }
 
+    # ─── Whisper helpers (Block 1: Today's Whisper) ────────────────
+    # Used by app/services/whisper_service.py to pick a contextual
+    # sentence for the user's current state. Each helper is defensive
+    # against missing data and never raises.
+
+    def has_active_credit_card_goal_completing_soon(self):
+        """True if any active goal whose name contains 'credit card'
+        will finish within ~6 months at the current monthly allocation."""
+        from app.models.goal import Goal
+        goals = Goal.query.filter_by(user_id=self.id, status="active").all()
+        for goal in goals:
+            name = (goal.name or "").lower()
+            if "credit card" not in name:
+                continue
+            target = float(goal.target_amount or 0)
+            current = float(goal.current_amount or 0)
+            allocation = float(goal.monthly_allocation or 0)
+            if target <= 0 or allocation <= 0:
+                continue
+            remaining = target - current
+            if remaining <= 0:
+                continue
+            months_left = remaining / allocation
+            if months_left < 6:
+                return True
+        return False
+
+    def get_credit_card_goal_completing_soon(self):
+        """Return (months_left, monthly_amount) for the soonest-completing
+        credit-card goal, or None. Used to populate whisper templates."""
+        from app.models.goal import Goal
+        candidates = []
+        goals = Goal.query.filter_by(user_id=self.id, status="active").all()
+        for goal in goals:
+            name = (goal.name or "").lower()
+            if "credit card" not in name:
+                continue
+            target = float(goal.target_amount or 0)
+            current = float(goal.current_amount or 0)
+            allocation = float(goal.monthly_allocation or 0)
+            if target <= 0 or allocation <= 0:
+                continue
+            remaining = target - current
+            if remaining <= 0:
+                continue
+            months_left = remaining / allocation
+            if months_left < 6:
+                candidates.append((months_left, allocation))
+        if not candidates:
+            return None
+        candidates.sort(key=lambda c: c[0])
+        return candidates[0]
+
+    def is_ahead_of_savings_target(self):
+        """True if each of the user's last 2 CheckIn rows totalled
+        contributions >= planned. Quiet streak — quietly noticing."""
+        from app.models.checkin import CheckIn
+        recent = (
+            CheckIn.query.filter_by(user_id=self.id)
+            .order_by(CheckIn.year.desc(), CheckIn.month.desc())
+            .limit(2)
+            .all()
+        )
+        if len(recent) < 2:
+            return False
+        for ci in recent:
+            entries = list(ci.entries) if ci.entries is not None else []
+            if not entries:
+                return False
+            planned = sum(float(e.planned_amount or 0) for e in entries)
+            actual = sum(float(e.actual_amount or 0) for e in entries)
+            if actual < planned:
+                return False
+        return True
+
+    def get_savings_streak_months(self):
+        """Count consecutive recent CheckIns where actual >= planned.
+        Used to fill {streak} in the whisper template."""
+        from app.models.checkin import CheckIn
+        rows = (
+            CheckIn.query.filter_by(user_id=self.id)
+            .order_by(CheckIn.year.desc(), CheckIn.month.desc())
+            .all()
+        )
+        streak = 0
+        for ci in rows:
+            entries = list(ci.entries) if ci.entries is not None else []
+            if not entries:
+                break
+            planned = sum(float(e.planned_amount or 0) for e in entries)
+            actual = sum(float(e.actual_amount or 0) for e in entries)
+            if actual >= planned and planned > 0:
+                streak += 1
+            else:
+                break
+        return streak
+
+    def has_completed_recent_checkin(self):
+        """True if the user's most recent CheckIn was completed within
+        the last 14 days."""
+        from datetime import datetime, timedelta
+        from app.models.checkin import CheckIn
+        latest = (
+            CheckIn.query.filter_by(user_id=self.id)
+            .order_by(CheckIn.completed_at.desc())
+            .first()
+        )
+        if latest is None or latest.completed_at is None:
+            return False
+        return latest.completed_at >= datetime.utcnow() - timedelta(days=14)
+
     def __repr__(self):
         return f"<User {self.id}: {self.email}>"

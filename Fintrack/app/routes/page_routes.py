@@ -691,6 +691,9 @@ def overview():
     if smart_plan and "error" not in smart_plan:
         plan_surplus_value = float(smart_plan.get("surplus") or 0)
 
+    from app.services.whisper_service import get_todays_whisper
+    todays_whisper = get_todays_whisper(current_user)
+
     return render_template("overview.html",
         greeting=greeting,
         first_name=first_name,
@@ -723,6 +726,7 @@ def overview():
         savings_rate=savings_rate,
         plan_phase=plan_phase,
         plan_surplus_value=plan_surplus_value,
+        todays_whisper=todays_whisper,
     )
 
 

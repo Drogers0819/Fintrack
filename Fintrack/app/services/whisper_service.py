@@ -396,3 +396,174 @@ def _ordinal(n):
     else:
         suffix = {1: "st", 2: "nd", 3: "rd"}.get(n % 10, "th")
     return f"{n}{suffix}"
+
+
+# ─── TODAY'S WHISPER ────────────────────────────────────────
+#
+# A single calm sentence shown at the top of the overview right rail.
+# Distinct from generate_action_whisper above, which returns a
+# structured action dict with a CTA button. Today's whisper is just
+# a reflection: priority-ordered, template-driven (zero API cost),
+# deterministic, instant.
+#
+# Adding a whisper: append a function that returns the rendered
+# string when the condition matches, None otherwise. Order in
+# WHISPER_LIBRARY = priority. Fallback at the end always wins so the
+# caller is guaranteed a non-empty string.
+
+import calendar
+import logging
+from datetime import datetime, timedelta
+
+_whisper_logger = logging.getLogger(__name__)
+
+
+def _next_window_start(today):
+    """The check-in window opens on the last 3 days of each calendar
+    month. Return the first day of the next window, used to fill the
+    'nothing required until X' whisper."""
+    last_day = calendar.monthrange(today.year, today.month)[1]
+    window_start = date(today.year, today.month, last_day - 2)
+    if today < window_start:
+        return window_start
+    if today.month == 12:
+        next_month, next_year = 1, today.year + 1
+    else:
+        next_month, next_year = today.month + 1, today.year
+    next_last_day = calendar.monthrange(next_year, next_month)[1]
+    return date(next_year, next_month, next_last_day - 2)
+
+
+def _factfind_pending_whisper(user):
+    if getattr(user, "factfind_completed", False):
+        return None
+    return (
+        "Tell Claro about your money in four short steps. The plan "
+        "unlocks the moment your profile is in."
+    )
+
+
+def _subscription_paused_whisper(user):
+    resume = getattr(user, "subscription_paused_until", None)
+    if resume is None:
+        return None
+    when = f"{resume.day} {resume.strftime('%B')}"
+    return (
+        f"Your subscription is paused. Billing resumes on {when}. "
+        f"Your plan and goals stay where they are."
+    )
+
+
+def _survival_mode_whisper(user):
+    if not getattr(user, "survival_mode_active", False):
+        return None
+    return (
+        "Survival mode is on. The plan is focused on essentials only. "
+        "When things change, switch back from settings and the goals resume."
+    )
+
+
+def _no_goals_yet_whisper(user):
+    """User has finished factfind but hasn't picked a goal yet."""
+    from app.models.goal import Goal
+    if not getattr(user, "factfind_completed", False):
+        return None
+    if Goal.query.filter_by(user_id=user.id, status="active").count() > 0:
+        return None
+    return (
+        "Your plan is ready. Pick a goal and Claro will work out what "
+        "each month moves you closer to it."
+    )
+
+
+def _credit_card_whisper(user):
+    """Their soonest-completing credit-card debt clears in N months."""
+    info = user.get_credit_card_goal_completing_soon()
+    if info is None:
+        return None
+    months_left, monthly_amount = info
+    months = max(1, int(round(months_left)))
+    amount = int(round(monthly_amount))
+    return (
+        f"Your credit card clears in roughly {months} "
+        f"month{'s' if months != 1 else ''}. After that, that "
+        f"£{amount} per month redirects automatically to your next goal."
+    )
+
+
+def _ahead_of_target_whisper(user):
+    streak = user.get_savings_streak_months()
+    if streak < 2:
+        return None
+    return (
+        f"You've been ahead of your savings target for {streak} "
+        f"month{'s' if streak != 1 else ''} running. Worth noticing."
+    )
+
+
+def _recent_checkin_whisper(user):
+    """Surface the next reminder window so the user can stop thinking
+    about it."""
+    if not user.has_completed_recent_checkin():
+        return None
+    today = date.today()
+    next_window_start = _next_window_start(today)
+    next_date = f"{next_window_start.day} {next_window_start.strftime('%B')}"
+    return (
+        f"Your check-in this month told the plan everything it needs. "
+        f"Nothing required from you until {next_date}."
+    )
+
+
+def _trial_active_whisper(user):
+    if (getattr(user, "subscription_status", "") or "") != "trialing":
+        return None
+    trial_ends = getattr(user, "trial_ends_at", None)
+    if trial_ends is None:
+        return None
+    days_left = (trial_ends - datetime.utcnow()).days
+    if days_left < 0 or days_left > 14:
+        return None
+    return (
+        f"You're {days_left} day{'s' if days_left != 1 else ''} into your "
+        f"trial. The plan is live; everything you change shapes it in real time."
+    )
+
+
+WHISPER_LIBRARY = [
+    _factfind_pending_whisper,
+    _subscription_paused_whisper,
+    _survival_mode_whisper,
+    _no_goals_yet_whisper,
+    _credit_card_whisper,
+    _ahead_of_target_whisper,
+    _recent_checkin_whisper,
+    _trial_active_whisper,
+]
+
+
+_WHISPER_FALLBACK = "Your plan is quiet today. That's the planner doing its job."
+
+
+def get_todays_whisper(user):
+    """Walk the library in priority order; return the first whisper
+    whose condition matches. Fallback for early-stage users.
+
+    Defensive: any helper that raises is logged and skipped so a single
+    flaky data shape can't blank the entire whisper card."""
+    if user is None:
+        return _WHISPER_FALLBACK
+
+    for whisper_fn in WHISPER_LIBRARY:
+        try:
+            result = whisper_fn(user)
+        except Exception:  # noqa: BLE001
+            _whisper_logger.exception(
+                "Whisper helper %s raised for user %s",
+                whisper_fn.__name__, getattr(user, "id", "?"),
+            )
+            continue
+        if result:
+            return result
+
+    return _WHISPER_FALLBACK
