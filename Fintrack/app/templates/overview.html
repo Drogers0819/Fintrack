@@ -163,12 +163,19 @@
         </p>
         {% endif %}
 
-        {# Spending breakdown ring — current month, by category #}
+        {# Spending breakdown ring — current month, by category.
+           Three states:
+             • Real spending (transactions exist this month) — full opacity.
+             • Preview (no transactions, factfind data exists) — soft
+               opacity, banner, "(estimate)" suffix on legend rows.
+             • Empty (neither) — informational copy. #}
         {% if not is_frozen and spending_breakdown %}
         <section data-spending-breakdown
                  style="margin: 0 0 18px; padding: 18px 20px; background: var(--card-bg); border: 0.5px solid var(--card-border); border-radius: 12px;">
             <div class="section-label" style="margin-top: 0;">THIS MONTH</div>
-            {% if spending_breakdown.total_spent > 0 %}
+
+            {% if spending_breakdown.total_spent > 0 and not spending_breakdown.is_preview %}
+            {# Real spending — full opacity. #}
             <div style="display: flex; gap: 28px; align-items: center; margin-top: 14px; flex-wrap: wrap;">
                 <div style="flex-shrink: 0; position: relative; width: 200px; height: 200px;">
                     <svg viewBox="0 0 200 200" width="200" height="200" style="transform: rotate(-90deg);">
@@ -199,6 +206,47 @@
                     {% endfor %}
                 </div>
             </div>
+
+            {% elif spending_breakdown.is_preview %}
+            {# Preview from factfind — soft opacity + banner + (estimate) suffix. #}
+            <div data-spending-preview-banner
+                 style="margin-top: 14px; padding: 8px 12px; background: rgba(197, 163, 93, 0.06); border: 0.5px solid rgba(197, 163, 93, 0.2); border-radius: 6px;">
+                <span style="font-family: var(--font-sans); font-size: 0.72rem; color: var(--text-secondary); line-height: 1.5;">
+                    <span style="color: var(--roman-gold); font-weight: 500;">Preview from your profile.</span>
+                    Once you log transactions or import a statement, this updates with what's actually happening.
+                </span>
+            </div>
+            <div style="display: flex; gap: 28px; align-items: center; margin-top: 14px; flex-wrap: wrap; opacity: 0.55;">
+                <div style="flex-shrink: 0; position: relative; width: 200px; height: 200px;">
+                    <svg viewBox="0 0 200 200" width="200" height="200" style="transform: rotate(-90deg);">
+                        <circle cx="100" cy="100" r="70" fill="none"
+                                stroke="rgba(255, 255, 255, 0.04)" stroke-width="20"/>
+                        {% for seg in spending_breakdown.categories %}
+                        <circle cx="100" cy="100" r="70" fill="none"
+                                stroke="{{ seg.colour }}" stroke-width="20"
+                                stroke-dasharray="{{ seg.stroke_dasharray }}"
+                                stroke-dashoffset="{{ seg.stroke_dashoffset }}"
+                                stroke-linecap="butt"></circle>
+                        {% endfor %}
+                    </svg>
+                    <div style="position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; pointer-events: none;">
+                        <div style="font-family: var(--font-serif), 'Cormorant Garamond', Georgia, serif; font-size: 1.6rem; font-weight: 300; color: var(--text-primary); line-height: 1;">£{{ "{:,.0f}".format(spending_breakdown.total_spent) }}</div>
+                        <div style="font-family: var(--font-sans); font-size: 0.65rem; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 1.5px; margin-top: 6px;">estimated typical month</div>
+                    </div>
+                </div>
+                <div style="flex: 1; min-width: 220px; display: flex; flex-direction: column; gap: 0;">
+                    {% for category in spending_breakdown.categories %}
+                    <div style="display: flex; align-items: center; justify-content: space-between; padding: 8px 0; {% if not loop.last %}border-bottom: 0.5px solid var(--glass-border-subtle);{% endif %}">
+                        <div style="display: flex; align-items: center; gap: 10px; min-width: 0;">
+                            <span style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: {{ category.colour }}; flex-shrink: 0;"></span>
+                            <span style="font-family: var(--font-sans); font-size: 0.85rem; color: var(--text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ category.name }} <span style="font-style: italic; color: var(--text-tertiary);">(estimate)</span></span>
+                        </div>
+                        <span style="font-family: var(--font-sans); font-size: 0.85rem; color: var(--text-primary); font-weight: 500; flex-shrink: 0;">£{{ "{:,.0f}".format(category.amount) }}</span>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
             {% else %}
             <p style="font-size: 0.85rem; color: var(--text-tertiary); line-height: 1.65; margin: 14px 0 0;">
                 No spending tracked this month yet. Once you log a transaction or check in, your breakdown will appear here.

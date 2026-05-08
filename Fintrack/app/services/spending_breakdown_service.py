@@ -78,17 +78,23 @@ def get_spending_breakdown_for_user(
 ) -> dict:
     """Aggregate this month's expense transactions by category.
 
-    Returns a dict ready for template rendering:
+    If the user has no transactions for the period BUT factfind data
+    exists, returns a preview ring built from the factfind values
+    (rent, bills, subscriptions, groceries, transport) with
+    `is_preview=True`. Template uses the flag to render with reduced
+    opacity, a "(estimate)" suffix on legend rows, and a banner
+    explaining that the user is looking at a preview.
+
+    Returns:
       {
         total_spent: float,
-        categories: [
-          {name, amount, colour, percentage, stroke_dasharray, stroke_dashoffset},
-          ...
-        ],
+        categories: [...],
         month_label: "May 2026",
+        is_preview: bool,
       }
 
-    Empty state when no expense transactions: total_spent=0, categories=[].
+    Empty state (no transactions, no factfind data): total_spent=0,
+    categories=[], is_preview=False.
     """
     from sqlalchemy import extract, func
     from app import db
@@ -124,23 +130,66 @@ def get_spending_breakdown_for_user(
     # Sum at the Python layer to avoid a second query and to keep the
     # totals consistent with what's been included in the segment list.
     total_spent = round(float(sum(float(r.total or 0) for r in rows)), 2)
-    if total_spent <= 0:
+    if total_spent > 0:
+        categories = _compute_segments(
+            [(r.name, float(r.total or 0)) for r in rows],
+            total_spent,
+        )
         return {
-            "total_spent": 0.0,
-            "categories": [],
+            "total_spent": total_spent,
+            "categories": categories,
             "month_label": month_label,
+            "is_preview": False,
         }
 
-    categories = _compute_segments(
-        [(r.name, float(r.total or 0)) for r in rows],
-        total_spent,
-    )
+    # No transactions for the period — try a factfind-driven preview.
+    preview_rows = _factfind_preview_rows(user)
+    if preview_rows:
+        preview_total = round(sum(amount for _, amount in preview_rows), 2)
+        return {
+            "total_spent": preview_total,
+            "categories": _compute_segments(preview_rows, preview_total),
+            "month_label": month_label,
+            "is_preview": True,
+        }
 
+    # No transactions, no factfind data — true empty state.
     return {
-        "total_spent": total_spent,
-        "categories": categories,
+        "total_spent": 0.0,
+        "categories": [],
         "month_label": month_label,
+        "is_preview": False,
     }
+
+
+# ─── Factfind preview helpers ────────────────────────────────
+
+
+# Map factfind profile fields to the same category names used by real
+# transactions. Sharing names means RING_CATEGORY_COLOURS gives every
+# category a stable identity whether the source is a transaction or a
+# factfind estimate. Order matters only insofar as ties break by
+# insertion order; _compute_segments sorts by amount.
+_FACTFIND_CATEGORY_FIELDS = (
+    ("Rent", "rent_amount"),
+    ("Bills", "bills_amount"),
+    ("Subscriptions", "subscriptions_total"),
+    ("Food", "groceries_estimate"),
+    ("Transport", "transport_estimate"),
+)
+
+
+def _factfind_preview_rows(user) -> list[tuple[str, float]]:
+    """Return (category_name, amount) pairs from factfind values, sorted
+    descending by amount. Skips zero / None values. Empty list when
+    the user has no factfind data."""
+    rows: list[tuple[str, float]] = []
+    for category_name, attr in _FACTFIND_CATEGORY_FIELDS:
+        amount = _amount_or_zero(getattr(user, attr, None))
+        if amount > 0:
+            rows.append((category_name, amount))
+    rows.sort(key=lambda r: r[1], reverse=True)
+    return rows
 
 
 def _compute_segments(rows: list[tuple[str, float]], total: float) -> list[dict]:
