@@ -95,7 +95,14 @@
            wrapper class's positioning, widen the rail, and adjust the
            main-content margin to clear it. Hover/active states on the
            inner items are inline-styled in _partials/sidebar.html;
-           pseudo-class hover lives here. */
+           pseudo-class hover lives here.
+
+           Header rendering rule:
+             • Slim-shell pages don't get a global app-header (the slim
+               layout was designed without one). Instead a small
+               identity widget floats top-right via .slim-shell-identity.
+             • Non-slim-shell pages keep the global app-header with the
+               identity block on the right. */
         @media (min-width: 768px) {
             body.has-slim-shell .slim-sidebar,
             body:not(.has-slim-shell) .sidebar.app-sidebar-labelled {
@@ -114,14 +121,16 @@
             body:not(.has-slim-shell) .main-content {
                 margin-left: 220px;
             }
-            /* Allow the global app header to render on every authenticated
-               page, including slim-shell ones (was previously hidden). */
-            body.has-slim-shell .app-header {
-                display: flex !important;
-                margin-left: 220px;
-            }
             body:not(.has-slim-shell) .app-header {
                 margin-left: 220px;
+            }
+            /* Floating identity widget for slim-shell pages — sits at
+               top-right without claiming a horizontal strip. */
+            .slim-shell-identity {
+                position: fixed;
+                top: 16px;
+                right: 24px;
+                z-index: 50;
             }
         }
         .app-nav-item:hover {
@@ -236,13 +245,26 @@
         <a href="{{ url_for('pages.overview') }}" class="slim-mobile-topbar__brand" aria-label="Claro home"><em>C</em>laro</a>
         <a href="{{ url_for('pages.settings') }}" class="slim-mobile-topbar__avatar" aria-label="Settings">{{ current_user.name[0] | upper }}</a>
     </header>
+
+    {# Floating identity widget on slim-shell pages. The slim shell was
+       designed without a global header bar, so we don't render one;
+       instead, the identity block floats top-right of the viewport so
+       it doesn't claim a horizontal strip across the page. Hidden on
+       mobile (the slim-mobile-topbar above carries the avatar there). #}
+    <a href="{{ url_for('pages.settings') }}"
+       class="app-header-identity slim-shell-identity"
+       aria-label="Open settings"
+       title="{{ current_user.name }}">
+        <span class="app-header-identity__avatar" aria-hidden="true">{{ current_user.name[0:2] | upper }}</span>
+        <span class="app-header-identity__name">{{ current_user.name.split()[0] }}</span>
+    </a>
     {% endif %}
 
-    {# ── Global app header — renders on every authenticated page.
+    {# ── Global app header — non-slim-shell pages only.
+       The slim-shell branch above floats the identity widget instead.
        Left side carries page-supplied breadcrumb / title via the
-       header_content block; right side carries the identity block
-       (avatar + first name → settings). ── #}
-    {% if show_header is not defined or show_header %}
+       header_content block; right side carries the identity block. ── #}
+    {% if not use_slim_shell and (show_header is not defined or show_header) %}
     <header class="app-header" style="justify-content: space-between;">
         {% if show_sidebar is not defined or show_sidebar %}
         {# The wordmark used to live here; it's now in the sidebar, so
