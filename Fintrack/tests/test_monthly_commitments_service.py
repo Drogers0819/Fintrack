@@ -261,3 +261,86 @@ class TestOverviewRender:
         assert "THIS MONTH" in body
         # Empty state copy from Commit A (no transactions yet).
         assert "No spending tracked this month" in body
+
+
+# ─── Estimated spend (Tier 2 follow-up) ──────────────────────
+
+
+class TestEstimates:
+
+    def test_all_three_estimates_set_returns_three_rows_in_order(self, app):
+        from app.services.spending_breakdown_service import (
+            get_monthly_commitments_for_user,
+        )
+        uid = _make_user(app, groceries=240, transport=120, other=60)
+        with app.app_context():
+            user = db.session.get(User, uid)
+            result = get_monthly_commitments_for_user(user)
+            names = [e["name"] for e in result["estimates"]]
+            assert names == [
+                "Groceries (estimate)",
+                "Transport (estimate)",
+                "Other (estimate)",
+            ]
+            assert result["total_estimated"] == 420.0
+
+    def test_only_groceries_set_returns_one_row(self, app):
+        from app.services.spending_breakdown_service import (
+            get_monthly_commitments_for_user,
+        )
+        uid = _make_user(app, groceries=240)
+        with app.app_context():
+            user = db.session.get(User, uid)
+            result = get_monthly_commitments_for_user(user)
+            names = [e["name"] for e in result["estimates"]]
+            assert names == ["Groceries (estimate)"]
+            assert result["total_estimated"] == 240.0
+
+    def test_no_estimates_returns_empty_list_and_zero_total(self, app):
+        from app.services.spending_breakdown_service import (
+            get_monthly_commitments_for_user,
+        )
+        uid = _make_user(app)  # No estimate fields set.
+        with app.app_context():
+            user = db.session.get(User, uid)
+            result = get_monthly_commitments_for_user(user)
+            assert result["estimates"] == []
+            assert result["total_estimated"] == 0.0
+
+    def test_estimates_distinct_from_commitments(self, app):
+        """A user with both rent (commitment) and groceries (estimate)
+        gets one row in `items` and one row in `estimates`. The
+        estimate must NOT contaminate the items list."""
+        from app.services.spending_breakdown_service import (
+            get_monthly_commitments_for_user,
+        )
+        uid = _make_user(app, rent=900, groceries=240)
+        with app.app_context():
+            user = db.session.get(User, uid)
+            result = get_monthly_commitments_for_user(user)
+            item_names = [i["name"] for i in result["items"]]
+            estimate_names = [e["name"] for e in result["estimates"]]
+            assert "Rent / mortgage" in item_names
+            assert "Groceries (estimate)" not in item_names
+            assert "Groceries (estimate)" in estimate_names
+            assert "Rent / mortgage" not in estimate_names
+            # And the totals stay separate.
+            assert result["total_committed"] == 900.0
+            assert result["total_estimated"] == 240.0
+
+    def test_overview_renders_both_sections_when_both_have_data(self, app, client):
+        uid = _make_user(app, rent=900, bills=200, subscriptions=50,
+                         groceries=400, transport=150)
+        _login(client)
+        resp = client.get("/overview")
+        assert resp.status_code == 200
+        body = resp.get_data(as_text=True)
+        # Commitments section.
+        assert "THIS MONTH'S COMMITMENTS" in body
+        assert "Rent / mortgage" in body
+        assert "Total committed" in body
+        # Estimates section.
+        assert "ESTIMATED SPEND" in body
+        assert "Groceries (estimate)" in body
+        assert "Transport (estimate)" in body
+        assert "Total estimated" in body

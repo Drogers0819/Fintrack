@@ -197,16 +197,27 @@ def _amount_or_zero(value) -> float:
 
 
 def get_monthly_commitments_for_user(user) -> dict:
-    """Return the user's known recurring monthly commitments.
+    """Return the user's known recurring monthly commitments AND the
+    factfind estimates that aren't commitments but still describe the
+    typical monthly outflow.
 
-    Order: Rent / mortgage, Bills, Subscriptions, then debt-shaped
-    goals, then other goals. Zero-valued profile fields are skipped;
-    an inactive goal is skipped.
+    The two are kept distinct: `items` / `total_committed` are
+    confirmed commitments (rent, bills, subscriptions, active goals),
+    while `estimates` / `total_estimated` are factfind estimates
+    (groceries, transport, other) that the template renders below the
+    commitments with deliberately softer hierarchy.
+
+    Order for items: Rent / mortgage, Bills, Subscriptions, then
+    debt-shaped goals, then other goals. Order for estimates:
+    Groceries, Transport, Other. Zero-valued fields skipped on both
+    sides; an inactive goal is skipped.
 
     Returns:
       {
-        items: [{name, amount, category}, ...],
+        items: [{name, amount, category}, ...],          # commitments
         total_committed: float,
+        estimates: [{name, amount}, ...],                # factfind
+        total_estimated: float,
       }
     """
     from app.models.goal import Goal
@@ -256,7 +267,38 @@ def get_monthly_commitments_for_user(user) -> dict:
 
     total = round(sum(item["amount"] for item in items), 2)
 
+    # ─── Factfind estimates ──────────────────────────────────
+    # Deliberately separate from `items`. The "(estimate)" suffix is
+    # owned by the service so the template doesn't need to know which
+    # rows are estimates. Same skip-on-zero rule as the commitments.
+    estimates: list[dict] = []
+
+    groceries = _amount_or_zero(getattr(user, "groceries_estimate", None))
+    if groceries > 0:
+        estimates.append({
+            "name": "Groceries (estimate)",
+            "amount": round(groceries, 2),
+        })
+
+    transport = _amount_or_zero(getattr(user, "transport_estimate", None))
+    if transport > 0:
+        estimates.append({
+            "name": "Transport (estimate)",
+            "amount": round(transport, 2),
+        })
+
+    other = _amount_or_zero(getattr(user, "other_commitments", None))
+    if other > 0:
+        estimates.append({
+            "name": "Other (estimate)",
+            "amount": round(other, 2),
+        })
+
+    total_estimated = round(sum(e["amount"] for e in estimates), 2)
+
     return {
         "items": items,
         "total_committed": total,
+        "estimates": estimates,
+        "total_estimated": total_estimated,
     }

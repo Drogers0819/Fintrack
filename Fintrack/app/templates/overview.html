@@ -418,6 +418,28 @@
                 No commitments tracked yet. Once your plan is live, what's spoken for each month will appear here.
             </p>
             {% endif %}
+
+            {% if monthly_commitments["estimates"] %}
+            {# Estimated spend — softer hierarchy than commitments above.
+               Italic italics + smaller font + tertiary colour signal
+               "rough estimate, not locked-in". Total NOT in Roman Gold. #}
+            {% set _estimate_rows = monthly_commitments["estimates"] %}
+            <div style="margin-top: 18px; padding-top: 14px; border-top: 0.5px solid var(--glass-border-subtle);">
+                <div class="section-label" style="margin-top: 0; opacity: 0.75;">ESTIMATED SPEND</div>
+                <div style="margin-top: 10px; display: flex; flex-direction: column; gap: 0;">
+                    {% for item in _estimate_rows %}
+                    <div style="display: flex; justify-content: space-between; align-items: baseline; padding: 5px 0; {% if not loop.last %}border-bottom: 0.5px solid var(--glass-border-subtle);{% endif %}">
+                        <span style="font-family: var(--font-sans); font-size: 0.78rem; color: var(--text-tertiary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; padding-right: 8px; font-style: italic;">{{ item.name }}</span>
+                        <span style="font-family: var(--font-sans); font-size: 0.78rem; color: var(--text-secondary); font-weight: 400; flex-shrink: 0;">£{{ "{:,.0f}".format(item.amount) }}</span>
+                    </div>
+                    {% endfor %}
+                    <div style="display: flex; justify-content: space-between; align-items: baseline; padding: 8px 0 0; margin-top: 4px;">
+                        <span style="font-family: var(--font-sans); font-size: 0.66rem; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 1px; opacity: 0.7;">Total estimated</span>
+                        <span style="font-family: var(--font-sans); font-size: 0.85rem; color: var(--text-secondary); font-weight: 400;">£{{ "{:,.0f}".format(monthly_commitments["total_estimated"]) }}</span>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
         </div>
         {% endif %}
 
