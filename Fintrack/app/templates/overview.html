@@ -341,15 +341,7 @@
         </div>
         {% endif %}
 
-        <div class="slim-side-card">
-            <div class="slim-side-profile">
-                <span class="slim-side-profile__avatar">{{ current_user.name[0:2] | upper }}</span>
-                <div>
-                    <div class="slim-side-profile__name">{{ _first }}</div>
-                    <div class="slim-side-profile__tier">{{ current_user.tier }}</div>
-                </div>
-            </div>
-        </div>
+        {# Identity card moved to the global app-header (top-right). #}
         {% endif %}
     </aside>
 
