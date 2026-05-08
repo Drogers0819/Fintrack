@@ -1,0 +1,262 @@
+"""
+Spending breakdown + monthly commitments — overview page services.
+
+Two related concepts that share data sources, so they live in one
+module:
+
+  • get_spending_breakdown_for_user(user, month, year)
+    Aggregates this month's expense transactions by category, returns
+    ring-chart-ready data with computed SVG arc math and harmonised
+    colours.
+
+  • get_monthly_commitments_for_user(user)
+    Returns the user's known recurring monthly outflows (rent, bills,
+    subscriptions, debt repayments, goal contributions). Pure read of
+    the User model + active Goal rows. No transaction inference.
+
+Colour discipline
+-----------------
+Categories use harmonised variants of their seed colours rather than
+priority-rank colours, so a category has stable identity month to
+month. The seed colours in DEFAULT_CATEGORIES (icon-friendly bright
+hues) clash with the Obsidian Vault canvas, so we map each to a
+desaturated/darkened variant tuned for deep-navy backgrounds.
+RING_CATEGORY_COLOURS is the source of truth for ring rendering;
+the DB seed colours stay untouched for icon use elsewhere.
+"""
+
+from __future__ import annotations
+
+import calendar
+import math
+from datetime import date
+
+
+# ─── Harmonised category colours for the ring chart ─────────
+#
+# Each value is a desaturated/darkened variant of the category's
+# DEFAULT_CATEGORIES seed colour, tuned to sit on deep-navy without
+# fighting the Roman Gold accents elsewhere on the page.
+RING_CATEGORY_COLOURS: dict[str, str] = {
+    "Food":          "#B8704F",  # warmer terracotta, desaturated
+    "Transport":     "#3D6585",  # deeper steel blue
+    "Bills":         "#5F8A7A",  # deeper sage
+    "Entertainment": "#C2A569",  # muted ochre, close to Roman Gold
+    "Shopping":      "#8E5670",  # deeper plum
+    "Health":        "#5F7E9D",  # muted slate blue
+    "Education":     "#8E8EA8",  # muted lavender-grey
+    "Subscriptions": "#7A6E9A",  # deeper purple
+    "Rent":          "#5F8270",  # deeper green-sage
+    "Other":         "#6B6B65",  # muted warm grey
+}
+
+_FALLBACK_RING_COLOUR = "#6B6B65"
+
+
+def colour_for_category(category_name: str) -> str:
+    """Return the harmonised ring colour for a category. Unknown
+    categories fall back to muted warm grey so an unexpected category
+    name never blanks a segment."""
+    return RING_CATEGORY_COLOURS.get(category_name, _FALLBACK_RING_COLOUR)
+
+
+# Categories excluded from spending breakdown (not actual user spend).
+_EXCLUDED_CATEGORIES = ("Income", "Transfer")
+
+
+# Ring geometry. Radius 70 gives circumference ~439.82 — clean working
+# numbers and a comfortable 200x200 viewBox with 20px stroke width.
+RING_RADIUS = 70
+RING_CIRCUMFERENCE = round(2 * math.pi * RING_RADIUS, 2)
+
+
+# ─── Spending breakdown ──────────────────────────────────────
+
+
+def get_spending_breakdown_for_user(
+    user, month: int | None = None, year: int | None = None,
+) -> dict:
+    """Aggregate this month's expense transactions by category.
+
+    Returns a dict ready for template rendering:
+      {
+        total_spent: float,
+        categories: [
+          {name, amount, colour, percentage, stroke_dasharray, stroke_dashoffset},
+          ...
+        ],
+        month_label: "May 2026",
+      }
+
+    Empty state when no expense transactions: total_spent=0, categories=[].
+    """
+    from sqlalchemy import extract, func
+    from app import db
+    from app.models.category import Category
+    from app.models.transaction import Transaction
+
+    today = date.today()
+    if month is None:
+        month = today.month
+    if year is None:
+        year = today.year
+
+    month_label = date(year, month, 1).strftime("%B %Y")
+
+    rows = (
+        db.session.query(
+            Category.name,
+            func.sum(Transaction.amount).label("total"),
+        )
+        .join(Category, Transaction.category_id == Category.id)
+        .filter(
+            Transaction.user_id == user.id,
+            Transaction.type == "expense",
+            ~Category.name.in_(_EXCLUDED_CATEGORIES),
+            extract("month", Transaction.date) == month,
+            extract("year", Transaction.date) == year,
+        )
+        .group_by(Category.id, Category.name)
+        .order_by(func.sum(Transaction.amount).desc())
+        .all()
+    )
+
+    # Sum at the Python layer to avoid a second query and to keep the
+    # totals consistent with what's been included in the segment list.
+    total_spent = round(float(sum(float(r.total or 0) for r in rows)), 2)
+    if total_spent <= 0:
+        return {
+            "total_spent": 0.0,
+            "categories": [],
+            "month_label": month_label,
+        }
+
+    categories = _compute_segments(
+        [(r.name, float(r.total or 0)) for r in rows],
+        total_spent,
+    )
+
+    return {
+        "total_spent": total_spent,
+        "categories": categories,
+        "month_label": month_label,
+    }
+
+
+def _compute_segments(rows: list[tuple[str, float]], total: float) -> list[dict]:
+    """Build the list of segment dicts for the ring chart, with
+    cumulative dashoffsets so adjacent segments line up cleanly."""
+    segments: list[dict] = []
+    cumulative_arc = 0.0
+
+    for name, amount in rows:
+        if amount <= 0:
+            continue
+        arc = (amount / total) * RING_CIRCUMFERENCE
+        gap = RING_CIRCUMFERENCE - arc
+        segments.append({
+            "name": name,
+            "amount": round(amount, 2),
+            "percentage": round((amount / total) * 100, 1),
+            "colour": colour_for_category(name),
+            # The pair (visible-arc, gap) — SVG draws the visible arc
+            # length then leaves the rest of the circumference blank.
+            "stroke_dasharray": f"{round(arc, 2)} {round(gap, 2)}",
+            # Negative offset positions this segment after all earlier
+            # ones. Combined with a -90deg SVG rotation, arc 0 starts
+            # at 12 o'clock.
+            "stroke_dashoffset": str(round(-cumulative_arc, 2)),
+        })
+        cumulative_arc += arc
+
+    return segments
+
+
+# ─── Monthly commitments ─────────────────────────────────────
+#
+# Read User profile fields + active Goal rows. We deliberately exclude
+# `groceries_estimate`, `transport_estimate`, `other_commitments` —
+# those are factfind estimates, not signed-up commitments. Their
+# spending shows up in the ring chart via real transactions; that's
+# the right place for them.
+
+_DEBT_KEYWORDS = ("credit card", "loan", "overdraft", "pay off")
+
+
+def _is_debt_goal_name(name: str) -> bool:
+    if not name:
+        return False
+    lower = name.lower()
+    return any(keyword in lower for keyword in _DEBT_KEYWORDS)
+
+
+def _amount_or_zero(value) -> float:
+    if value is None:
+        return 0.0
+    return float(value)
+
+
+def get_monthly_commitments_for_user(user) -> dict:
+    """Return the user's known recurring monthly commitments.
+
+    Order: Rent / mortgage, Bills, Subscriptions, then debt-shaped
+    goals, then other goals. Zero-valued profile fields are skipped;
+    an inactive goal is skipped.
+
+    Returns:
+      {
+        items: [{name, amount, category}, ...],
+        total_committed: float,
+      }
+    """
+    from app.models.goal import Goal
+
+    items: list[dict] = []
+
+    rent = _amount_or_zero(getattr(user, "rent_amount", None))
+    if rent > 0:
+        items.append({"name": "Rent / mortgage", "amount": round(rent, 2), "category": "rent"})
+
+    bills = _amount_or_zero(getattr(user, "bills_amount", None))
+    if bills > 0:
+        items.append({"name": "Bills", "amount": round(bills, 2), "category": "bills"})
+
+    subs = _amount_or_zero(getattr(user, "subscriptions_total", None))
+    if subs > 0:
+        items.append({"name": "Subscriptions", "amount": round(subs, 2), "category": "subscriptions"})
+
+    goals = (
+        Goal.query.filter_by(user_id=user.id, status="active")
+        .order_by(Goal.priority_rank.asc(), Goal.id.asc())
+        .all()
+    )
+
+    debt_goals = [g for g in goals if _is_debt_goal_name(g.name or "")]
+    other_goals = [g for g in goals if not _is_debt_goal_name(g.name or "")]
+
+    for goal in debt_goals:
+        amount = _amount_or_zero(goal.monthly_allocation)
+        if amount <= 0:
+            continue
+        items.append({
+            "name": goal.name,
+            "amount": round(amount, 2),
+            "category": "debt",
+        })
+
+    for goal in other_goals:
+        amount = _amount_or_zero(goal.monthly_allocation)
+        if amount <= 0:
+            continue
+        items.append({
+            "name": goal.name,
+            "amount": round(amount, 2),
+            "category": "goal",
+        })
+
+    total = round(sum(item["amount"] for item in items), 2)
+
+    return {
+        "items": items,
+        "total_committed": total,
+    }
