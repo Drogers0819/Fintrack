@@ -394,6 +394,33 @@
         </div>
         {% endif %}
 
+        {% if monthly_commitments %}
+        {# Bracket access: monthly_commitments["items"] avoids the Jinja
+           clash with dict.items() (the bound method). #}
+        {% set _commitment_rows = monthly_commitments["items"] %}
+        <div class="slim-side-card">
+            <div class="section-label" style="margin-top: 0;">THIS MONTH'S COMMITMENTS</div>
+            {% if _commitment_rows %}
+            <div style="margin-top: 12px; display: flex; flex-direction: column; gap: 0;">
+                {% for item in _commitment_rows %}
+                <div style="display: flex; justify-content: space-between; align-items: baseline; padding: 6px 0; {% if not loop.last %}border-bottom: 0.5px solid var(--glass-border-subtle);{% endif %}">
+                    <span style="font-family: var(--font-sans); font-size: 0.82rem; color: var(--text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; padding-right: 8px;">{{ item.name }}</span>
+                    <span style="font-family: var(--font-sans); font-size: 0.82rem; color: var(--text-primary); font-weight: 500; flex-shrink: 0;">£{{ "{:,.0f}".format(item.amount) }}</span>
+                </div>
+                {% endfor %}
+                <div style="display: flex; justify-content: space-between; align-items: baseline; padding: 10px 0 4px; border-top: 0.5px solid var(--glass-border); margin-top: 6px;">
+                    <span style="font-family: var(--font-sans); font-size: 0.7rem; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 1px;">Total committed</span>
+                    <span style="font-family: var(--font-sans); font-size: 0.95rem; color: var(--roman-gold); font-weight: 500;">£{{ "{:,.0f}".format(monthly_commitments.total_committed) }}</span>
+                </div>
+            </div>
+            {% else %}
+            <p style="font-size: 0.78rem; color: var(--text-tertiary); line-height: 1.65; margin: 12px 0 0;">
+                No commitments tracked yet. Once your plan is live, what's spoken for each month will appear here.
+            </p>
+            {% endif %}
+        </div>
+        {% endif %}
+
         {# Identity card moved to the global app-header (top-right). #}
         {% endif %}
     </aside>

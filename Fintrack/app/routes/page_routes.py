@@ -695,9 +695,11 @@ def overview():
     todays_whisper = get_todays_whisper(current_user)
 
     from app.services.spending_breakdown_service import (
+        get_monthly_commitments_for_user,
         get_spending_breakdown_for_user,
     )
     spending_breakdown = get_spending_breakdown_for_user(current_user)
+    monthly_commitments = get_monthly_commitments_for_user(current_user)
 
     return render_template("overview.html",
         greeting=greeting,
@@ -733,6 +735,7 @@ def overview():
         plan_surplus_value=plan_surplus_value,
         todays_whisper=todays_whisper,
         spending_breakdown=spending_breakdown,
+        monthly_commitments=monthly_commitments,
     )
 
 
