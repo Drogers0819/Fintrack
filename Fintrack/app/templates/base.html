@@ -148,6 +148,47 @@
             }
         }
 
+        /* ── Page transitions (Animation Tier 1) ──
+           Two CSS-only animations that share the brand's
+           ease-in-out-quart curve:
+             1. .page-content-enter on the <main> wrapper fades the
+                whole content area in over 250ms on every route
+                change (server-rendered Flask = fresh class on every
+                load, animation plays naturally).
+             2. .stagger-1 through .stagger-5 are opt-in classes
+                that pages apply to their own major content blocks
+                so they fade in 60ms apart after the page transition
+                completes. Total composition time: ~840ms from load.
+           Both animations honour prefers-reduced-motion: reduce. */
+        .page-content-enter {
+            animation: pageContentEnter 250ms cubic-bezier(0.77, 0, 0.175, 1) both;
+        }
+        @keyframes pageContentEnter {
+            from { opacity: 0; transform: translateY(8px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+
+        .stagger-1, .stagger-2, .stagger-3, .stagger-4, .stagger-5 {
+            animation: staggerFadeIn 350ms cubic-bezier(0.77, 0, 0.175, 1) both;
+        }
+        .stagger-1 { animation-delay: 250ms; }
+        .stagger-2 { animation-delay: 310ms; }
+        .stagger-3 { animation-delay: 370ms; }
+        .stagger-4 { animation-delay: 430ms; }
+        .stagger-5 { animation-delay: 490ms; }
+
+        @keyframes staggerFadeIn {
+            from { opacity: 0; transform: translateY(6px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .page-content-enter,
+            .stagger-1, .stagger-2, .stagger-3, .stagger-4, .stagger-5 {
+                animation: none;
+            }
+        }
+
         /* Form-submission spinner. Used by the global form-loading helper
            below and any inline link/button that opts in. Colour follows
            currentColor so it picks up the surrounding button text colour. */
@@ -226,7 +267,7 @@
         </aside>
         {% endif %}
 
-        <main class="{% if use_slim_shell %}main-content{% elif show_sidebar is not defined or show_sidebar %}main-content{% else %}main-content--solo{% endif %} {% block main_class %}{% endblock %}">
+        <main class="{% if use_slim_shell %}main-content{% elif show_sidebar is not defined or show_sidebar %}main-content{% else %}main-content--solo{% endif %} page-content-enter {% block main_class %}{% endblock %}">
             {% block content %}{% endblock %}
         </main>
     </div>
