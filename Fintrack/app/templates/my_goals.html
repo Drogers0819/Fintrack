@@ -72,9 +72,9 @@
 </div>
 
 {% if goals | length > 0 %}
-<p style="font-size:0.78rem; color:var(--text-tertiary); margin:0 0 14px;">{{ goals | length }} active goal{{ 's' if goals | length != 1 else '' }}</p>
+<p class="stagger-1" style="font-size:0.78rem; color:var(--text-tertiary); margin:0 0 14px;">{{ goals | length }} active goal{{ 's' if goals | length != 1 else '' }}</p>
 
-<div style="display: flex; flex-direction: column; gap: 10px;">
+<div class="stagger-1" style="display: flex; flex-direction: column; gap: 10px;">
     {% for g in goals %}
     {% set _name_low = (g.name or '') | lower %}
     {% set _is_debt = (g.type == 'debt' or 'debt' in _name_low or 'loan' in _name_low or 'overdraft' in _name_low or 'credit card' in _name_low or 'pay off' in _name_low) %}
