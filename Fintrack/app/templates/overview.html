@@ -454,24 +454,58 @@
         {% endif %}
 
         {% if monthly_commitments %}
-        {# Bracket access: monthly_commitments["items"] avoids the Jinja
-           clash with dict.items() (the bound method). #}
-        {% set _commitment_rows = monthly_commitments["items"] %}
+        {# Bracket access avoids the Jinja .items() / dict.items() clash. #}
+        {% set _obligations = monthly_commitments["obligations"] %}
+        {% set _goal_contributions = monthly_commitments["goal_contributions"] %}
+        {% set _has_any_commitment = _obligations or _goal_contributions %}
         <div class="slim-side-card">
             <div class="section-label" style="margin-top: 0;">THIS MONTH'S COMMITMENTS</div>
-            {% if _commitment_rows %}
-            <div style="margin-top: 12px; display: flex; flex-direction: column; gap: 0;">
-                {% for item in _commitment_rows %}
-                <div style="display: flex; justify-content: space-between; align-items: baseline; padding: 6px 0; {% if not loop.last %}border-bottom: 0.5px solid var(--glass-border-subtle);{% endif %}">
-                    <span style="font-family: var(--font-sans); font-size: 0.82rem; color: var(--text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; padding-right: 8px;">{{ item.name }}</span>
-                    <span style="font-family: var(--font-sans); font-size: 0.82rem; color: var(--text-primary); font-weight: 500; flex-shrink: 0;">£{{ "{:,.0f}".format(item.amount) }}</span>
-                </div>
-                {% endfor %}
-                <div style="display: flex; justify-content: space-between; align-items: baseline; padding: 10px 0 4px; border-top: 0.5px solid var(--glass-border); margin-top: 6px;">
-                    <span style="font-family: var(--font-sans); font-size: 0.7rem; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 1px;">Total committed</span>
-                    <span style="font-family: var(--font-sans); font-size: 0.95rem; color: var(--roman-gold); font-weight: 500;">£{{ "{:,.0f}".format(monthly_commitments.total_committed) }}</span>
+            {% if _has_any_commitment %}
+
+            {# Fixed obligations — rent, bills, subscriptions. #}
+            {% if _obligations %}
+            <div style="margin-top: 12px;">
+                <div class="section-label" style="margin-top: 0; margin-bottom: 6px; opacity: 0.75;">Fixed obligations</div>
+                <div style="display: flex; flex-direction: column; gap: 0;">
+                    {% for item in _obligations %}
+                    <div style="display: flex; justify-content: space-between; align-items: baseline; padding: 6px 0; {% if not loop.last %}border-bottom: 0.5px solid var(--glass-border-subtle);{% endif %}">
+                        <span style="font-family: var(--font-sans); font-size: 0.82rem; color: var(--text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; padding-right: 8px;">{{ item.name }}</span>
+                        <span style="font-family: var(--font-sans); font-size: 0.82rem; color: var(--text-primary); font-weight: 500; flex-shrink: 0;">£{{ "{:,.0f}".format(item.amount) }}</span>
+                    </div>
+                    {% endfor %}
+                    <div style="display: flex; justify-content: space-between; align-items: baseline; padding: 8px 0 0; margin-top: 2px;">
+                        <span style="font-family: var(--font-sans); font-size: 0.66rem; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 1px;">Obligations subtotal</span>
+                        <span style="font-family: var(--font-sans); font-size: 0.82rem; color: var(--text-secondary); font-weight: 400;">£{{ "{:,.0f}".format(monthly_commitments["obligations_total"]) }}</span>
+                    </div>
                 </div>
             </div>
+            {% endif %}
+
+            {# Towards your goals — active goals with monthly_allocation. #}
+            {% if _goal_contributions %}
+            <div style="margin-top: 14px;">
+                <div class="section-label" style="margin-top: 0; margin-bottom: 6px; opacity: 0.75;">Towards your goals</div>
+                <div style="display: flex; flex-direction: column; gap: 0;">
+                    {% for item in _goal_contributions %}
+                    <div style="display: flex; justify-content: space-between; align-items: baseline; padding: 6px 0; {% if not loop.last %}border-bottom: 0.5px solid var(--glass-border-subtle);{% endif %}">
+                        <span style="font-family: var(--font-sans); font-size: 0.82rem; color: var(--text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; padding-right: 8px;">{{ item.name }}</span>
+                        <span style="font-family: var(--font-sans); font-size: 0.82rem; color: var(--text-primary); font-weight: 500; flex-shrink: 0;">£{{ "{:,.0f}".format(item.amount) }}</span>
+                    </div>
+                    {% endfor %}
+                    <div style="display: flex; justify-content: space-between; align-items: baseline; padding: 8px 0 0; margin-top: 2px;">
+                        <span style="font-family: var(--font-sans); font-size: 0.66rem; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 1px;">Goals subtotal</span>
+                        <span style="font-family: var(--font-sans); font-size: 0.82rem; color: var(--text-secondary); font-weight: 400;">£{{ "{:,.0f}".format(monthly_commitments["goal_contributions_total"]) }}</span>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            {# Grand total — Roman Gold, prominent. #}
+            <div style="display: flex; justify-content: space-between; align-items: baseline; padding: 12px 0 4px; border-top: 0.5px solid var(--glass-border); margin-top: 12px;">
+                <span style="font-family: var(--font-sans); font-size: 0.7rem; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 1px;">Total committed</span>
+                <span style="font-family: var(--font-sans); font-size: 0.95rem; color: var(--roman-gold); font-weight: 500;">£{{ "{:,.0f}".format(monthly_commitments.total_committed) }}</span>
+            </div>
+
             {% else %}
             <p style="font-size: 0.78rem; color: var(--text-tertiary); line-height: 1.65; margin: 12px 0 0;">
                 No commitments tracked yet. Once your plan is live, what's spoken for each month will appear here.

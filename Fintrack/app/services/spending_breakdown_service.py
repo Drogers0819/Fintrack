@@ -239,75 +239,78 @@ def _amount_or_zero(value) -> float:
 
 
 def get_monthly_commitments_for_user(user) -> dict:
-    """Return the user's known recurring monthly commitments AND the
-    factfind estimates that aren't commitments but still describe the
-    typical monthly outflow.
+    """Return the user's known recurring monthly commitments split
+    into two distinct subsections, plus the factfind estimates.
 
-    The two are kept distinct: `items` / `total_committed` are
-    confirmed commitments (rent, bills, subscriptions, active goals),
-    while `estimates` / `total_estimated` are factfind estimates
-    (groceries, transport, other) that the template renders below the
-    commitments with deliberately softer hierarchy.
+    The new shape (Tier 2 clarity follow-up) separates fixed
+    obligations (rent, bills, subscriptions) from goal contributions
+    (one row per active goal with monthly_allocation > 0). This makes
+    the categorical distinction visible without changing the totals.
 
-    Order for items: Rent / mortgage, Bills, Subscriptions, then
-    debt-shaped goals, then other goals. Order for estimates:
-    Groceries, Transport, Other. Zero-valued fields skipped on both
-    sides; an inactive goal is skipped.
+    Order:
+      • obligations: Rent / mortgage, Bills, Subscriptions
+      • goal_contributions: descending by amount (visual weight
+        matches the amount). priority_rank is intentionally NOT used
+        here because the panel is a financial summary, not a planner
+        ordering surface.
+
+    `total_committed` is the sum of both subtotals — the grand total
+    the template shows in Roman Gold. `items` is preserved as a
+    legacy alias (concatenation of obligations + goal_contributions)
+    so callers that still read the flat list keep working until they
+    migrate.
 
     Returns:
       {
-        items: [{name, amount, category}, ...],          # commitments
-        total_committed: float,
-        estimates: [{name, amount}, ...],                # factfind
+        obligations: [{name, amount, category}, ...],
+        obligations_total: float,
+        goal_contributions: [{name, amount, category}, ...],
+        goal_contributions_total: float,
+        items: [...],                  # legacy: obligations + goals
+        total_committed: float,        # obligations_total + goal_contributions_total
+        estimates: [{name, amount}, ...],
         total_estimated: float,
       }
     """
     from app.models.goal import Goal
 
-    items: list[dict] = []
+    obligations: list[dict] = []
 
     rent = _amount_or_zero(getattr(user, "rent_amount", None))
     if rent > 0:
-        items.append({"name": "Rent / mortgage", "amount": round(rent, 2), "category": "rent"})
+        obligations.append({"name": "Rent / mortgage", "amount": round(rent, 2), "category": "rent"})
 
     bills = _amount_or_zero(getattr(user, "bills_amount", None))
     if bills > 0:
-        items.append({"name": "Bills", "amount": round(bills, 2), "category": "bills"})
+        obligations.append({"name": "Bills", "amount": round(bills, 2), "category": "bills"})
 
     subs = _amount_or_zero(getattr(user, "subscriptions_total", None))
     if subs > 0:
-        items.append({"name": "Subscriptions", "amount": round(subs, 2), "category": "subscriptions"})
+        obligations.append({"name": "Subscriptions", "amount": round(subs, 2), "category": "subscriptions"})
 
-    goals = (
-        Goal.query.filter_by(user_id=user.id, status="active")
-        .order_by(Goal.priority_rank.asc(), Goal.id.asc())
-        .all()
+    obligations_total = round(sum(o["amount"] for o in obligations), 2)
+
+    goal_contributions: list[dict] = []
+    goals = Goal.query.filter_by(user_id=user.id, status="active").all()
+    for goal in goals:
+        amount = _amount_or_zero(goal.monthly_allocation)
+        if amount <= 0:
+            continue
+        goal_contributions.append({
+            "name": goal.name,
+            "amount": round(amount, 2),
+            "category": "debt" if _is_debt_goal_name(goal.name or "") else "goal",
+        })
+
+    # Descending by amount. The visual weight in the panel matches the
+    # numeric weight — the largest contribution sits at the top.
+    goal_contributions.sort(key=lambda g: g["amount"], reverse=True)
+    goal_contributions_total = round(
+        sum(g["amount"] for g in goal_contributions), 2,
     )
 
-    debt_goals = [g for g in goals if _is_debt_goal_name(g.name or "")]
-    other_goals = [g for g in goals if not _is_debt_goal_name(g.name or "")]
-
-    for goal in debt_goals:
-        amount = _amount_or_zero(goal.monthly_allocation)
-        if amount <= 0:
-            continue
-        items.append({
-            "name": goal.name,
-            "amount": round(amount, 2),
-            "category": "debt",
-        })
-
-    for goal in other_goals:
-        amount = _amount_or_zero(goal.monthly_allocation)
-        if amount <= 0:
-            continue
-        items.append({
-            "name": goal.name,
-            "amount": round(amount, 2),
-            "category": "goal",
-        })
-
-    total = round(sum(item["amount"] for item in items), 2)
+    items = list(obligations) + list(goal_contributions)
+    total = round(obligations_total + goal_contributions_total, 2)
 
     # ─── Factfind estimates ──────────────────────────────────
     # Deliberately separate from `items`. The "(estimate)" suffix is
@@ -339,7 +342,11 @@ def get_monthly_commitments_for_user(user) -> dict:
     total_estimated = round(sum(e["amount"] for e in estimates), 2)
 
     return {
-        "items": items,
+        "obligations": obligations,
+        "obligations_total": obligations_total,
+        "goal_contributions": goal_contributions,
+        "goal_contributions_total": goal_contributions_total,
+        "items": items,  # legacy alias for existing callers
         "total_committed": total,
         "estimates": estimates,
         "total_estimated": total_estimated,

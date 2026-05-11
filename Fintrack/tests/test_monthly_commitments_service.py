@@ -159,7 +159,11 @@ class TestProfileFields:
 
 class TestGoalCommitments:
 
-    def test_debt_goals_listed_before_non_debt_goals(self, app):
+    def test_goal_contributions_sorted_by_amount_descending(self, app):
+        """The panel orders goal contributions by amount (largest first)
+        so visual weight matches numeric weight. Debt vs non-debt
+        category no longer influences order — that was the old
+        contract under the flat-items shape."""
         from app.services.spending_breakdown_service import (
             get_monthly_commitments_for_user,
         )
@@ -172,9 +176,9 @@ class TestGoalCommitments:
             user = db.session.get(User, uid)
             result = get_monthly_commitments_for_user(user)
             names = [item["name"] for item in result["items"]]
-            # Debt-shaped name first, then non-debt goals.
-            assert names[0] == "Pay off credit card"
-            assert set(names[1:]) == {"Holiday fund", "House deposit"}
+            # Items list is obligations (none here) + goal_contributions
+            # in descending-amount order.
+            assert names == ["House deposit", "Pay off credit card", "Holiday fund"]
 
     def test_inactive_goals_are_skipped(self, app):
         from app.services.spending_breakdown_service import (
@@ -344,3 +348,144 @@ class TestEstimates:
         assert "Groceries (estimate)" in body
         assert "Transport (estimate)" in body
         assert "Total estimated" in body
+
+
+# ─── Obligations vs goal contributions (clarity follow-up) ──
+
+
+class TestObligationsAndGoalContributions:
+    """Tests for the new return shape that separates fixed obligations
+    from goal contributions with their own subtotals."""
+
+    def test_no_active_goals_leaves_goal_contributions_empty(self, app):
+        from app.services.spending_breakdown_service import (
+            get_monthly_commitments_for_user,
+        )
+        uid = _make_user(app, rent=900, bills=180)
+        with app.app_context():
+            user = db.session.get(User, uid)
+            result = get_monthly_commitments_for_user(user)
+            assert result["goal_contributions"] == []
+            assert result["goal_contributions_total"] == 0.0
+            # Obligations populated as before.
+            assert len(result["obligations"]) == 2
+            assert result["obligations_total"] == 1080.0
+            # Total equals the obligations subtotal when no goals.
+            assert result["total_committed"] == result["obligations_total"]
+
+    def test_active_goals_populate_goal_contributions(self, app):
+        from app.services.spending_breakdown_service import (
+            get_monthly_commitments_for_user,
+        )
+        uid = _make_user(app, rent=900, bills=180)
+        _add_goal(app, uid, "Car", monthly_allocation=1518)
+        _add_goal(app, uid, "Emergency fund", monthly_allocation=202)
+
+        with app.app_context():
+            user = db.session.get(User, uid)
+            result = get_monthly_commitments_for_user(user)
+            names = [g["name"] for g in result["goal_contributions"]]
+            assert set(names) == {"Car", "Emergency fund"}
+            assert result["goal_contributions_total"] == 1720.0
+            # Grand total = obligations + goals.
+            assert result["total_committed"] == 1080.0 + 1720.0
+
+    def test_goal_contributions_sorted_descending_by_amount(self, app):
+        from app.services.spending_breakdown_service import (
+            get_monthly_commitments_for_user,
+        )
+        uid = _make_user(app)
+        _add_goal(app, uid, "Holiday", monthly_allocation=120)
+        _add_goal(app, uid, "Car", monthly_allocation=400)
+        _add_goal(app, uid, "Emergency fund", monthly_allocation=250)
+
+        with app.app_context():
+            user = db.session.get(User, uid)
+            result = get_monthly_commitments_for_user(user)
+            names = [g["name"] for g in result["goal_contributions"]]
+            assert names == ["Car", "Emergency fund", "Holiday"]
+
+    def test_completed_or_archived_goals_excluded(self, app):
+        """Only active goals contribute. Anything else doesn't appear
+        as a current monthly commitment."""
+        from app.services.spending_breakdown_service import (
+            get_monthly_commitments_for_user,
+        )
+        uid = _make_user(app)
+        _add_goal(app, uid, "Active goal", monthly_allocation=200)
+        _add_goal(app, uid, "Archived goal", monthly_allocation=500,
+                  status="archived")
+        _add_goal(app, uid, "Done goal", monthly_allocation=300,
+                  status="completed")
+
+        with app.app_context():
+            user = db.session.get(User, uid)
+            result = get_monthly_commitments_for_user(user)
+            names = [g["name"] for g in result["goal_contributions"]]
+            assert names == ["Active goal"]
+            assert result["goal_contributions_total"] == 200.0
+
+    def test_zero_allocation_goals_excluded(self, app):
+        """An active goal with monthly_allocation == 0 isn't a current
+        commitment — paused, or never funded."""
+        from app.services.spending_breakdown_service import (
+            get_monthly_commitments_for_user,
+        )
+        uid = _make_user(app)
+        _add_goal(app, uid, "Funded goal", monthly_allocation=150)
+        _add_goal(app, uid, "Paused goal", monthly_allocation=0)
+
+        with app.app_context():
+            user = db.session.get(User, uid)
+            result = get_monthly_commitments_for_user(user)
+            names = [g["name"] for g in result["goal_contributions"]]
+            assert names == ["Funded goal"]
+
+    def test_total_committed_identity_holds(self, app):
+        """For any combination of obligations + goals, the grand total
+        always equals the sum of the two subtotals."""
+        from app.services.spending_breakdown_service import (
+            get_monthly_commitments_for_user,
+        )
+        uid = _make_user(app, rent=900, bills=180, subscriptions=50)
+        _add_goal(app, uid, "Car", monthly_allocation=300)
+        _add_goal(app, uid, "Emergency fund", monthly_allocation=150)
+
+        with app.app_context():
+            user = db.session.get(User, uid)
+            result = get_monthly_commitments_for_user(user)
+            assert (
+                result["total_committed"]
+                == result["obligations_total"] + result["goal_contributions_total"]
+            )
+
+    def test_overview_renders_both_subsections_when_goals_present(self, app, client):
+        """Integration: the new subsection labels render on /overview
+        when the user has both obligations and goal contributions."""
+        uid = _make_user(app, rent=900, bills=180)
+        _add_goal(app, uid, "Car", monthly_allocation=300)
+        _login(client)
+
+        resp = client.get("/overview")
+        assert resp.status_code == 200
+        body = resp.get_data(as_text=True)
+        # Sub-section labels (matched case-insensitively in template).
+        assert "Fixed obligations" in body
+        assert "Towards your goals" in body
+        assert "Obligations subtotal" in body
+        assert "Goals subtotal" in body
+        assert "Total committed" in body
+
+    def test_overview_hides_goals_subsection_when_no_active_goals(self, app, client):
+        """No goals → goals subsection (and its subtotal label) must
+        not appear. Obligations + total committed still render."""
+        _make_user(app, rent=900, bills=180)
+        _login(client)
+
+        resp = client.get("/overview")
+        assert resp.status_code == 200
+        body = resp.get_data(as_text=True)
+        assert "Fixed obligations" in body
+        assert "Towards your goals" not in body
+        assert "Goals subtotal" not in body
+        assert "Total committed" in body
