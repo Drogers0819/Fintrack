@@ -393,4 +393,7 @@ def create_app(config_class=None):
                 from flask import jsonify
                 return jsonify({"success": False, "error": str(exc)}), 500
 
+    from app.cli import register_cli_commands
+    register_cli_commands(app)
+
     return app
