@@ -34,6 +34,7 @@ class User(db.Model, UserMixin):
     survival_mode_started_at = db.Column(db.DateTime, nullable=True)
     subscription_paused_until = db.Column(db.DateTime, nullable=True)
     last_pause_started_at = db.Column(db.DateTime, nullable=True)
+    starting_net_worth = db.Column(db.Numeric(12, 2), nullable=True)
     employment_type = db.Column(db.String(30), default="full_time")
     factfind_completed = db.Column(db.Boolean, default=False)
     plan_wizard_complete = db.Column(db.Boolean, default=False)

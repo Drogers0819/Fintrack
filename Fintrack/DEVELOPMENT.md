@@ -1335,4 +1335,14 @@ Suite count: **690 passing** (653 deterministic baseline + 36 new + 1 — `test_
 
 ---
 
+## Net Worth — Known Limitations
+
+The Net Worth metric currently reflects savings goals and debt-payoff goals only. Outstanding mortgage balances are not tracked anywhere in the data model and therefore cannot be included. For users with mortgages, the displayed net worth will be higher than their true financial position. Adding an outstanding mortgage balance field is on the post-launch roadmap.
+
+Student loans are included when (and only when) the user has entered them as a debt-payoff goal during onboarding. The "Pay off student loan" chip in the goal-chips step is the canonical entry path. Users who skip that chip won't have their student-loan balance reflected in the metric until they add it as a goal manually.
+
+The metric uses the existing `_is_debt_goal_name` heuristic (shared via `app/services/goal_classification.py`) rather than `Goal.type`, because the onboarding goal-chips handler writes every goal with `type="savings_target"` regardless of purpose. Debt is recognised by name keywords: `credit card`, `loan`, `overdraft`, `pay off`.
+
+---
+
 *This journal is part of the FinTrack project. It documents genuine learning, not polished retrospection. Mistakes, confusion, and wrong turns are included deliberately — they're where the real growth happened.*

@@ -229,14 +229,7 @@ def _compute_segments(rows: list[tuple[str, float]], total: float) -> list[dict]
 # spending shows up in the ring chart via real transactions; that's
 # the right place for them.
 
-_DEBT_KEYWORDS = ("credit card", "loan", "overdraft", "pay off")
-
-
-def _is_debt_goal_name(name: str) -> bool:
-    if not name:
-        return False
-    lower = name.lower()
-    return any(keyword in lower for keyword in _DEBT_KEYWORDS)
+from app.services.goal_classification import _is_debt_goal_name
 
 
 def _amount_or_zero(value) -> float:

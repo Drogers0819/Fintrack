@@ -658,16 +658,9 @@ def overview():
                 "next_date_str": _fmt(next_date),
             }
 
-    # ── Savings rate, plan phase, date label, first name (slim shell shell) ──
+    # ── Plan phase, date label, first name (slim shell) ──
     first_name = (current_user.name or "").split()[0] if current_user.name else ""
     date_label = today.strftime("%A, %d %B")
-
-    savings_rate = None
-    if smart_plan and "error" not in smart_plan:
-        income_for_rate = float(current_user.monthly_income or 0)
-        plan_surplus = float(smart_plan.get("surplus") or 0)
-        if income_for_rate > 0 and plan_surplus > 0:
-            savings_rate = round((plan_surplus / income_for_rate) * 100)
 
     plan_phase = None
     if smart_plan and "error" not in smart_plan:
@@ -701,6 +694,9 @@ def overview():
     spending_breakdown = get_spending_breakdown_for_user(current_user)
     monthly_commitments = get_monthly_commitments_for_user(current_user)
 
+    from app.services.net_worth_service import get_net_worth_summary
+    net_worth = get_net_worth_summary(current_user)
+
     return render_template("overview.html",
         greeting=greeting,
         first_name=first_name,
@@ -730,7 +726,7 @@ def overview():
         debt_allocation=debt_allocation,
         available_surplus=available_surplus,
         has_debt_goals=has_debt_goals,
-        savings_rate=savings_rate,
+        net_worth=net_worth,
         plan_phase=plan_phase,
         plan_surplus_value=plan_surplus_value,
         todays_whisper=todays_whisper,
@@ -1486,6 +1482,12 @@ def plan_reveal():
         current_user.plan_wizard_complete = True
         session['first_overview'] = True
         db.session.commit()
+        # Snapshot the starting net worth at the end of onboarding so
+        # the overview's Net worth pill can show progress from the
+        # baseline. Idempotent inside the helper: if a snapshot
+        # already exists it is left alone.
+        from app.services.net_worth_service import snapshot_starting_net_worth
+        snapshot_starting_net_worth(current_user)
         track_event(current_user.id, "plan_revealed", {
             "phase_count": plan.get("phase_count") if "error" not in plan else None,
             "monthly_surplus": plan.get("surplus") if "error" not in plan else None,

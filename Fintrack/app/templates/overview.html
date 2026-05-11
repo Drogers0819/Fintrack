@@ -128,9 +128,19 @@
                 <div class="slim-stat__label">Monthly surplus</div>
                 <div class="slim-stat__value">£{{ "{:,.0f}".format(plan_surplus_value) }}</div>
             </div>
+            {# Net worth pill — replaces Savings rate. Honest about
+               where users start (often negative). Two-row body: top
+               row shows current net worth, bottom row shows progress
+               since the onboarding snapshot in Roman Gold. #}
             <div class="slim-stat">
-                <div class="slim-stat__label">Savings rate</div>
-                <div class="slim-stat__value">{% if savings_rate is not none %}{{ savings_rate }}%{% else %}—{% endif %}</div>
+                <div class="slim-stat__label">Net worth</div>
+                {% if net_worth.has_started %}
+                <div class="slim-stat__value">{{ '-£' if net_worth.current < 0 else '£' }}{{ "{:,.0f}".format(net_worth.current | abs) }}</div>
+                <div style="font-size: 0.55rem; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.08em; margin-top: 6px;">Progress</div>
+                <div style="font-size: 0.85rem; color: var(--roman-gold); font-weight: 500; line-height: 1; margin-top: 2px;">{{ '+£' if net_worth.progress > 0 else ('-£' if net_worth.progress < 0 else '£') }}{{ "{:,.0f}".format(net_worth.progress | abs) }}</div>
+                {% else %}
+                <div style="font-size: 0.72rem; color: var(--text-tertiary); line-height: 1.4; margin-top: 4px;">Complete onboarding to see your net worth.</div>
+                {% endif %}
             </div>
             <div class="slim-stat">
                 <div class="slim-stat__label">Active goals</div>

@@ -150,6 +150,7 @@ def create_app(config_class=None):
             ("survival_mode_started_at", "ALTER TABLE users ADD COLUMN survival_mode_started_at TIMESTAMP"),
             ("subscription_paused_until", "ALTER TABLE users ADD COLUMN subscription_paused_until TIMESTAMP"),
             ("last_pause_started_at", "ALTER TABLE users ADD COLUMN last_pause_started_at TIMESTAMP"),
+            ("starting_net_worth", "ALTER TABLE users ADD COLUMN starting_net_worth NUMERIC(12, 2)"),
         ]
 
         for col_name, sql in migrations:
