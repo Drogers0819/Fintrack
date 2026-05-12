@@ -22,6 +22,7 @@ def register_cli_commands(app):
     """Register all CLI commands with the given Flask app."""
     app.cli.add_command(backfill_net_worth)
     app.cli.add_command(wipe_users_by_email)
+    app.cli.add_command(backfill_recurring_contributions)
 
 
 @click.command("backfill-net-worth")
@@ -267,3 +268,133 @@ def wipe_users_by_email(emails: tuple[str, ...], confirm: bool):
             f"failed users.",
             err=True,
         )
+
+
+# ─── backfill-recurring-contributions ────────────────────────
+
+
+@click.command("backfill-recurring-contributions")
+@click.option(
+    "--dry-run",
+    "dry_run",
+    is_flag=True,
+    default=False,
+    help="List affected users and the Legacy row that would be created.",
+)
+@click.option(
+    "--confirm",
+    is_flag=True,
+    default=False,
+    help="Write Legacy contributions rows for affected users.",
+)
+def backfill_recurring_contributions(dry_run: bool, confirm: bool):
+    """One-shot migration for the RecurringContribution refactor.
+
+    For each user where User.subscriptions_total > 0 OR
+    User.other_commitments > 0 AND no RecurringContribution rows
+    exist for that source yet, creates a single "Legacy contributions"
+    row that preserves the rolled-up amount. No chip identity is
+    invented — we cannot recover information that wasn't captured.
+
+    Idempotent: users who already have RecurringContribution rows
+    for a source are skipped for that source (a user might have
+    rows for subscriptions but not other_commitments, and the
+    migration handles that mixed case).
+    """
+    if not dry_run and not confirm:
+        click.echo(
+            "Pass --dry-run to preview or --confirm to write. "
+            "Refusing to run without either flag.",
+            err=True,
+        )
+        raise click.Abort()
+
+    if dry_run and confirm:
+        click.echo("Pass only one of --dry-run or --confirm.", err=True)
+        raise click.Abort()
+
+    from app import db
+    from app.models.recurring_contribution import RecurringContribution
+    from app.models.user import User
+    from app.services.recurring_contribution_service import (
+        recompute_cached_aggregate,
+    )
+
+    sources_to_check = (
+        ("subscriptions", "subscriptions_total"),
+        ("other_commitments", "other_commitments"),
+    )
+
+    mode_label = "DRY RUN" if dry_run else "WRITE"
+    click.echo(f"[{mode_label}] Recurring contribution backfill")
+    click.echo("-" * 70)
+
+    plan: list[dict] = []
+    users = User.query.order_by(User.id).all()
+    for user in users:
+        for source_key, scalar_col in sources_to_check:
+            scalar = getattr(user, scalar_col, None)
+            if scalar is None or float(scalar) <= 0:
+                continue
+            existing_count = RecurringContribution.query.filter_by(
+                user_id=user.id, source=source_key,
+            ).count()
+            if existing_count > 0:
+                continue
+            plan.append({
+                "user_id": user.id,
+                "source": source_key,
+                "amount": float(scalar),
+            })
+
+    if not plan:
+        click.echo("No users to backfill. Already in sync.")
+        return
+
+    for entry in plan:
+        action = "would write" if dry_run else "writing"
+        click.echo(
+            f"user_id={entry['user_id']} source={entry['source']} "
+            f"amount=£{entry['amount']:.2f} → Legacy contributions ({action})"
+        )
+
+    click.echo("-" * 70)
+
+    if not confirm:
+        click.echo(
+            f"DRY RUN complete. {len(plan)} Legacy row(s) would be created."
+        )
+        click.echo(
+            "Note: backfilled rows have no chip identity. Their label is "
+            "'Legacy contributions ({source})' and chip_id is NULL — we "
+            "cannot recover information that wasn't captured pre-refactor."
+        )
+        return
+
+    written = 0
+    for entry in plan:
+        row = RecurringContribution(
+            user_id=entry["user_id"],
+            source=entry["source"],
+            chip_id=None,
+            label=f"Legacy contributions ({entry['source'].replace('_', ' ')})",
+            amount=entry["amount"],
+            linked_goal_id=None,
+        )
+        db.session.add(row)
+        written += 1
+    db.session.commit()
+
+    # Recompute the cached aggregate on each affected user. The amount
+    # should be unchanged (we wrote the same scalar value into the row)
+    # but recomputing keeps the invariant explicit.
+    seen_users: set[int] = set()
+    for entry in plan:
+        if entry["user_id"] in seen_users:
+            continue
+        user = db.session.get(User, entry["user_id"])
+        if user is not None:
+            recompute_cached_aggregate(user, entry["source"])
+        seen_users.add(entry["user_id"])
+
+    click.echo(f"Backfill complete. {written} Legacy row(s) created.")

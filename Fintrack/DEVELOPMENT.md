@@ -1335,11 +1335,41 @@ Suite count: **690 passing** (653 deterministic baseline + 36 new + 1 — `test_
 
 ---
 
+## Recurring Contributions — Architecture
+
+The factfind form has two "sub-chip" sections — Subscriptions (Netflix, Spotify, etc.) and Other regular payments (LISA, ISA, Pension, Childcare, etc.). Each section presents a list of selectable chips with per-chip £/month inputs, plus a free-form "add a custom one" affordance.
+
+Before May 2026 these chip selections were summed client-side in JavaScript and POSTed as a single scalar per source (`User.subscriptions_total`, `User.other_commitments`). Chip identity was lost the moment the form submitted: a user with £200 of LISA contributions and £150 of Pension contributions saw the same `other_commitments = 350` as a user with £350 of childcare. This made the "what's this LISA for?" UX impossible to build because the data didn't carry the chip's identity.
+
+**As of the RecurringContribution refactor (May 2026), each chip selection persists as a row in the `recurring_contributions` table.**
+
+Schema:
+- `user_id` (FK → users, ON DELETE CASCADE)
+- `source` — one of `"subscriptions"` or `"other_commitments"` (mirrors the factfind section)
+- `chip_id` — `"lisa"`, `"netflix"`, etc. for standard chips; NULL for user-typed custom entries
+- `label` — display label ("LISA contributions") for standard chips; user's typed name for custom entries
+- `amount` — monthly amount
+- `linked_goal_id` (FK → goals, ON DELETE SET NULL) — optional. When set, the contribution surfaces in the Overview commitments panel's "Towards your goals" subsection and gets mentioned in the AI companion's context
+
+**Cached aggregate pattern.** `User.subscriptions_total` and `User.other_commitments` columns are preserved but treated as cache-only storage. They are populated automatically by `sync_contributions_from_factfind` whenever the user submits factfind. Every existing downstream consumer (planner, companion, surplus reveal, simulator, allocator, narrative, prediction, digest, insight, profile, goal routes — 12+ sites) continues reading the scalars unchanged. New code that needs chip identity (commitments panel goals subsection, AI companion linked-contribution context) reads `RecurringContribution` rows directly.
+
+**The invariant: `User.{source}_total == sum(RecurringContribution.amount where user_id, source matches)`.** Maintained by `sync_contributions_from_factfind`. Do not write to the scalar columns outside the service.
+
+**Migration for pre-refactor users.** Run `flask --app run backfill-recurring-contributions --dry-run` then `--confirm` on production. For each user with a non-zero scalar but no rows for that source, the command creates a single `"Legacy contributions (subscriptions)"` or `"Legacy contributions (other commitments)"` row preserving the rolled-up amount with `chip_id = NULL`. Chip identity for pre-refactor data cannot be recovered — the data was never captured. Idempotent: re-running the command is a no-op once every affected user has at least one row.
+
+**What the refactor doesn't do.** It doesn't ship the user-facing "what's this LISA for?" linking prompt. That's a separate follow-up task; the data model is in place to support it. Today users can edit factfind to add/remove chips and (if a developer manually sets `linked_goal_id` on a row) the linkage surfaces in the UI and AI context. A future commit will add a UI affordance for users to set `linked_goal_id` themselves.
+
+**Known UX improvement that landed inside this refactor.** Before the refactor, editing factfind reset every chip checkbox even though the rolled-up scalar was preserved. Users had to re-select all their chips on every edit. The new `restoreChipState` JS function reads the rendered chip state and re-checks the boxes / restores amounts / restores custom entries on factfind open. This was a known UX issue that the architectural rewrite fixed as a side effect.
+
+---
+
 ## Net Worth — Known Limitations
 
 The Net Worth metric currently reflects savings goals and debt-payoff goals only. Outstanding mortgage balances are not tracked anywhere in the data model and therefore cannot be included. For users with mortgages, the displayed net worth will be higher than their true financial position. Adding an outstanding mortgage balance field is on the post-launch roadmap.
 
 Student loans are included when (and only when) the user has entered them as a debt-payoff goal during onboarding. The "Pay off student loan" chip in the goal-chips step is the canonical entry path. Users who skip that chip won't have their student-loan balance reflected in the metric until they add it as a goal manually.
+
+Since the RecurringContribution refactor (May 2026), a LISA contribution linked to a savings goal (e.g. House deposit) flows through to the Net Worth calc automatically via the linked Goal — the linkage doesn't need its own representation in `net_worth_service`. The goal's `current_amount` grows over time as the user contributes; that growth shows up as Net Worth progress in the standard way.
 
 The metric uses the existing `_is_debt_goal_name` heuristic (shared via `app/services/goal_classification.py`) rather than `Goal.type`, because the onboarding goal-chips handler writes every goal with `type="savings_target"` regardless of purpose. Debt is recognised by name keywords: `credit card`, `loan`, `overdraft`, `pay off`.
 
