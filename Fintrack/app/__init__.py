@@ -126,6 +126,7 @@ def create_app(config_class=None):
         from app.models.checkin import CheckIn, CheckInEntry
         from app.models.crisis_event import CrisisEvent
         from app.models.subscription_event import SubscriptionEvent
+        from app.models.recurring_contribution import RecurringContribution
 
         db.create_all()
 
@@ -209,6 +210,8 @@ def create_app(config_class=None):
                 ("checkin_entries", "goal_id", "goals", "SET NULL"),
                 ("crisis_events", "user_id", "users", "CASCADE"),
                 ("subscription_events", "user_id", "users", "CASCADE"),
+                ("recurring_contributions", "user_id", "users", "CASCADE"),
+                ("recurring_contributions", "linked_goal_id", "goals", "SET NULL"),
             ]
 
             for table, column, ref_table, desired_rule in cascade_targets:
