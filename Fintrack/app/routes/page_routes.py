@@ -1840,6 +1840,108 @@ def update_theme():
 
 # ─── FACTFIND ────────────────────────────────────────────
 
+
+def _sync_factfind_contributions_from_post(
+    user, *, source, json_payload, fallback_scalar, fallback_label,
+):
+    """Bridge between the factfind form payload and
+    sync_contributions_from_factfind.
+
+    Behaviour:
+      • If `json_payload` is a parseable string with chips or custom
+        entries, sync from those.
+      • If the JSON is missing or invalid AND `fallback_scalar` > 0,
+        create a single Legacy roll-up row. Log a warning so we can
+        spot legacy clients in production logs.
+      • If everything is empty, sync with no rows (clears any prior
+        entries and writes 0 to the cached aggregate).
+    """
+    import json
+    import logging
+    from app.services.recurring_contribution_service import (
+        sync_contributions_from_factfind,
+    )
+
+    logger = logging.getLogger(__name__)
+
+    chip_data = None
+    custom_entries = None
+
+    if json_payload:
+        try:
+            parsed = json.loads(json_payload)
+        except (TypeError, ValueError) as exc:
+            logger.warning(
+                "factfind: unparseable %s_chip_data for user=%s (%s) "
+                "— falling back to legacy scalar",
+                source, user.id, exc,
+            )
+            parsed = None
+
+        if isinstance(parsed, dict):
+            chip_list = parsed.get("chips") or []
+            chip_data = {}
+            for entry in chip_list:
+                if not isinstance(entry, dict):
+                    continue
+                cid = entry.get("chip_id")
+                if not cid:
+                    continue
+                chip_data[cid] = {
+                    "label": entry.get("label") or cid,
+                    "amount": entry.get("amount"),
+                }
+            custom_entries = [
+                c for c in (parsed.get("custom") or [])
+                if isinstance(c, dict)
+            ]
+
+    if chip_data is None and custom_entries is None:
+        # No JSON at all — legacy client, or a no-JS form submit.
+        # Honour the scalar so we don't lose the user's data.
+        if fallback_scalar and float(fallback_scalar) > 0:
+            logger.warning(
+                "factfind: legacy scalar fallback for user=%s source=%s "
+                "value=%s — creating Legacy contributions row",
+                user.id, source, fallback_scalar,
+            )
+            custom_entries = [{
+                "label": fallback_label,
+                "amount": float(fallback_scalar),
+            }]
+        else:
+            custom_entries = []
+        chip_data = {}
+
+    sync_contributions_from_factfind(
+        user, source,
+        chip_data=chip_data,
+        custom_entries=custom_entries,
+    )
+
+
+def _serialise_user_contributions_for_template(user, source):
+    """Return chip state as a list of dicts the JS can read on
+    factfind open: [{chip_id|None, label, amount}, ...].
+
+    JSON-encoded into a hidden input so factfind.html can restore
+    the prior selection (ticked chips + amounts + custom entries)
+    without an extra HTTP round-trip."""
+    from app.services.recurring_contribution_service import (
+        get_contributions_for_user,
+    )
+
+    rows = get_contributions_for_user(user, source=source)
+    return [
+        {
+            "chip_id": r.chip_id,
+            "label": r.label,
+            "amount": float(r.amount),
+        }
+        for r in rows
+    ]
+
+
 @page_bp.route("/factfind", methods=["GET", "POST"])
 @login_required
 def factfind():
@@ -1890,6 +1992,12 @@ def factfind():
                 profile=current_user.profile_dict(),
                 show_sidebar=current_user.plan_wizard_complete,
                 show_header=current_user.plan_wizard_complete,
+                subscriptions_chip_state=_serialise_user_contributions_for_template(
+                    current_user, "subscriptions",
+                ),
+                other_commitments_chip_state=_serialise_user_contributions_for_template(
+                    current_user, "other_commitments",
+                ),
             )
 
         employment_type = form_data.get("employment_type", "full_time")
@@ -1901,8 +2009,10 @@ def factfind():
         current_user.bills_amount = values["bills_amount"]
         current_user.groceries_estimate = values["groceries_estimate"]
         current_user.transport_estimate = values["transport_estimate"]
-        current_user.subscriptions_total = values["subscriptions_total"]
-        current_user.other_commitments = values["other_commitments"]
+        # subscriptions_total / other_commitments are persisted via
+        # sync_contributions_from_factfind below as cached aggregates.
+        # The scalar values from the form are used only as a back-compat
+        # fallback when the JSON chip-data inputs aren't present.
         current_user.income_day = income_day
         current_user.employment_type = employment_type
         was_already_completed = current_user.factfind_completed
@@ -1912,6 +2022,22 @@ def factfind():
         monthly_income = values["monthly_income"]
 
         db.session.commit()
+
+        # Chip-level contributions. Each source has a JSON payload
+        # from the JS-side serialiser; if missing/unparseable, fall
+        # back to a single "Legacy contributions" row sized by the
+        # scalar that the form ALSO submits (legacy compatibility).
+        for source_key, scalar_value, scalar_label in (
+            ("subscriptions", values["subscriptions_total"], "Subscriptions"),
+            ("other_commitments", values["other_commitments"], "Other commitments"),
+        ):
+            _sync_factfind_contributions_from_post(
+                current_user,
+                source=source_key,
+                json_payload=form_data.get(f"{source_key}_chip_data"),
+                fallback_scalar=scalar_value,
+                fallback_label=f"Legacy contributions ({scalar_label.lower()})",
+            )
         if not was_already_completed:
             track_event(current_user.id, "onboarding_stage1_completed", {
                 "employment_type": employment_type,
@@ -1927,7 +2053,13 @@ def factfind():
     return render_template("factfind.html",
         profile=current_user.profile_dict(),
         show_sidebar=current_user.plan_wizard_complete,
-        show_header=current_user.plan_wizard_complete
+        show_header=current_user.plan_wizard_complete,
+        subscriptions_chip_state=_serialise_user_contributions_for_template(
+            current_user, "subscriptions",
+        ),
+        other_commitments_chip_state=_serialise_user_contributions_for_template(
+            current_user, "other_commitments",
+        ),
     )
 
 

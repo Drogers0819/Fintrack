@@ -208,6 +208,10 @@
     </div>
 
     <input type="hidden" name="subscriptions_total" id="subscriptions_total" value="{{ '%g' | format(profile.subscriptions_total) if profile.subscriptions_total else '0' }}">
+    {# Per-chip JSON. The route reads this when present; the scalar
+       above is the legacy fallback for older clients. #}
+    <input type="hidden" name="subscriptions_chip_data" id="subscriptions_chip_data" value="">
+    <script id="subscriptions_chip_state" type="application/json">{{ subscriptions_chip_state | default([]) | tojson | safe }}</script>
 
 <!-- ─── OTHER REGULAR PAYMENTS ─── -->
     <div class="section-label" style="margin-top: 4px; margin-bottom: 10px;">Other regular payments</div>
@@ -231,7 +235,7 @@
         <div style="display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 8px;">
             {% for p in payments %}
             <label style="cursor: pointer;">
-                <input type="checkbox" class="payment-checkbox" data-id="{{ p.id }}" style="display: none;" onchange="togglePayment(this, '{{ p.id }}')">
+                <input type="checkbox" class="payment-checkbox" data-id="{{ p.id }}" data-name="{{ p.label }}" style="display: none;" onchange="togglePayment(this, '{{ p.id }}')">
                 <div class="sub-chip" id="pay-chip-{{ p.id }}" style="display: flex; align-items: center; gap: 6px; padding: 7px 14px; border-radius: 50px; border: 1px solid var(--glass-chip); background: rgba(255,255,255,0.02); transition: all 0.2s ease; font-size: 0.78rem; color: var(--text-secondary); user-select: none;">
                     {{ p.label }}
                 </div>
@@ -266,6 +270,8 @@
     </div>
 
     <input type="hidden" name="other_commitments" id="other_commitments" value="{{ '%g' | format(profile.other_commitments) if profile.other_commitments else '0' }}">
+    <input type="hidden" name="other_commitments_chip_data" id="other_commitments_chip_data" value="">
+    <script id="other_commitments_chip_state" type="application/json">{{ other_commitments_chip_state | default([]) | tojson | safe }}</script>
 
     <!-- ─── LIVING COSTS ─── -->
     <div class="section-label" style="margin-top: var(--sp-sm); margin-bottom: 16px;">Living costs</div>
@@ -367,6 +373,7 @@ function toggleSub(cb, id, defaultCost) {
 function updateSubTotal() {
     var total = 0;
     var selectedCount = 0;
+    var chips = [];
     var checkboxes = document.querySelectorAll('.sub-checkbox');
     checkboxes.forEach(function(cb) {
         if (!cb.checked) return;
@@ -375,17 +382,23 @@ function updateSubTotal() {
         var amt = amtInput ? parseFloat(amtInput.value) : NaN;
         if (isNaN(amt) || amt < 0) amt = parseFloat(cb.dataset.cost) || 0;
         total += amt;
+        chips.push({ chip_id: cb.dataset.id, label: cb.dataset.name, amount: amt });
     });
 
     // Add custom subs
-    customSubs.forEach(function(s) {
+    var customList = customSubs.map(function(s) {
         total += s.cost;
+        return { label: s.name, amount: s.cost };
     });
 
     total = Math.round(total * 100) / 100;
     selectedCount += customSubs.length;
     document.getElementById('sub-total-display').textContent = '£' + fmtGBP(total);
     document.getElementById('subscriptions_total').value = total.toFixed(2);
+    document.getElementById('subscriptions_chip_data').value = JSON.stringify({
+        chips: chips,
+        custom: customList,
+    });
     var countEl = document.getElementById('sub-selected-count');
     if (countEl) countEl.textContent = selectedCount > 0 ? selectedCount + ' selected' : '';
 }
@@ -443,14 +456,26 @@ function togglePayment(cb, id) {
 
 function updatePaymentTotal() {
     var total = 0;
-    document.querySelectorAll('.payment-amount').forEach(function(input) {
-        var val = parseFloat(input.value);
-        if (!isNaN(val) && val > 0) total += val;
+    var chips = [];
+    document.querySelectorAll('.payment-checkbox').forEach(function(cb) {
+        if (!cb.checked) return;
+        var amtInput = document.querySelector('.payment-amount[data-id="' + cb.dataset.id + '"]');
+        var amt = amtInput ? parseFloat(amtInput.value) : NaN;
+        if (isNaN(amt) || amt <= 0) return;
+        total += amt;
+        chips.push({ chip_id: cb.dataset.id, label: cb.dataset.name || cb.dataset.id, amount: amt });
     });
-    customPayments.forEach(function(p) { total += p.cost; });
+    var customList = customPayments.map(function(p) {
+        total += p.cost;
+        return { label: p.name, amount: p.cost };
+    });
     total = Math.round(total * 100) / 100;
     document.getElementById('pay-total-display').textContent = '£' + fmtGBP(total);
     document.getElementById('other_commitments').value = total.toFixed(2);
+    document.getElementById('other_commitments_chip_data').value = JSON.stringify({
+        chips: chips,
+        custom: customList,
+    });
 }
 
 function addCustomPayment() {
@@ -484,16 +509,68 @@ function renderCustomPayments() {
     });
 }
 
-// On load, mirror the persisted totals into the visible displays so users
-// see what was previously saved. Touching a chip will recompute from current
-// selections — the saved total stays in the hidden input until then.
+// On load, restore the per-chip state from the server-rendered JSON
+// blob so users coming back to factfind see their previously-saved
+// chip selections, not a blank form. This replaces the prior
+// "mirror the totals only" behaviour, which left the chips
+// un-ticked and confused users on edit.
+function restoreChipState(stateScriptId, kind) {
+    var el = document.getElementById(stateScriptId);
+    if (!el) return;
+    var rows;
+    try { rows = JSON.parse(el.textContent || '[]'); }
+    catch (_) { return; }
+    if (!Array.isArray(rows) || rows.length === 0) return;
+
+    rows.forEach(function(row) {
+        if (row.chip_id) {
+            // Standard chip — find its checkbox and amount input.
+            var selector = kind === 'sub' ? '.sub-checkbox' : '.payment-checkbox';
+            var cb = document.querySelector(selector + '[data-id="' + row.chip_id + '"]');
+            if (!cb) return;
+            cb.checked = true;
+            // Trigger the project's existing toggle handler so chip
+            // CSS classes + visible amount input get set correctly.
+            if (kind === 'sub') {
+                toggleSub(cb, row.chip_id, parseFloat(cb.dataset.cost) || 0);
+            } else {
+                togglePayment(cb, row.chip_id);
+            }
+            var amtSelector = kind === 'sub' ? '.sub-amount' : '.payment-amount';
+            var amt = document.querySelector(amtSelector + '[data-id="' + row.chip_id + '"]');
+            if (amt) amt.value = row.amount;
+        } else {
+            // Custom entry — push into the JS array and re-render.
+            if (kind === 'sub') {
+                customSubs.push({ name: row.label, cost: row.amount });
+            } else {
+                customPayments.push({ name: row.label, cost: row.amount });
+            }
+        }
+    });
+
+    if (kind === 'sub') {
+        renderCustomSubs();
+        updateSubTotal();
+    } else {
+        renderCustomPayments();
+        updatePaymentTotal();
+    }
+}
+
 document.addEventListener('DOMContentLoaded', function() {
+    restoreChipState('subscriptions_chip_state', 'sub');
+    restoreChipState('other_commitments_chip_state', 'pay');
+
+    // Fallback for users with no chip state but a non-zero scalar
+    // (e.g. legacy data pre-refactor): show the saved total. The
+    // first chip touch will replace this with a computed value.
     var subSaved = parseFloat(document.getElementById('subscriptions_total').value) || 0;
-    if (subSaved > 0) {
+    if (subSaved > 0 && document.getElementById('sub-total-display').textContent === '£0.00') {
         document.getElementById('sub-total-display').textContent = '£' + fmtGBP(subSaved);
     }
     var paySaved = parseFloat(document.getElementById('other_commitments').value) || 0;
-    if (paySaved > 0) {
+    if (paySaved > 0 && document.getElementById('pay-total-display').textContent === '£0.00') {
         document.getElementById('pay-total-display').textContent = '£' + fmtGBP(paySaved);
     }
 });
