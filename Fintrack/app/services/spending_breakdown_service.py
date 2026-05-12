@@ -302,6 +302,33 @@ def get_monthly_commitments_for_user(user) -> dict:
             "category": "debt" if _is_debt_goal_name(goal.name or "") else "goal",
         })
 
+    # Linked RecurringContributions surface under the goals subsection
+    # too. Label format "<chip_label> → <goal_name>" makes the link
+    # explicit. Only other_commitments-source contributions are eligible
+    # — subscriptions stay in obligations to avoid double-counting the
+    # cached subscriptions_total scalar.
+    from app.models.recurring_contribution import RecurringContribution
+    goal_id_to_name = {g.id: g.name for g in goals}
+    linked_other = (
+        RecurringContribution.query
+        .filter(RecurringContribution.user_id == user.id)
+        .filter(RecurringContribution.source == "other_commitments")
+        .filter(RecurringContribution.linked_goal_id.isnot(None))
+        .all()
+    )
+    for contrib in linked_other:
+        goal_name = goal_id_to_name.get(contrib.linked_goal_id)
+        if not goal_name:
+            # The contribution's linked goal isn't in the active-goals
+            # set (deleted, archived, completed). Treat as unlinked
+            # and let it fall through to the estimates section below.
+            continue
+        goal_contributions.append({
+            "name": f"{contrib.label} → {goal_name}",
+            "amount": round(float(contrib.amount), 2),
+            "category": "linked_contribution",
+        })
+
     # Descending by amount. The visual weight in the panel matches the
     # numeric weight — the largest contribution sits at the top.
     goal_contributions.sort(key=lambda g: g["amount"], reverse=True)
@@ -332,11 +359,32 @@ def get_monthly_commitments_for_user(user) -> dict:
             "amount": round(transport, 2),
         })
 
-    other = _amount_or_zero(getattr(user, "other_commitments", None))
-    if other > 0:
+    # Per-row unlinked other_commitments contributions take the place
+    # of the legacy "Other (estimate)" roll-up scalar. A user with a
+    # £200 LISA contribution they haven't yet linked to a goal sees
+    # "LISA contributions" here; once linked, the row moves to the
+    # goals subsection above. Subscriptions stay in obligations
+    # whether linked or not — the cached subscriptions_total scalar
+    # is the canonical surface for that source.
+    #
+    # Also covers the case where a contribution's linked goal has
+    # been deleted / archived / completed: the linked_other loop above
+    # skipped them; here we treat them as unlinked again so they
+    # still appear somewhere on the panel.
+    unlinked_other = (
+        RecurringContribution.query
+        .filter(RecurringContribution.user_id == user.id)
+        .filter(RecurringContribution.source == "other_commitments")
+        .order_by(RecurringContribution.amount.desc())
+        .all()
+    )
+    active_goal_ids = set(goal_id_to_name.keys())
+    for contrib in unlinked_other:
+        if contrib.linked_goal_id in active_goal_ids:
+            continue  # already surfaced in goal_contributions above
         estimates.append({
-            "name": "Other (estimate)",
-            "amount": round(other, 2),
+            "name": contrib.label,
+            "amount": round(float(contrib.amount), 2),
         })
 
     total_estimated = round(sum(e["amount"] for e in estimates), 2)

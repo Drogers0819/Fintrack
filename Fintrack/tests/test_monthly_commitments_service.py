@@ -272,19 +272,37 @@ class TestOverviewRender:
 
 class TestEstimates:
 
-    def test_all_three_estimates_set_returns_three_rows_in_order(self, app):
+    def test_groceries_transport_and_per_row_other_appear_in_estimates(self, app):
+        """Estimates now contains: groceries + transport from User
+        columns, plus one row per unlinked other_commitments
+        RecurringContribution. The legacy single "Other (estimate)"
+        scalar roll-up row no longer exists — see Commit 3 of the
+        RecurringContribution refactor."""
+        from app.models.recurring_contribution import RecurringContribution
         from app.services.spending_breakdown_service import (
             get_monthly_commitments_for_user,
         )
-        uid = _make_user(app, groceries=240, transport=120, other=60)
+        uid = _make_user(app, groceries=240, transport=120)
+        # Per-row unlinked contribution replaces the old "Other (estimate)" line.
         with app.app_context():
+            row = RecurringContribution(
+                user_id=uid,
+                source="other_commitments",
+                chip_id="lisa",
+                label="LISA contributions",
+                amount=Decimal("60"),
+                linked_goal_id=None,
+            )
+            db.session.add(row)
+            db.session.commit()
+
             user = db.session.get(User, uid)
             result = get_monthly_commitments_for_user(user)
             names = [e["name"] for e in result["estimates"]]
             assert names == [
                 "Groceries (estimate)",
                 "Transport (estimate)",
-                "Other (estimate)",
+                "LISA contributions",
             ]
             assert result["total_estimated"] == 420.0
 
@@ -489,3 +507,154 @@ class TestObligationsAndGoalContributions:
         assert "Towards your goals" not in body
         assert "Goals subtotal" not in body
         assert "Total committed" in body
+
+
+# ─── Linked / unlinked RecurringContributions (Commit 3) ────
+
+
+class TestLinkedContributions:
+    """Tests for the chip-level contribution surface introduced in
+    Commit 3 of the RecurringContribution refactor."""
+
+    def _make_contrib(self, app, user_id, *, source="other_commitments",
+                      chip_id="lisa", label="LISA contributions",
+                      amount=200, linked_goal_id=None):
+        from app.models.recurring_contribution import RecurringContribution
+        from decimal import Decimal as _D
+        with app.app_context():
+            row = RecurringContribution(
+                user_id=user_id,
+                source=source,
+                chip_id=chip_id,
+                label=label,
+                amount=_D(str(amount)),
+                linked_goal_id=linked_goal_id,
+            )
+            db.session.add(row)
+            db.session.commit()
+            return row.id
+
+    def test_linked_contribution_surfaces_in_goal_contributions(self, app):
+        """A LISA contribution linked to the House goal appears in
+        the goals subsection labelled "<chip_label> → <goal_name>"."""
+        from app.services.spending_breakdown_service import (
+            get_monthly_commitments_for_user,
+        )
+        uid = _make_user(app, rent=900)
+        gid = _add_goal(app, uid, "House deposit", monthly_allocation=100)
+        self._make_contrib(
+            app, uid, chip_id="lisa", label="LISA contributions",
+            amount=200, linked_goal_id=gid,
+        )
+        with app.app_context():
+            user = db.session.get(User, uid)
+            result = get_monthly_commitments_for_user(user)
+            names = [g["name"] for g in result["goal_contributions"]]
+            assert "LISA contributions → House deposit" in names
+            # Goals subtotal includes both.
+            assert result["goal_contributions_total"] == 300.0
+
+    def test_unlinked_contribution_surfaces_in_estimates(self, app):
+        """An unlinked LISA contribution stays in the estimates
+        section (replacing the old single 'Other (estimate)' row)."""
+        from app.services.spending_breakdown_service import (
+            get_monthly_commitments_for_user,
+        )
+        uid = _make_user(app, rent=900)
+        self._make_contrib(
+            app, uid, chip_id="lisa", label="LISA contributions",
+            amount=200, linked_goal_id=None,
+        )
+        with app.app_context():
+            user = db.session.get(User, uid)
+            result = get_monthly_commitments_for_user(user)
+            estimate_names = [e["name"] for e in result["estimates"]]
+            assert "LISA contributions" in estimate_names
+            # Each estimate row keeps its actual label — no "(estimate)"
+            # suffix on chip-derived rows.
+            assert "Other (estimate)" not in estimate_names
+
+    def test_orphaned_link_falls_through_to_estimates(self, app):
+        """If the linked goal has been deleted/archived/completed,
+        the contribution treats itself as unlinked and shows up in
+        estimates rather than orphaning."""
+        from app.services.spending_breakdown_service import (
+            get_monthly_commitments_for_user,
+        )
+        uid = _make_user(app)
+        gid = _add_goal(app, uid, "House deposit", monthly_allocation=100,
+                        status="archived")
+        self._make_contrib(
+            app, uid, chip_id="lisa", label="LISA contributions",
+            amount=200, linked_goal_id=gid,
+        )
+        with app.app_context():
+            user = db.session.get(User, uid)
+            result = get_monthly_commitments_for_user(user)
+            # Linked goal is archived → contribution not in goals.
+            goal_names = [g["name"] for g in result["goal_contributions"]]
+            assert not any("LISA" in n for n in goal_names)
+            # And it surfaces in estimates instead.
+            estimate_names = [e["name"] for e in result["estimates"]]
+            assert "LISA contributions" in estimate_names
+
+    def test_linked_contribution_excluded_from_estimates(self, app):
+        """No double-counting: a contribution linked to an active goal
+        appears ONLY in the goals subsection, not also in estimates."""
+        from app.services.spending_breakdown_service import (
+            get_monthly_commitments_for_user,
+        )
+        uid = _make_user(app)
+        gid = _add_goal(app, uid, "House deposit", monthly_allocation=100)
+        self._make_contrib(
+            app, uid, chip_id="lisa", label="LISA contributions",
+            amount=200, linked_goal_id=gid,
+        )
+        with app.app_context():
+            user = db.session.get(User, uid)
+            result = get_monthly_commitments_for_user(user)
+            estimate_names = [e["name"] for e in result["estimates"]]
+            assert "LISA contributions" not in estimate_names
+
+    def test_subscriptions_contributions_do_not_leak_into_goals(self, app):
+        """Source filter: linked subscriptions don't appear in goal
+        contributions even if linked_goal_id is set, because the
+        cached subscriptions_total scalar already accounts for them
+        in obligations and we'd double-count."""
+        from app.services.spending_breakdown_service import (
+            get_monthly_commitments_for_user,
+        )
+        uid = _make_user(app, subscriptions=11)
+        gid = _add_goal(app, uid, "Anything", monthly_allocation=50)
+        self._make_contrib(
+            app, uid, source="subscriptions", chip_id="netflix",
+            label="Netflix", amount=11, linked_goal_id=gid,
+        )
+        with app.app_context():
+            user = db.session.get(User, uid)
+            result = get_monthly_commitments_for_user(user)
+            goal_names = [g["name"] for g in result["goal_contributions"]]
+            assert not any("Netflix" in n for n in goal_names)
+            # And subscriptions stays in obligations as a single row.
+            obligation_names = [o["name"] for o in result["obligations"]]
+            assert "Subscriptions" in obligation_names
+
+    def test_total_committed_includes_linked_contributions(self, app):
+        from app.services.spending_breakdown_service import (
+            get_monthly_commitments_for_user,
+        )
+        uid = _make_user(app, rent=900, bills=180)
+        gid = _add_goal(app, uid, "House deposit", monthly_allocation=100)
+        self._make_contrib(
+            app, uid, chip_id="lisa", label="LISA contributions",
+            amount=200, linked_goal_id=gid,
+        )
+        with app.app_context():
+            user = db.session.get(User, uid)
+            result = get_monthly_commitments_for_user(user)
+            # obligations: rent 900 + bills 180 = 1080
+            # goal contributions: House 100 + LISA→House 200 = 300
+            # total = 1380
+            assert result["obligations_total"] == 1080.0
+            assert result["goal_contributions_total"] == 300.0
+            assert result["total_committed"] == 1380.0

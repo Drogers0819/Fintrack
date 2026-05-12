@@ -372,3 +372,54 @@ class TestCascadeBehaviour:
             db.session.commit()
 
             assert RecurringContribution.query.filter_by(user_id=uid).count() == 0
+
+
+# ─── Companion context (Commit 3) ────────────────────────────
+
+
+class TestCompanionContext:
+    """Linked contributions surface in the AI companion's per-user
+    context block. Without this, the AI would have a different
+    mental model of the user's commitments than the UI shows."""
+
+    def test_linked_contribution_appears_in_user_context(self, app):
+        from app.services.companion_service import _build_user_context
+        from app.services.recurring_contribution_service import (
+            sync_contributions_from_factfind,
+        )
+        uid = _make_user(app)
+        gid = _make_goal(app, uid, name="House deposit")
+        with app.app_context():
+            user = db.session.get(User, uid)
+            sync_contributions_from_factfind(
+                user, "other_commitments",
+                chip_data={"lisa": {"label": "LISA contributions", "amount": 200}},
+                custom_entries=None,
+            )
+            lisa = RecurringContribution.query.filter_by(user_id=uid).first()
+            lisa.linked_goal_id = gid
+            db.session.commit()
+
+            context = _build_user_context(user)
+            assert "Recurring contributions linked to goals" in context
+            assert "LISA contributions" in context
+            assert "House deposit" in context
+
+    def test_unlinked_contributions_not_in_linked_summary(self, app):
+        """Unlinked contributions are still represented in the
+        rolled-up other_commitments scalar line; they should NOT
+        appear in the dedicated linked-summary section."""
+        from app.services.companion_service import _build_user_context
+        from app.services.recurring_contribution_service import (
+            sync_contributions_from_factfind,
+        )
+        uid = _make_user(app)
+        with app.app_context():
+            user = db.session.get(User, uid)
+            sync_contributions_from_factfind(
+                user, "other_commitments",
+                chip_data={"lisa": {"label": "LISA contributions", "amount": 200}},
+                custom_entries=None,
+            )
+            context = _build_user_context(user)
+            assert "Recurring contributions linked to goals" not in context

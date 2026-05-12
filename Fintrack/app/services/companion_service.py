@@ -210,6 +210,16 @@ def _build_user_context(user):
     if debt_summary:
         parts.append(debt_summary)
 
+    # Recurring contributions linked to specific goals. The cached
+    # subscriptions_total / other_commitments scalars above already
+    # capture the total monthly outflow; this block adds the goal-
+    # linkage information so the AI sees the same view the user does
+    # on the commitments panel. Format: "LISA contributions → House
+    # deposit (£200/mo)".
+    linked_lines = _summarise_linked_contributions(user)
+    if linked_lines:
+        parts.append("Recurring contributions linked to goals: " + ", ".join(linked_lines))
+
     return "\n".join(parts) if parts else "No profile data available yet."
 
 
@@ -237,6 +247,43 @@ def _summarise_debt(user):
     if debt_count == 0:
         return None
     return f"Active debt: £{debt_total:,.0f} across {debt_count} debt{'s' if debt_count != 1 else ''}"
+
+
+def _summarise_linked_contributions(user):
+    """Return a list of "<chip label> → <goal name> (£X/mo)" strings
+    for every RecurringContribution linked to an active goal. Empty
+    list when no linkages exist."""
+    try:
+        from app.models.goal import Goal
+        from app.models.recurring_contribution import RecurringContribution
+    except ImportError:
+        return []
+
+    rows = (
+        RecurringContribution.query
+        .filter(RecurringContribution.user_id == user.id)
+        .filter(RecurringContribution.linked_goal_id.isnot(None))
+        .order_by(RecurringContribution.amount.desc())
+        .all()
+    )
+    if not rows:
+        return []
+
+    # One query for all linked goals (active or not — the AI should
+    # see the linkage even if the goal is archived, so it knows where
+    # the user's intent points).
+    goal_ids = {r.linked_goal_id for r in rows}
+    goals = Goal.query.filter(Goal.id.in_(goal_ids)).all()
+    goal_map = {g.id: g.name for g in goals}
+
+    lines = []
+    for r in rows:
+        goal_name = goal_map.get(r.linked_goal_id)
+        if not goal_name:
+            continue
+        amount = float(r.amount)
+        lines.append(f"{r.label} → {goal_name} (£{amount:,.0f}/mo)")
+    return lines
 
 
 def _build_plan_context(plan):
