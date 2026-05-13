@@ -293,13 +293,15 @@ class TestOverviewIntegration:
 
     def test_overview_renders_whisper_card(self, app, client):
         """A user with no goals should land on the 'pick a goal' whisper
-        and the card should render with the gold left border + section
-        label and the whisper text."""
+        and the top-row chip should render with the section label and
+        the whisper text. (May 2026 restructure moved the whisper from
+        a right-rail card to a top-row stat chip — the label text
+        moved with it.)"""
         _make_user(app)
         _login(client)
         resp = client.get("/overview")
         assert resp.status_code == 200
         body = resp.get_data(as_text=True)
-        assert "TODAY'S WHISPER" in body
+        assert "Today's whisper" in body
         # The whisper text itself.
         assert "pick a goal" in body.lower()

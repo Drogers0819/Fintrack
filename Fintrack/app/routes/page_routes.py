@@ -44,6 +44,66 @@ page_bp = Blueprint("pages", __name__)
 
 # ─── HELPERS ──────────────────────────────────────────────
 
+
+def _decorate_plan_summary_with_goal_dots(plan_summary, smart_plan):
+    """Wrap each active-goal name in the plan summary text with an
+    inline coloured dot matching the goals section colour coding.
+
+    Returns a Markup-safe string when at least one goal is referenced
+    in the text, or None when there are no decoratable goals (the
+    template falls back to the plain plan_summary in that case).
+
+    Goal names are escaped before substitution and replaced via a
+    single regex pass with longest-name-first ordering so a shorter
+    name (Car) cannot match inside a longer one (Car fund) that has
+    already been wrapped.
+    """
+    if not plan_summary:
+        return None
+
+    import re
+    from markupsafe import Markup, escape
+    from app.services.goal_classification import goal_colour_token
+
+    goals = []
+    for pot in (smart_plan or {}).get("pots") or []:
+        if not pot.get("goal_id"):
+            continue
+        if (pot.get("monthly_amount") or 0) <= 0:
+            continue
+        name = (pot.get("name") or "").replace(" (must-hit)", "").strip()
+        if not name:
+            continue
+        goals.append((name, goal_colour_token(name)))
+
+    if not goals:
+        return None
+
+    safe_text = str(escape(plan_summary))
+    escaped = [(str(escape(name)), token) for name, token in goals]
+    escaped.sort(key=lambda g: -len(g[0]))
+
+    pattern = re.compile("|".join(re.escape(esc) for esc, _ in escaped))
+    name_to_token = {esc: token for esc, token in escaped}
+
+    def _wrap(match):
+        matched = match.group(0)
+        token = name_to_token.get(matched, "--roman-gold")
+        dot = (
+            '<span aria-hidden="true" style="display:inline-block; width:7px; '
+            f'height:7px; border-radius:50%; background:var({token}); '
+            'margin-right:6px; vertical-align:middle;"></span>'
+        )
+        return f'{dot}<span style="vertical-align:middle;">{matched}</span>'
+
+    decorated = pattern.sub(_wrap, safe_text)
+    if decorated == safe_text:
+        # No goal name was found in the text — let the template render
+        # the original plain string instead of an escaped passthrough.
+        return None
+    return Markup(decorated)
+
+
 def _build_memory_card(data):
     """
     Builds the 'what Claro has learned' card for the overview.
@@ -658,31 +718,17 @@ def overview():
                 "next_date_str": _fmt(next_date),
             }
 
-    # ── Plan phase, date label, first name (slim shell) ──
+    # ── Date label, first name (slim shell) ──
     first_name = (current_user.name or "").split()[0] if current_user.name else ""
     date_label = today.strftime("%A, %d %B")
-
-    plan_phase = None
-    if smart_plan and "error" not in smart_plan:
-        phases = smart_plan.get("phases") or []
-        if phases:
-            current_phase = phases[0]
-            plan_phase = {
-                "current": int(current_phase.get("phase") or 1),
-                "total": len(phases),
-                "description": current_phase.get("description", ""),
-            }
-
-    # Active goal count for the right-panel stat pill
-    active_goals_for_pill = 0
-    if smart_plan and "error" not in smart_plan:
-        for pot in smart_plan.get("pots") or []:
-            if pot.get("goal_id") and pot.get("monthly_amount", 0) > 0 and not pot.get("completed"):
-                active_goals_for_pill += 1
 
     plan_surplus_value = 0.0
     if smart_plan and "error" not in smart_plan:
         plan_surplus_value = float(smart_plan.get("surplus") or 0)
+
+    plan_summary_html = _decorate_plan_summary_with_goal_dots(
+        plan_summary, smart_plan,
+    )
 
     from app.services.whisper_service import get_todays_whisper
     todays_whisper = get_todays_whisper(current_user)
@@ -712,7 +758,6 @@ def overview():
         top_categories=categories,
         primary_goal=data["primary_goal"] if data["primary_goal"] else None,
         active_goals_count=data["active_goals"],
-        active_goals_for_pill=active_goals_for_pill,
         action_whisper=action_whisper,
         plan_status=plan_status,
         nearest_milestone=nearest_milestone,
@@ -727,8 +772,8 @@ def overview():
         available_surplus=available_surplus,
         has_debt_goals=has_debt_goals,
         net_worth=net_worth,
-        plan_phase=plan_phase,
         plan_surplus_value=plan_surplus_value,
+        plan_summary_html=plan_summary_html,
         todays_whisper=todays_whisper,
         spending_breakdown=spending_breakdown,
         monthly_commitments=monthly_commitments,

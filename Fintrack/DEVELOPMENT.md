@@ -1446,6 +1446,58 @@ The 8 test accounts from the 11 May 2026 `wipe-users-by-email` invocation are al
 
 ---
 
+## 2026-05-13 — Dashboard visual restructure
+
+Business decision after co-founder meeting: the dashboard top row was 3 stat pills with a right rail holding five stacked panels (Quick Actions, This Month, Today's Whisper, Plan Phase, Commitments). After this commit:
+
+- **Top row** is 4 items spanning the full dashboard width: Monthly Surplus, a combined Net Worth + This Month chip, This Month's Commitments (compact), Today's Whisper.
+- **Right column** is Quick Actions only.
+- **Plan Phase** panel removed entirely. The phase data in `smart_plan["phases"]` stays — `plan.html` still uses it.
+- **Main column** reordered: Your Plan, Companion input, Ring chart, Goals (Companion moved above the ring chart to position it as a primary action surface rather than a footer).
+- **Ring chart** lost the per-row `(estimate)` suffix and the inner "estimated typical month" label. The single disclaimer "Preview from your profile. These figures update once you log transactions." sits above the ring in preview mode.
+- **Your Plan whisper** gets inline coloured dots before each active-goal name. The mapping lives in `goal_classification.goal_colour_token`; the route-side decorator `_decorate_plan_summary_with_goal_dots` produces a `markupsafe.Markup` string that the template renders with `| safe`. Custom goal names that don't match a keyword fall back to Roman Gold.
+- **"If something's changed, tell us here" link** removed from the dashboard.
+
+### "Has something changed?" card on /plan
+
+The Plan page becomes the canonical "tell us what changed" surface. A new card sits between the plan-summary whisper and the monthly breakdown, with a Cormorant Garamond italic question, an Inter subtitle, and a Roman Gold "Update →" button that links to `/factfind?edit=1`. Stacks below the question on narrow viewports via `flex-wrap`.
+
+### Tests
+
+`tests/test_dashboard_restructure.py` adds 5 tests:
+
+- The combined NW + This Month chip renders both halves.
+- The "Has something changed?" card renders with the correct factfind link.
+- `_decorate_plan_summary_with_goal_dots` emits a coloured dot when a goal name matches.
+- The decorator returns None when no goal name appears in the summary (template falls back to plain text).
+- HTML injection via a malicious goal name (`<script>alert(1)</script>`) is escaped — the markupsafe wrapper survives a hostile name end-to-end.
+
+Test count: 824 → 829.
+
+---
+
+## Post-launch roadmap
+
+Items deliberately deferred from pre-launch commits. Each entry names what needs to happen and the rough shape of the work; they live here so the deferral is visible rather than implicit.
+
+### Plan Health stat (5th top-row item)
+
+A status pill — `On track` / `Behind` — derived by comparing each goal's actual progress against the expected progress for the time elapsed since the goal was created. Deferred because the thresholds need real user data to calibrate; calling someone "Behind" on day 12 of a 36-month house deposit goal is a UX accident waiting to happen. Slot reserved in the overview top-row comment; when implemented, it becomes a 5th item in the existing `repeat(auto-fit, minmax(200px, 1fr))` grid.
+
+### Plan whisper intelligence
+
+The text rendered by `get_plan_summary` is currently a templated sentence. Follow-up work: make it react to recent state (a check-in just completed, a goal just hit, a debt just cleared, a surplus that shrank) so the whisper reads as live commentary rather than a static line. Tracked as a separate commit from the May 13 visual restructure so the layout change can ship without waiting on the text work.
+
+### Goal-colour mapping extension for custom goals
+
+`goal_colour_token` recognises six keyword families (debt, house, emergency, wedding, car, holiday). Anything else falls back to Roman Gold, which works at launch but flattens the visual distinction for users who type custom goal names (a goal called "MBA tuition" gets the same dot as "Wedding venue"). Two options for post-launch: (a) widen the keyword list as patterns emerge from real users, or (b) let users pick a colour at goal creation time. (b) is more flexible but needs a small picker UI on the add-goal flow.
+
+### Standing-orders onboarding prompt
+
+A factfind step that asks the user to list their standing orders so the commitments panel is populated from day one instead of waiting for transactions to flow in. Deferred because onboarding length is already a measured drop-off point and adding a step without an A/B framework risks worsening completion.
+
+---
+
 ## 2026-05-13 — Follow-up audits needed for similar patterns
 
 The silent-failure root cause — narrow exception catch + commit + return success, with no post-condition verification — is generic enough that it likely exists in other services that mix external API calls with DB writes. **Each needs its own focused investigation; none are in scope for the May 2026 commit that fixed `delete_user_account`.**

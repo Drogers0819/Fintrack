@@ -89,50 +89,60 @@
 </div>
 {% endif %}
 
-<div class="slim-overview">
+{# Greeting + check-in pill — full width above the stat row. #}
+<div class="slim-greet stagger-1" style="margin-bottom: 16px;">
+    <div>
+        <p class="slim-greet__date">{{ date_label }}</p>
+        <h1 class="slim-greet__title">
+            {%- if first_overview -%}
+                Your plan is ready, {{ _first }}.
+            {%- else -%}
+                Good {{ greeting }}, {{ _first }}.
+            {%- endif -%}
+        </h1>
+    </div>
+    {% if checkin_state and not is_frozen %}
+    <a href="{{ url_for('pages.checkin') }}" class="slim-greet__pill press-scale">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        {% if checkin_state.completed %}Check-in ✓{% else %}{{ checkin_state.label }}{% endif %}
+    </a>
+    {% endif %}
+</div>
 
-    {# ────── MAIN COLUMN (left) ────── #}
-    <div class="slim-overview__main">
+{# Directed counter — serif italic, gold #}
+{% if directed_amount and not is_frozen %}
+<p class="slim-directed" style="margin-bottom: 12px;">
+    £{{ "{:,.0f}".format(directed_amount) }} directed toward your goals{% if directed_since %} since {{ directed_since }}{% endif %}
+</p>
+{% endif %}
 
-        {# Greeting + check-in pill #}
-        <div class="slim-greet stagger-1">
-            <div>
-                <p class="slim-greet__date">{{ date_label }}</p>
-                <h1 class="slim-greet__title">
-                    {%- if first_overview -%}
-                        Your plan is ready, {{ _first }}.
-                    {%- else -%}
-                        Good {{ greeting }}, {{ _first }}.
-                    {%- endif -%}
-                </h1>
-            </div>
-            {% if checkin_state and not is_frozen %}
-            <a href="{{ url_for('pages.checkin') }}" class="slim-greet__pill press-scale">
-                <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-                {% if checkin_state.completed %}Check-in ✓{% else %}{{ checkin_state.label }}{% endif %}
-            </a>
-            {% endif %}
-        </div>
+{# Plan Health stat slot — deferred to post-launch.
+   When implemented, will become a 5th item in this top row.
+   Algorithm: compare actual vs expected goal progress for time elapsed.
+   Requires real user data to validate thresholds. #}
 
-        {# Directed counter — serif italic, gold #}
-        {% if directed_amount and not is_frozen %}
-        <p class="slim-directed">
-            £{{ "{:,.0f}".format(directed_amount) }} directed toward your goals{% if directed_since %} since {{ directed_since }}{% endif %}
-        </p>
-        {% endif %}
+{# ────── FULL-WIDTH 4-ITEM TOP ROW ──────
+   Order: [Monthly Surplus] [Net Worth + This Month] [Commitments] [Today's Whisper]
+   Hidden entirely pre-factfind — the banner above handles that messaging. #}
+{% if smart_plan and not smart_plan.error and not is_frozen %}
+<div class="slim-stats stagger-2"
+     style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin-bottom: 18px;">
 
-        {# Three stat pills #}
-        {% if smart_plan and not smart_plan.error and not is_frozen %}
-        <div class="slim-stats stagger-2">
-            <div class="slim-stat">
-                <div class="slim-stat__label">Monthly surplus</div>
-                <div class="slim-stat__value">£{{ "{:,.0f}".format(plan_surplus_value) }}</div>
-            </div>
-            {# Net worth pill — replaces Savings rate. Honest about
-               where users start (often negative). Two-row body: top
-               row shows current net worth, bottom row shows progress
-               since the onboarding snapshot in Roman Gold. #}
-            <div class="slim-stat">
+    {# 1. Monthly surplus #}
+    <div class="slim-stat">
+        <div class="slim-stat__label">Monthly surplus</div>
+        <div class="slim-stat__value">£{{ "{:,.0f}".format(plan_surplus_value) }}</div>
+    </div>
+
+    {# 2. Combined Net Worth + This Month — two-column internal layout #}
+    {% set ns_t = namespace(target_total=0) %}
+    {% for pot in smart_plan.pots %}{% if pot.goal_id and pot.target %}{% set ns_t.target_total = ns_t.target_total + (pot.target | float) %}{% endif %}{% endfor %}
+    {% set _overall_pct = 0 %}
+    {% if ns_t.target_total > 0 %}{% set _overall_pct = [((total_saved_toward_goals / ns_t.target_total) * 100) | round(0) | int, 100] | min %}{% endif %}
+    <div class="slim-stat" style="padding: 0; overflow: hidden;">
+        <div style="display: flex; height: 100%;">
+            {# Left column: Net worth #}
+            <div style="flex: 1; min-width: 0; padding: 12px 14px; border-right: 0.5px solid var(--glass-border-subtle);">
                 <div class="slim-stat__label">Net worth</div>
                 {% if net_worth.has_started %}
                 <div class="slim-stat__value">{{ '-£' if net_worth.current < 0 else '£' }}{{ "{:,.0f}".format(net_worth.current | abs) }}</div>
@@ -142,135 +152,82 @@
                 <div style="font-size: 0.72rem; color: var(--text-tertiary); line-height: 1.4; margin-top: 4px;">Complete onboarding to see your net worth.</div>
                 {% endif %}
             </div>
-            <div class="slim-stat">
-                <div class="slim-stat__label">Active goals</div>
-                <div class="slim-stat__value">{{ active_goals_for_pill }}</div>
-            </div>
-        </div>
-        {% endif %}
-
-        {# Survival mode banner — calm Roman-Gold accent, no urgency #}
-        {% if current_user.survival_mode_active %}
-        <div data-survival-mode-banner
-             style="display: flex; align-items: flex-start; gap: 12px; padding: 12px 14px; margin: 0 0 18px; background: var(--card-bg); border: 0.5px solid var(--card-border); border-left: 3px solid var(--roman-gold); border-radius: 10px;">
-            <div style="flex: 1; min-width: 0;">
-                <div style="font-size: 0.78rem; color: var(--text-primary); font-weight: 500; line-height: 1.55;">Survival mode is on. Plan simplified to essentials.</div>
-                <div style="font-size: 0.72rem; color: var(--text-tertiary); line-height: 1.6; margin-top: 4px;">
-                    <a href="{{ url_for('pages.settings') }}" style="color: var(--text-secondary); text-decoration: underline; text-underline-offset: 2px;">Switch back to standard mode</a>
+            {# Right column: This month #}
+            <div style="flex: 1; min-width: 0; padding: 12px 14px;">
+                <div class="slim-stat__label">This month</div>
+                <div style="display: flex; justify-content: space-between; align-items: baseline; font-size: 0.78rem; margin-top: 8px;">
+                    <span style="color: var(--text-tertiary);">Saved</span>
+                    <span style="color: var(--text-primary); font-weight: 500;">£{{ "{:,.0f}".format(total_saved_toward_goals or 0) }}</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; align-items: baseline; font-size: 0.78rem; margin-top: 4px;">
+                    <span style="color: var(--text-tertiary);">Spending</span>
+                    <span style="color: var(--text-primary); font-weight: 500;">£{{ "{:,.0f}".format(expenses_this_month) }}</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; align-items: baseline; font-size: 0.78rem; margin-top: 4px;">
+                    <span style="color: var(--text-tertiary);">Progress</span>
+                    <span style="color: var(--roman-gold); font-weight: 500;">{{ _overall_pct }}%</span>
                 </div>
             </div>
         </div>
+    </div>
+
+    {# 3. This month's commitments — compact summary #}
+    <div class="slim-stat">
+        <div class="slim-stat__label">Commitments</div>
+        {% if monthly_commitments and monthly_commitments.total_committed %}
+        <div class="slim-stat__value">£{{ "{:,.0f}".format(monthly_commitments.total_committed) }}</div>
+        {% set _ob_total = monthly_commitments["obligations_total"] or 0 %}
+        {% set _gc_total = monthly_commitments["goal_contributions_total"] or 0 %}
+        <div style="font-size: 0.62rem; color: var(--text-tertiary); margin-top: 6px; line-height: 1.5;">
+            £{{ "{:,.0f}".format(_ob_total) }} fixed · £{{ "{:,.0f}".format(_gc_total) }} towards goals
+        </div>
+        {% else %}
+        <div style="font-size: 0.72rem; color: var(--text-tertiary); line-height: 1.4; margin-top: 4px;">Once your plan is live, what's spoken for each month appears here.</div>
         {% endif %}
+    </div>
 
-        {# Contextual crisis link — calm presence, no urgency #}
-        {% if not is_frozen %}
-        <p style="font-size: 0.78rem; color: var(--text-tertiary); line-height: 1.6; margin: 0 0 14px;">
-            If something's changed,
-            <a href="{{ url_for('crisis.index') }}?source=overview"
-               class="js-crisis-link"
-               data-crisis-location="overview"
-               style="color: var(--text-secondary); text-decoration: underline; text-underline-offset: 2px;">tell us here</a>.
-        </p>
+    {# 4. Today's whisper #}
+    <div class="slim-stat" style="border-left: 3px solid var(--roman-gold);">
+        <div class="slim-stat__label">Today's whisper</div>
+        {% if todays_whisper %}
+        <div style="font-family: var(--font-serif), 'Cormorant Garamond', Georgia, serif; font-style: italic; font-size: 0.88rem; line-height: 1.5; color: var(--text-primary); margin-top: 6px;">
+            {{ todays_whisper }}
+        </div>
+        {% else %}
+        <div style="font-size: 0.72rem; color: var(--text-tertiary); line-height: 1.5; margin-top: 4px;">Quietly noticing. A whisper will appear when there's something worth saying.</div>
         {% endif %}
+    </div>
 
-        {# Spending breakdown ring — current month, by category.
-           Three states:
-             • Real spending (transactions exist this month) — full opacity.
-             • Preview (no transactions, factfind data exists) — soft
-               opacity, banner, "(estimate)" suffix on legend rows.
-             • Empty (neither) — informational copy. #}
-        {% if not is_frozen and spending_breakdown %}
-        <section data-spending-breakdown
-                 class="stagger-3"
-                 style="margin: 0 0 18px; padding: 18px 20px; background: var(--card-bg); border: 0.5px solid var(--card-border); border-radius: 12px;">
-            <div class="section-label" style="margin-top: 0;">THIS MONTH</div>
+</div>
+{% endif %}
 
-            {% if spending_breakdown.total_spent > 0 and not spending_breakdown.is_preview %}
-            {# Real spending — full opacity. #}
-            <div style="display: flex; gap: 28px; align-items: center; margin-top: 14px; flex-wrap: wrap;">
-                <div style="flex-shrink: 0; position: relative; width: 200px; height: 200px;">
-                    <svg viewBox="0 0 200 200" width="200" height="200" style="transform: rotate(-90deg);">
-                        <circle cx="100" cy="100" r="70" fill="none"
-                                stroke="rgba(255, 255, 255, 0.04)" stroke-width="20"/>
-                        {% for seg in spending_breakdown.categories %}
-                        <circle cx="100" cy="100" r="70" fill="none"
-                                stroke="{{ seg.colour }}" stroke-width="20"
-                                stroke-dasharray="{{ seg.stroke_dasharray }}"
-                                stroke-dashoffset="{{ seg.stroke_dashoffset }}"
-                                stroke-linecap="butt"></circle>
-                        {% endfor %}
-                    </svg>
-                    <div style="position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; pointer-events: none;">
-                        <div style="font-family: var(--font-serif), 'Cormorant Garamond', Georgia, serif; font-size: 1.6rem; font-weight: 300; color: var(--text-primary); line-height: 1;">£{{ "{:,.0f}".format(spending_breakdown.total_spent) }}</div>
-                        <div style="font-family: var(--font-sans); font-size: 0.65rem; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 1.5px; margin-top: 6px;">spent this month</div>
-                    </div>
-                </div>
-                <div style="flex: 1; min-width: 220px; display: flex; flex-direction: column; gap: 0;">
-                    {% for category in spending_breakdown.categories %}
-                    <div style="display: flex; align-items: center; justify-content: space-between; padding: 8px 0; {% if not loop.last %}border-bottom: 0.5px solid var(--glass-border-subtle);{% endif %}">
-                        <div style="display: flex; align-items: center; gap: 10px; min-width: 0;">
-                            <span style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: {{ category.colour }}; flex-shrink: 0;"></span>
-                            <span style="font-family: var(--font-sans); font-size: 0.85rem; color: var(--text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ category.name }}</span>
-                        </div>
-                        <span style="font-family: var(--font-sans); font-size: 0.85rem; color: var(--text-primary); font-weight: 500; flex-shrink: 0;">£{{ "{:,.0f}".format(category.amount) }}</span>
-                    </div>
-                    {% endfor %}
-                </div>
-            </div>
+{# Survival mode banner — calm Roman-Gold accent, no urgency #}
+{% if current_user.survival_mode_active %}
+<div data-survival-mode-banner
+     style="display: flex; align-items: flex-start; gap: 12px; padding: 12px 14px; margin: 0 0 18px; background: var(--card-bg); border: 0.5px solid var(--card-border); border-left: 3px solid var(--roman-gold); border-radius: 10px;">
+    <div style="flex: 1; min-width: 0;">
+        <div style="font-size: 0.78rem; color: var(--text-primary); font-weight: 500; line-height: 1.55;">Survival mode is on. Plan simplified to essentials.</div>
+        <div style="font-size: 0.72rem; color: var(--text-tertiary); line-height: 1.6; margin-top: 4px;">
+            <a href="{{ url_for('pages.settings') }}" style="color: var(--text-secondary); text-decoration: underline; text-underline-offset: 2px;">Switch back to standard mode</a>
+        </div>
+    </div>
+</div>
+{% endif %}
 
-            {% elif spending_breakdown.is_preview %}
-            {# Preview from factfind — soft opacity + banner + (estimate) suffix. #}
-            <div data-spending-preview-banner
-                 style="margin-top: 14px; padding: 8px 12px; background: rgba(197, 163, 93, 0.06); border: 0.5px solid rgba(197, 163, 93, 0.2); border-radius: 6px;">
-                <span style="font-family: var(--font-sans); font-size: 0.72rem; color: var(--text-secondary); line-height: 1.5;">
-                    <span style="color: var(--roman-gold); font-weight: 500;">Preview from your profile.</span>
-                    Once you log transactions or import a statement, this updates with what's actually happening.
-                </span>
-            </div>
-            <div style="display: flex; gap: 28px; align-items: center; margin-top: 14px; flex-wrap: wrap; opacity: 0.55;">
-                <div style="flex-shrink: 0; position: relative; width: 200px; height: 200px;">
-                    <svg viewBox="0 0 200 200" width="200" height="200" style="transform: rotate(-90deg);">
-                        <circle cx="100" cy="100" r="70" fill="none"
-                                stroke="rgba(255, 255, 255, 0.04)" stroke-width="20"/>
-                        {% for seg in spending_breakdown.categories %}
-                        <circle cx="100" cy="100" r="70" fill="none"
-                                stroke="{{ seg.colour }}" stroke-width="20"
-                                stroke-dasharray="{{ seg.stroke_dasharray }}"
-                                stroke-dashoffset="{{ seg.stroke_dashoffset }}"
-                                stroke-linecap="butt"></circle>
-                        {% endfor %}
-                    </svg>
-                    <div style="position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; pointer-events: none;">
-                        <div style="font-family: var(--font-serif), 'Cormorant Garamond', Georgia, serif; font-size: 1.6rem; font-weight: 300; color: var(--text-primary); line-height: 1;">£{{ "{:,.0f}".format(spending_breakdown.total_spent) }}</div>
-                        <div style="font-family: var(--font-sans); font-size: 0.65rem; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 1.5px; margin-top: 6px;">estimated typical month</div>
-                    </div>
-                </div>
-                <div style="flex: 1; min-width: 220px; display: flex; flex-direction: column; gap: 0;">
-                    {% for category in spending_breakdown.categories %}
-                    <div style="display: flex; align-items: center; justify-content: space-between; padding: 8px 0; {% if not loop.last %}border-bottom: 0.5px solid var(--glass-border-subtle);{% endif %}">
-                        <div style="display: flex; align-items: center; gap: 10px; min-width: 0;">
-                            <span style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: {{ category.colour }}; flex-shrink: 0;"></span>
-                            <span style="font-family: var(--font-sans); font-size: 0.85rem; color: var(--text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ category.name }} <span style="font-style: italic; color: var(--text-tertiary);">(estimate)</span></span>
-                        </div>
-                        <span style="font-family: var(--font-sans); font-size: 0.85rem; color: var(--text-primary); font-weight: 500; flex-shrink: 0;">£{{ "{:,.0f}".format(category.amount) }}</span>
-                    </div>
-                    {% endfor %}
-                </div>
-            </div>
+<div class="slim-overview">
 
-            {% else %}
-            <p style="font-size: 0.85rem; color: var(--text-tertiary); line-height: 1.65; margin: 14px 0 0;">
-                No spending tracked this month yet. Once you log a transaction or check in, your breakdown will appear here.
-            </p>
-            {% endif %}
-        </section>
-        {% endif %}
+    {# ────── MAIN COLUMN (left) ──────
+       Order: Your Plan → Companion → Ring chart → Goals. #}
+    <div class="slim-overview__main">
 
-        {# Plan whisper card — gold left border #}
+        {# Plan whisper card — gold left border.
+           plan_summary_html is rendered server-side with inline coloured
+           dots before each mentioned goal name; falls back to plain
+           plan_summary text when no goals are referenced. #}
         {% if plan_summary and smart_plan and not smart_plan.error and not is_frozen %}
         <div class="slim-card slim-card--whisper stagger-3">
             <div class="slim-card__eyebrow">Your plan</div>
-            <p class="slim-card__body">{{ plan_summary }}</p>
+            <p class="slim-card__body">{{ (plan_summary_html | safe) if plan_summary_html else plan_summary }}</p>
             {% if has_debt_goals and debt_allocation > 0 %}
             <div class="slim-card__meta">
                 £{{ "{:,.0f}".format(plan_surplus_value) }}/month surplus · <span style="color: var(--goal-stroke-debt);">£{{ "{:,.0f}".format(debt_allocation) }} clearing debt</span> · £{{ "{:,.0f}".format(available_surplus) }} building goals
@@ -290,12 +247,121 @@
         </div>
         {% endif %}
 
+        {# Companion prompt — fake input. Moved up to sit directly under
+           Your Plan so the primary action surface lands above the fold. #}
+        {% if not is_frozen and can_access_companion %}
+        <div style="margin-top: 18px;">
+            <a href="{{ url_for('companion.companion_page') }}" class="slim-companion-prompt">
+                <span class="slim-companion-prompt__icon">
+                    <svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                </span>
+                <span class="slim-companion-prompt__text">Anything on your mind?</span>
+                <span class="slim-companion-prompt__arrow"><svg viewBox="0 0 24 24"><path d="M9 18l6-6-6-6"/></svg></span>
+            </a>
+            <div class="slim-chips" role="list">
+                <a class="slim-chip" href="{{ url_for('companion.companion_page', q='Can I afford a holiday?') }}" role="listitem">Can I afford a holiday?</a>
+                <a class="slim-chip" href="{{ url_for('companion.companion_page', q='What if I got a raise?') }}" role="listitem">What if I got a raise?</a>
+                <a class="slim-chip" href="{{ url_for('companion.companion_page', q='Am I on track?') }}" role="listitem">Am I on track?</a>
+            </div>
+        </div>
+        {% endif %}
+
+        {# Spending breakdown ring — current month, by category.
+           Three states:
+             • Real spending (transactions exist this month) — full opacity.
+             • Preview (no transactions, factfind data exists) — soft
+               opacity + single disclaimer at the top.
+             • Empty (neither) — informational copy. #}
+        {% if not is_frozen and spending_breakdown %}
+        <section data-spending-breakdown
+                 style="margin: 18px 0 0; padding: 18px 20px; background: var(--card-bg); border: 0.5px solid var(--card-border); border-radius: 12px;">
+            <div class="section-label" style="margin-top: 0;">THIS MONTH</div>
+
+            {% if spending_breakdown.total_spent > 0 and not spending_breakdown.is_preview %}
+            {# Real spending — full opacity. #}
+            <div style="display: flex; gap: 28px; align-items: center; margin-top: 14px; flex-wrap: wrap;">
+                <div style="flex-shrink: 0; position: relative; width: 200px; height: 200px;">
+                    <svg viewBox="0 0 200 200" width="200" height="200" style="transform: rotate(-90deg);">
+                        <circle cx="100" cy="100" r="70" fill="none"
+                                stroke="rgba(255, 255, 255, 0.04)" stroke-width="20"/>
+                        {% for seg in spending_breakdown.categories %}
+                        <circle cx="100" cy="100" r="70" fill="none"
+                                stroke="{{ seg.colour }}" stroke-width="20"
+                                stroke-dasharray="{{ seg.stroke_dasharray }}"
+                                stroke-dashoffset="{{ seg.stroke_dashoffset }}"
+                                stroke-linecap="butt"></circle>
+                        {% endfor %}
+                    </svg>
+                    <div style="position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; pointer-events: none;">
+                        <div style="font-family: var(--font-serif), 'Cormorant Garamond', Georgia, serif; font-size: 1.6rem; font-weight: 300; color: var(--text-primary); line-height: 1;">£{{ "{:,.0f}".format(spending_breakdown.total_spent) }}</div>
+                    </div>
+                </div>
+                <div style="flex: 1; min-width: 220px; display: flex; flex-direction: column; gap: 0;">
+                    {% for category in spending_breakdown.categories %}
+                    <div style="display: flex; align-items: center; justify-content: space-between; padding: 8px 0; {% if not loop.last %}border-bottom: 0.5px solid var(--glass-border-subtle);{% endif %}">
+                        <div style="display: flex; align-items: center; gap: 10px; min-width: 0;">
+                            <span style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: {{ category.colour }}; flex-shrink: 0;"></span>
+                            <span style="font-family: var(--font-sans); font-size: 0.85rem; color: var(--text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ category.name }}</span>
+                        </div>
+                        <span style="font-family: var(--font-sans); font-size: 0.85rem; color: var(--text-primary); font-weight: 500; flex-shrink: 0;">£{{ "{:,.0f}".format(category.amount) }}</span>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            {% elif spending_breakdown.is_preview %}
+            {# Preview from factfind — soft opacity + single disclaimer line.
+               The "(estimate)" per-row suffix and the inner ring label
+               were removed (May 2026 restructure); the disclaimer
+               carries that message once for the whole section. #}
+            <p style="margin: 6px 0 14px; font-family: var(--font-sans); font-size: 0.74rem; font-style: italic; color: var(--text-tertiary); line-height: 1.5;">
+                <span style="color: var(--roman-gold); font-style: normal; font-weight: 500;">Preview from your profile.</span>
+                These figures update once you log transactions.
+            </p>
+            <div style="display: flex; gap: 28px; align-items: center; flex-wrap: wrap; opacity: 0.55;">
+                <div style="flex-shrink: 0; position: relative; width: 200px; height: 200px;">
+                    <svg viewBox="0 0 200 200" width="200" height="200" style="transform: rotate(-90deg);">
+                        <circle cx="100" cy="100" r="70" fill="none"
+                                stroke="rgba(255, 255, 255, 0.04)" stroke-width="20"/>
+                        {% for seg in spending_breakdown.categories %}
+                        <circle cx="100" cy="100" r="70" fill="none"
+                                stroke="{{ seg.colour }}" stroke-width="20"
+                                stroke-dasharray="{{ seg.stroke_dasharray }}"
+                                stroke-dashoffset="{{ seg.stroke_dashoffset }}"
+                                stroke-linecap="butt"></circle>
+                        {% endfor %}
+                    </svg>
+                    <div style="position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; pointer-events: none;">
+                        <div style="font-family: var(--font-serif), 'Cormorant Garamond', Georgia, serif; font-size: 1.6rem; font-weight: 300; color: var(--text-primary); line-height: 1;">£{{ "{:,.0f}".format(spending_breakdown.total_spent) }}</div>
+                    </div>
+                </div>
+                <div style="flex: 1; min-width: 220px; display: flex; flex-direction: column; gap: 0;">
+                    {% for category in spending_breakdown.categories %}
+                    <div style="display: flex; align-items: center; justify-content: space-between; padding: 8px 0; {% if not loop.last %}border-bottom: 0.5px solid var(--glass-border-subtle);{% endif %}">
+                        <div style="display: flex; align-items: center; gap: 10px; min-width: 0;">
+                            <span style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: {{ category.colour }}; flex-shrink: 0;"></span>
+                            <span style="font-family: var(--font-sans); font-size: 0.85rem; color: var(--text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ category.name }}</span>
+                        </div>
+                        <span style="font-family: var(--font-sans); font-size: 0.85rem; color: var(--text-primary); font-weight: 500; flex-shrink: 0;">£{{ "{:,.0f}".format(category.amount) }}</span>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            {% else %}
+            <p style="font-size: 0.85rem; color: var(--text-tertiary); line-height: 1.65; margin: 14px 0 0;">
+                No spending tracked this month yet. Once you log a transaction or check in, your breakdown will appear here.
+            </p>
+            {% endif %}
+        </section>
+        {% endif %}
+
         {# Goals section #}
         {% set goal_pots = smart_plan.pots if smart_plan and not smart_plan.error else [] %}
         {% set ns_gp = namespace(visible=0) %}
         {% for _p in goal_pots %}{% if _p.monthly_amount > 0 and _p.goal_id %}{% set ns_gp.visible = ns_gp.visible + 1 %}{% endif %}{% endfor %}
         {% if ns_gp.visible > 0 and not is_frozen %}
-        <div class="stagger-4">
+        <div class="stagger-4" style="margin-top: 18px;">
             <div class="slim-section-head">
                 <span class="slim-section-head__label">Goals</span>
                 <a href="{{ url_for('pages.my_goals') }}" class="slim-section-head__link">See all →</a>
@@ -374,27 +440,11 @@
             </div>
         </div>
         {% endif %}
-
-        {# Companion prompt — fake input #}
-        {% if not is_frozen and can_access_companion %}
-        <div>
-            <a href="{{ url_for('companion.companion_page') }}" class="slim-companion-prompt">
-                <span class="slim-companion-prompt__icon">
-                    <svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-                </span>
-                <span class="slim-companion-prompt__text">Anything on your mind?</span>
-                <span class="slim-companion-prompt__arrow"><svg viewBox="0 0 24 24"><path d="M9 18l6-6-6-6"/></svg></span>
-            </a>
-            <div class="slim-chips" role="list">
-                <a class="slim-chip" href="{{ url_for('companion.companion_page', q='Can I afford a holiday?') }}" role="listitem">Can I afford a holiday?</a>
-                <a class="slim-chip" href="{{ url_for('companion.companion_page', q='What if I got a raise?') }}" role="listitem">What if I got a raise?</a>
-                <a class="slim-chip" href="{{ url_for('companion.companion_page', q='Am I on track?') }}" role="listitem">Am I on track?</a>
-            </div>
-        </div>
-        {% endif %}
     </div>
 
-    {# ────── RIGHT PANEL (desktop only) ────── #}
+    {# ────── RIGHT PANEL (desktop only) ──────
+       Quick Actions only. This Month, Whisper, Plan Phase, and
+       Commitments moved into the full-width top row above. #}
     <aside class="slim-overview__side stagger-5">
         {% if not is_frozen %}
         <div class="slim-side-card">
@@ -415,126 +465,6 @@
                 <svg class="slim-qa-row__chev" viewBox="0 0 24 24"><path d="M9 18l6-6-6-6"/></svg>
             </a>
         </div>
-
-        <div class="slim-side-card">
-            <div class="slim-side-card__title">This month</div>
-            <div class="slim-mini-row"><span style="color:var(--text-tertiary);">Spending</span><span>£{{ "{:,.0f}".format(expenses_this_month) }}</span></div>
-            {% if smart_plan and not smart_plan.error and total_saved_toward_goals > 0 %}
-            <div class="slim-mini-row"><span style="color:var(--text-tertiary);">Saved</span><span>£{{ "{:,.0f}".format(total_saved_toward_goals) }}</span></div>
-            {% set ns_t = namespace(total=0) %}
-            {% for pot in smart_plan.pots %}{% if pot.goal_id and pot.target %}{% set ns_t.total = ns_t.total + (pot.target | float) %}{% endif %}{% endfor %}
-            {% if ns_t.total > 0 %}
-            {% set _overall_pct = [((total_saved_toward_goals / ns_t.total) * 100) | round(0) | int, 100] | min %}
-            <div style="margin-top:10px; padding-top:10px; border-top:0.5px solid var(--card-border);">
-                <div class="slim-mini-row" style="padding:0 0 6px;">
-                    <span style="color:var(--text-tertiary); font-size:0.66rem; letter-spacing:0.04em; text-transform:uppercase;">Overall progress</span>
-                    <span style="font-weight:500;">{{ _overall_pct }}%</span>
-                </div>
-                <div class="slim-progress"><span style="width: {{ _overall_pct }}%; background: var(--whisper-border-left);"></span></div>
-            </div>
-            {% endif %}
-            {% endif %}
-        </div>
-
-        {% if todays_whisper %}
-        <div class="slim-side-card" style="border-left: 3px solid var(--roman-gold);">
-            <div class="slim-side-card__title">TODAY'S WHISPER</div>
-            <div style="font-family: var(--font-serif), 'Cormorant Garamond', Georgia, serif; font-style: italic; font-size: 0.95rem; line-height: 1.6; color: var(--text-primary); margin-top: 8px;">
-                {{ todays_whisper }}
-            </div>
-        </div>
-        {% endif %}
-
-        {% if plan_phase %}
-        <div class="slim-side-card">
-            <div class="slim-side-card__title">Plan phase</div>
-            <div style="font-size:0.85rem; color:var(--text-primary); font-weight:500; margin-bottom:4px;">Phase {{ plan_phase.current }} of {{ plan_phase.total }}</div>
-            <div style="font-size:0.74rem; color:var(--text-tertiary); line-height:1.5;">{{ plan_phase.description }}</div>
-        </div>
-        {% endif %}
-
-        {% if monthly_commitments %}
-        {# Bracket access avoids the Jinja .items() / dict.items() clash. #}
-        {% set _obligations = monthly_commitments["obligations"] %}
-        {% set _goal_contributions = monthly_commitments["goal_contributions"] %}
-        {% set _has_any_commitment = _obligations or _goal_contributions %}
-        <div class="slim-side-card">
-            <div class="section-label" style="margin-top: 0;">THIS MONTH'S COMMITMENTS</div>
-            {% if _has_any_commitment %}
-
-            {# Fixed obligations — rent, bills, subscriptions. #}
-            {% if _obligations %}
-            <div style="margin-top: 12px;">
-                <div class="section-label" style="margin-top: 0; margin-bottom: 6px; opacity: 0.75;">Fixed obligations</div>
-                <div style="display: flex; flex-direction: column; gap: 0;">
-                    {% for item in _obligations %}
-                    <div style="display: flex; justify-content: space-between; align-items: baseline; padding: 6px 0; {% if not loop.last %}border-bottom: 0.5px solid var(--glass-border-subtle);{% endif %}">
-                        <span style="font-family: var(--font-sans); font-size: 0.82rem; color: var(--text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; padding-right: 8px;">{{ item.name }}</span>
-                        <span style="font-family: var(--font-sans); font-size: 0.82rem; color: var(--text-primary); font-weight: 500; flex-shrink: 0;">£{{ "{:,.0f}".format(item.amount) }}</span>
-                    </div>
-                    {% endfor %}
-                    <div style="display: flex; justify-content: space-between; align-items: baseline; padding: 8px 0 0; margin-top: 2px;">
-                        <span style="font-family: var(--font-sans); font-size: 0.66rem; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 1px;">Obligations subtotal</span>
-                        <span style="font-family: var(--font-sans); font-size: 0.82rem; color: var(--text-secondary); font-weight: 400;">£{{ "{:,.0f}".format(monthly_commitments["obligations_total"]) }}</span>
-                    </div>
-                </div>
-            </div>
-            {% endif %}
-
-            {# Towards your goals — active goals with monthly_allocation. #}
-            {% if _goal_contributions %}
-            <div style="margin-top: 14px;">
-                <div class="section-label" style="margin-top: 0; margin-bottom: 6px; opacity: 0.75;">Towards your goals</div>
-                <div style="display: flex; flex-direction: column; gap: 0;">
-                    {% for item in _goal_contributions %}
-                    <div style="display: flex; justify-content: space-between; align-items: baseline; padding: 6px 0; {% if not loop.last %}border-bottom: 0.5px solid var(--glass-border-subtle);{% endif %}">
-                        <span style="font-family: var(--font-sans); font-size: 0.82rem; color: var(--text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; padding-right: 8px;">{{ item.name }}</span>
-                        <span style="font-family: var(--font-sans); font-size: 0.82rem; color: var(--text-primary); font-weight: 500; flex-shrink: 0;">£{{ "{:,.0f}".format(item.amount) }}</span>
-                    </div>
-                    {% endfor %}
-                    <div style="display: flex; justify-content: space-between; align-items: baseline; padding: 8px 0 0; margin-top: 2px;">
-                        <span style="font-family: var(--font-sans); font-size: 0.66rem; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 1px;">Goals subtotal</span>
-                        <span style="font-family: var(--font-sans); font-size: 0.82rem; color: var(--text-secondary); font-weight: 400;">£{{ "{:,.0f}".format(monthly_commitments["goal_contributions_total"]) }}</span>
-                    </div>
-                </div>
-            </div>
-            {% endif %}
-
-            {# Grand total — Roman Gold, prominent. #}
-            <div style="display: flex; justify-content: space-between; align-items: baseline; padding: 12px 0 4px; border-top: 0.5px solid var(--glass-border); margin-top: 12px;">
-                <span style="font-family: var(--font-sans); font-size: 0.7rem; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 1px;">Total committed</span>
-                <span style="font-family: var(--font-sans); font-size: 0.95rem; color: var(--roman-gold); font-weight: 500;">£{{ "{:,.0f}".format(monthly_commitments.total_committed) }}</span>
-            </div>
-
-            {% else %}
-            <p style="font-size: 0.78rem; color: var(--text-tertiary); line-height: 1.65; margin: 12px 0 0;">
-                No commitments tracked yet. Once your plan is live, what's spoken for each month will appear here.
-            </p>
-            {% endif %}
-
-            {% if monthly_commitments["estimates"] %}
-            {# Estimated spend — softer hierarchy than commitments above.
-               Italic italics + smaller font + tertiary colour signal
-               "rough estimate, not locked-in". Total NOT in Roman Gold. #}
-            {% set _estimate_rows = monthly_commitments["estimates"] %}
-            <div style="margin-top: 18px; padding-top: 14px; border-top: 0.5px solid var(--glass-border-subtle);">
-                <div class="section-label" style="margin-top: 0; opacity: 0.75;">ESTIMATED SPEND</div>
-                <div style="margin-top: 10px; display: flex; flex-direction: column; gap: 0;">
-                    {% for item in _estimate_rows %}
-                    <div style="display: flex; justify-content: space-between; align-items: baseline; padding: 5px 0; {% if not loop.last %}border-bottom: 0.5px solid var(--glass-border-subtle);{% endif %}">
-                        <span style="font-family: var(--font-sans); font-size: 0.78rem; color: var(--text-tertiary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; padding-right: 8px; font-style: italic;">{{ item.name }}</span>
-                        <span style="font-family: var(--font-sans); font-size: 0.78rem; color: var(--text-secondary); font-weight: 400; flex-shrink: 0;">£{{ "{:,.0f}".format(item.amount) }}</span>
-                    </div>
-                    {% endfor %}
-                    <div style="display: flex; justify-content: space-between; align-items: baseline; padding: 8px 0 0; margin-top: 4px;">
-                        <span style="font-family: var(--font-sans); font-size: 0.66rem; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 1px; opacity: 0.7;">Total estimated</span>
-                        <span style="font-family: var(--font-sans); font-size: 0.85rem; color: var(--text-secondary); font-weight: 400;">£{{ "{:,.0f}".format(monthly_commitments["total_estimated"]) }}</span>
-                    </div>
-                </div>
-            </div>
-            {% endif %}
-        </div>
-        {% endif %}
 
         {# Identity card moved to the global app-header (top-right). #}
         {% endif %}
