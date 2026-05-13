@@ -1375,4 +1375,92 @@ The metric uses the existing `_is_debt_goal_name` heuristic (shared via `app/ser
 
 ---
 
+## 2026-05-13 — Account Deletion: Silent Failure Bug (May 2026)
+
+### What the bug was
+
+On **11 May 2026** the `wipe-users-by-email` CLI was run on production Render with `--confirm` and 8 email addresses. The command printed `→ DELETED` for each of the 8 users and reported `Wiped 8 user(s)`.
+
+On **13 May 2026** a follow-up backfill command revealed that all 8 users **still existed** in the production database. The wipe had silently failed for every user while reporting success.
+
+The same `delete_user_account` function powers the UK GDPR Article 17 user-initiated deletion flow at `/settings/delete-account` (shipped 1 May 2026). Any user who used that flow between 1 May and the fix landing could have hit the same silent failure — seeing the "Account deleted" confirmation page while their row and related personal data persisted. **Launch blocker.**
+
+### What the silent failure looked like
+
+The function was reaching `return True` on line 83 (the success branch) without the user row ever being removed from the database. Code inspection alone could not pin the exact upstream trigger — production logs would be needed — but the function had three converging defects that together let the symptom slip through:
+
+1. **No post-condition verification.** The function returned `True` whenever `db.session.commit()` did not raise, without confirming via a database query that the row was actually gone. In Postgres, a deactivated transaction's `COMMIT` can be silently downgraded to `ROLLBACK` without raising at the SQLAlchemy layer. Any session-state mismatch, transaction abort, or autoflush-recovery sequence that lands in this state was rewarded with a false-success.
+
+2. **Narrow exception handling.** `except stripe.error.StripeError` did not catch network-library exceptions raised through the Stripe SDK (`requests.exceptions.Timeout`, `urllib3.exceptions.MaxRetryError`, SDK regressions). These could propagate out of the function or leave the session in a bad state.
+
+3. **Trusted session identity-map.** The `if user is None: return True` early-exit accepted `db.session.get(User, user_id)` returning `None` as definitive proof the row was gone. An expired session, a recent rollback, or an identity-map quirk after a previous iteration's failure could make this return `None` for a row that genuinely existed.
+
+### What the fix does (app/services/account_service.py)
+
+- **Post-condition verification.** A new helper `_user_row_is_absent(user_id)` issues a fresh `SELECT COUNT(*)` inside a `no_autoflush` block, bypassing any pending session state. After every commit the function calls this helper and returns `False` if the row is still present — even though commit did not raise.
+- **Defensive helper contract.** The helper itself catches any exception, logs it with `logger.exception`, rolls back the session, and returns `False`. "Could not confirm absence" is never reported as success. The function never raises to its caller — return value is always `True` or `False`.
+- **Broadened exception handling.** The Stripe `try/except` now catches `Exception`, not just `stripe.error.StripeError`. The DB delete/commit `try/except` likewise catches `Exception`. Both log the exception class name via `type(exc).__name__` so future debugging is easier.
+- **track_event hardened.** Wrapped in its own `try/except Exception` as defence in depth, even though `track_event` already swallows internally. A future refactor that lets it raise must not break the delete.
+- **Three-tier early-exit check.** When `db.session.get` returns `None`, the function now verifies with the fresh-query helper. If the row really is absent → return `True`. If the session lied → re-fetch and proceed to delete. If still unresolvable → return `False` (no silent claim of success).
+
+### The new invariant
+
+> `delete_user_account` returns `True` ONLY when a fresh database query confirms the User row is absent. Any other outcome — row still present, verification query raised, exception during delete, Stripe failure interrupting the flow — returns `False`.
+
+Encoded as a property test in `tests/test_account_deletion.py::TestDeleteUserAccountPostFix::test_core_invariant_true_only_when_row_verifiably_absent`, which exercises three silent-failure simulations and asserts the contract in each.
+
+### Tests
+
+`tests/test_account_deletion.py` grew from 9 to 18 tests (+9). Test count for the full suite: 815 → 824.
+
+- `TestDeleteUserAccountSilentFailureRegression` (3 tests) — reproduces three distinct silent-failure mechanisms (no-op delete, no-op commit, identity-map miss) and pins the return-False contract.
+- `TestDeleteUserAccountPostFix` (6 tests) — idempotency on genuinely-missing user, full cascade success path, non-StripeError tolerance, DB error rollback, track_event failure tolerance, and the over-arching invariant property test.
+
+---
+
+## 2026-05-13 — Follow-up: real-user GDPR audit needed
+
+The silent-failure bug went live with the GDPR Article 17 user-initiated deletion flow on **1 May 2026** and was fixed on **13 May 2026**. Any user who used `/settings/delete-account` in that window could have seen "Account deleted" while their data persisted — a documented Article 17 erasure request that did not actually erase. **This is a compliance issue and must be triaged before launch.**
+
+### Audit procedure
+
+1. **Pull Render logs** from 2026-05-01 onwards for the production service. Grep for the line written by the service on the success branch:
+   ```
+   delete_user_account: user_id=<N> deleted (reason=...)
+   ```
+2. **Extract every `user_id`** that appears in such a line.
+3. **Cross-reference** that list against the current `users` table — `SELECT id FROM users WHERE id IN (...)`.
+4. **Any ID that appears in both is a real user whose GDPR erasure silently failed.**
+
+### Remediation
+
+For each identified user:
+
+- **Honour the original erasure request.** Run `delete_user_account(user_id, reason="post-incident-honour")` (now safe — the fix verifies removal). Confirm the row is gone via a second SQL query.
+- **Consider notification.** The user submitted an erasure request and was told it succeeded. ICO guidance on the UK GDPR is that material correction of a prior data-protection failure should be communicated to the data subject. Loop in legal / DPO before reaching out — the wording matters, and a notification that admits a compliance failure has its own consequences.
+- **Record the incident.** Log to the internal data-protection register with date detected, scope, affected user count, remediation taken, and notification status. Keep the audit query and its result set with the record.
+
+### Known internal accounts
+
+The 8 test accounts from the 11 May 2026 `wipe-users-by-email` invocation are also still present and should be cleaned up via the now-fixed CLI in the same operation. They are internal test users, not in scope for the real-user audit above, but documenting here for completeness.
+
+---
+
+## 2026-05-13 — Follow-up audits needed for similar patterns
+
+The silent-failure root cause — narrow exception catch + commit + return success, with no post-condition verification — is generic enough that it likely exists in other services that mix external API calls with DB writes. **Each needs its own focused investigation; none are in scope for the May 2026 commit that fixed `delete_user_account`.**
+
+- **`app/services/pause_service.py`** — subscription pause/resume flow. Calls Stripe to pause/resume subscriptions and writes `SubscriptionEvent` audit rows. Same shape: external API call, DB write, return value reported back to the user. Audit for: narrow stripe-error catches, missing post-condition checks, "commit didn't raise so report success" patterns.
+
+- **`app/routes/billing_routes.py:54, 78, 102, 185`** — Stripe webhook handlers. Each `except stripe.error.StripeError` may follow the same shape as the old `delete_user_account`: narrow catch, commit, return success. Webhook silent-failure has a smaller user-facing blast radius (idempotency via `stripe_event_id` unique constraint should catch repeats) but a billing-state silent-failure would still surface as "I was charged but my subscription doesn't reflect it" support tickets.
+
+For each, the focused investigation looks like the one done for `delete_user_account`:
+
+1. Identify the function's `return True` paths.
+2. For each, ask "what guarantees the work actually happened?"
+3. If the answer is "commit didn't raise" — that's not a guarantee. Add a post-condition check.
+4. Broaden exception handling around any external API call that sits between the work and the commit.
+
+---
+
 *This journal is part of the FinTrack project. It documents genuine learning, not polished retrospection. Mistakes, confusion, and wrong turns are included deliberately — they're where the real growth happened.*
