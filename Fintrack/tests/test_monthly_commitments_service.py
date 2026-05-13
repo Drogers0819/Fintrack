@@ -230,20 +230,8 @@ class TestTotal:
 
 
 class TestOverviewRender:
-    """Overview integration tests for the commitments surface.
 
-    Pre May 2026: the dashboard rendered a detailed right-rail
-    Commitments panel with subsections (Fixed obligations, Towards
-    your goals, Estimated spend) and a Total committed footer.
-
-    Post May 2026: the dashboard renders a compact top-row chip with
-    just the label, the total, and a one-line "fixed · towards goals"
-    breakdown. The detailed panel structure still exists in the
-    service-layer output and is tested by the non-rendering tests in
-    this file — these tests now cover only the compact chip.
-    """
-
-    def test_overview_renders_compact_commitments_chip(self, app, client):
+    def test_overview_renders_commitments_panel(self, app, client):
         uid = _make_user(app, rent=900, bills=180)
         _add_goal(app, uid, "Holiday", monthly_allocation=150)
         _login(client)
@@ -251,10 +239,10 @@ class TestOverviewRender:
         resp = client.get("/overview")
         assert resp.status_code == 200
         body = resp.get_data(as_text=True)
-        # Compact chip label and one-line breakdown.
-        assert ">Commitments<" in body
-        assert "fixed" in body
-        assert "towards goals" in body
+        assert "THIS MONTH'S COMMITMENTS" in body
+        assert "Rent / mortgage" in body
+        assert "Holiday" in body
+        assert "Total committed" in body
 
     def test_overview_renders_commitments_empty_state(self, app, client):
         _make_user(app)  # No profile commitments, no goals.
@@ -263,9 +251,8 @@ class TestOverviewRender:
         resp = client.get("/overview")
         assert resp.status_code == 200
         body = resp.get_data(as_text=True)
-        assert ">Commitments<" in body
-        # Compact-chip empty-state copy.
-        assert "Once your plan is live" in body
+        assert "THIS MONTH'S COMMITMENTS" in body
+        assert "No commitments tracked yet" in body
 
     def test_overview_renders_ring_chart_section(self, app, client):
         """Sanity check that the ring chart THIS MONTH section still renders."""
@@ -363,25 +350,22 @@ class TestEstimates:
             assert result["total_committed"] == 900.0
             assert result["total_estimated"] == 240.0
 
-    def test_overview_renders_compact_chip_when_commitments_data_present(self, app, client):
-        """Post-restructure: the dashboard no longer renders a
-        detailed right-rail panel with Fixed obligations / Towards
-        your goals / Estimated spend subsections. That content is
-        produced by the service for callers that want the detail
-        (still covered by the non-rendering tests above), but the
-        dashboard surface is the compact top-row chip only.
-        """
+    def test_overview_renders_both_sections_when_both_have_data(self, app, client):
         uid = _make_user(app, rent=900, bills=200, subscriptions=50,
                          groceries=400, transport=150)
         _login(client)
         resp = client.get("/overview")
         assert resp.status_code == 200
         body = resp.get_data(as_text=True)
-        assert ">Commitments<" in body
-        # Total renders inside the compact chip — sum of obligations
-        # (rent 900 + bills 200 + subscriptions 50 = 1150) shows as
-        # "£1,150" in the value position.
-        assert "£1,150" in body
+        # Commitments section.
+        assert "THIS MONTH'S COMMITMENTS" in body
+        assert "Rent / mortgage" in body
+        assert "Total committed" in body
+        # Estimates section.
+        assert "ESTIMATED SPEND" in body
+        assert "Groceries (estimate)" in body
+        assert "Transport (estimate)" in body
+        assert "Total estimated" in body
 
 
 # ─── Obligations vs goal contributions (clarity follow-up) ──
@@ -493,13 +477,9 @@ class TestObligationsAndGoalContributions:
                 == result["obligations_total"] + result["goal_contributions_total"]
             )
 
-    def test_overview_compact_chip_breakdown_line_with_goals(self, app, client):
-        """Post May 2026: the detailed subsection labels (Fixed
-        obligations / Towards your goals / Obligations subtotal /
-        Goals subtotal) are no longer rendered on /overview — they
-        belong to the service output now, not the dashboard surface.
-        The dashboard chip just shows the one-line breakdown.
-        """
+    def test_overview_renders_both_subsections_when_goals_present(self, app, client):
+        """Integration: the subsection labels render on /overview
+        when the user has both obligations and goal contributions."""
         uid = _make_user(app, rent=900, bills=180)
         _add_goal(app, uid, "Car", monthly_allocation=300)
         _login(client)
@@ -507,23 +487,26 @@ class TestObligationsAndGoalContributions:
         resp = client.get("/overview")
         assert resp.status_code == 200
         body = resp.get_data(as_text=True)
-        # Breakdown line: "£1,080 fixed · £300 towards goals".
-        assert "£1,080 fixed" in body
-        assert "£300 towards goals" in body
+        # Sub-section labels (matched case-insensitively in template).
+        assert "Fixed obligations" in body
+        assert "Towards your goals" in body
+        assert "Obligations subtotal" in body
+        assert "Goals subtotal" in body
+        assert "Total committed" in body
 
-    def test_overview_compact_chip_breakdown_line_no_goals(self, app, client):
-        """No goals → breakdown line still renders but the towards-
-        goals figure is £0. The dashboard never hides the chip when
-        a user has any obligations.
-        """
+    def test_overview_hides_goals_subsection_when_no_active_goals(self, app, client):
+        """No goals → goals subsection (and its subtotal label) must
+        not appear. Obligations + total committed still render."""
         _make_user(app, rent=900, bills=180)
         _login(client)
 
         resp = client.get("/overview")
         assert resp.status_code == 200
         body = resp.get_data(as_text=True)
-        assert "£1,080 fixed" in body
-        assert "£0 towards goals" in body
+        assert "Fixed obligations" in body
+        assert "Towards your goals" not in body
+        assert "Goals subtotal" not in body
+        assert "Total committed" in body
 
 
 # ─── Linked / unlinked RecurringContributions (Commit 3) ────

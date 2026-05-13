@@ -1446,6 +1446,21 @@ The 8 test accounts from the 11 May 2026 `wipe-users-by-email` invocation are al
 
 ---
 
+## 2026-05-13 — Dashboard layout reversal (same day)
+
+Same-day reversal of the Commitments + Whisper repositioning from `04d4112`. Business review concluded:
+
+- The compact Commitments chip lost too much density. Users care about which obligations and estimates make up their total, not just the aggregate.
+- The Whisper card belongs in the contemplative right-rail zone, not the at-a-glance top row. Top row = stats. Right column = reflective content.
+
+The full detailed Commitments panel and the Today's Whisper card return to the right column in that order, top to bottom, above Quick Actions. The top row reduces from 4 items to 2 (Monthly Surplus + Combined NW+This Month). Grid min-width on the top row bumped from 200px to 280px so the two chips grow naturally to fill the row.
+
+Everything else from `04d4112` stays: Plan Phase removal, ring chart cleanup, goal colour dots in the plan whisper, Plan page "Has something changed?" card, Companion input position above the ring chart. Only the Commitments + Whisper positioning is reversed.
+
+Six test assertions reverted to their pre-`04d4112` strings: 5 in `test_monthly_commitments_service.py` (`TestOverviewRender` + `TestEstimates` + `TestObligationsAndGoalContributions` integration tests) and 1 in `test_whisper_service.py` (`test_overview_renders_whisper_card`). Test count unchanged at 829.
+
+---
+
 ## 2026-05-13 — Dashboard visual restructure
 
 Business decision after co-founder meeting: the dashboard top row was 3 stat pills with a right rail holding five stacked panels (Quick Actions, This Month, Today's Whisper, Plan Phase, Commitments). After this commit:
