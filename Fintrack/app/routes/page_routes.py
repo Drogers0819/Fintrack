@@ -89,7 +89,7 @@ def _decorate_plan_summary_with_goal_dots(plan_summary, smart_plan):
     def _wrap(match):
         matched = match.group(0)
         token = name_to_token.get(matched, "--roman-gold")
-        return f'<span style="color:var({token}); font-weight:500;">{matched}</span>'
+        return f'<span style="font-weight:600;">{matched}</span>'
 
     decorated = pattern.sub(_wrap, safe_text)
     if decorated == safe_text:
@@ -725,6 +725,35 @@ def overview():
         plan_summary, smart_plan,
     )
 
+    # Contextual companion prompt — reactive to what the user is about to see.
+    # A static "Anything on your mind?" earns its place only when there's nothing
+    # more specific to say. When there is, lead with it.
+    companion_context = None
+    if smart_plan and "error" not in smart_plan:
+        pots = smart_plan.get("pots") or []
+        active_pots = [
+            p for p in pots
+            if not p.get("completed") and p.get("goal_id") and p.get("months_to_target", 0) > 0
+        ]
+        if active_pots:
+            nearest = min(active_pots, key=lambda p: p.get("months_to_target", 999))
+            months = int(nearest.get("months_to_target", 0))
+            name = nearest.get("name", "your goal")
+            if months <= 6:
+                companion_context = {
+                    "message": f"Your {name} is {months} month{'s' if months != 1 else ''} away.",
+                    "pre_fill": f"Am I on track for my {name}?",
+                }
+            else:
+                furthest = max(active_pots, key=lambda p: p.get("months_to_target", 0))
+                far_months = int(furthest.get("months_to_target", 0))
+                far_name = furthest.get("name", "your goal")
+                if far_months > 24:
+                    companion_context = {
+                        "message": f"Your {far_name} is {far_months} months away.",
+                        "pre_fill": f"What would help me reach my {far_name} faster?",
+                    }
+
     from app.services.whisper_service import get_todays_whisper
     todays_whisper = get_todays_whisper(current_user)
 
@@ -772,6 +801,7 @@ def overview():
         todays_whisper=todays_whisper,
         spending_breakdown=spending_breakdown,
         monthly_commitments=monthly_commitments,
+        companion_context=companion_context,
         now=datetime.now(),
     )
 

@@ -338,6 +338,139 @@ Run these checks before marking any UI change done. Static analysis is not enoug
 
 ---
 
+## MANDATORY: Claro product goals — the lens for every decision
+
+Read before ANY UI change, feature addition, or copy edit.
+
+**What Claro is:** A UK-based, surplus-first financial planning tool with an AI companion. NOT a budgeting tracker. It shows users WHEN goals become real.
+
+**Target user:** 22–35 UK professional. House deposit, debt payoff, baby fund, travel — real stakes. Busy and smart. Cognitive load is their enemy.
+
+**The two-layer moat:**
+1. **Surplus-first planning** — Show when goals become real. Month 1 Claro knows income and spending. This is the first-insight moment.
+2. **Longitudinal memory (the deeper moat)** — Over time, Claro knows this user better than any other product. Month 12 it says: "Every October you overspend — your house deposit slips 2 months. Here is what to do before October arrives." Every companion and AI feature decision must ask: does this help Claro build a richer model of this specific user over time?
+
+**The "wow" bar:** Users must feel "This shows me something I couldn't see myself" and "Wow, where has this been all my life?" Generic tracking = failure. Forward-looking, personalised insight = success.
+
+**Success criteria:**
+- Familiar enough for day-one usability (patterns from Monarch, Revolut, Wealthfront)
+- Premium enough to feel worth paying for
+- Surplus-first in every number, label, and CTA — every number answers "what can I DO?" not "what did I do?"
+- Tone: clear, warm, specific — never generic, never condescending, never jargon
+
+**Correct competitor references:**
+- Monarch: goals as "Your top priorities", planning-first nav, calendar check-ins
+- Revolut Premium: dark UI, clean analytics, ring center = REMAINING (actionable)
+- Wealthfront: outcome-as-hero (date and amount, not balance saved), contribution slider
+- Plum: UK savings pockets — reference UX patterns only, NOT tone (too gamified)
+- Emma: UK AI transaction insights, categorisation
+- NOT: Mint, YNAB, Buddy, Copilot — US budgeting trackers, wrong category
+
+**Wealthfront pattern (goal cards):** The primary number on any goal card should be the DATE or outcome ("March 2027"), not the balance saved ("£12,400 of £35,000"). The date is the answer to what the user is actually asking. Balance is context. This applies to goal_detail and goal cards. (Pending implementation — flag when touching goal cards.)
+
+**Section order (overview):** Plan status → Goals → Spending reality → Companion prompt → Act.
+Reasoning: spending data has meaning only in the context of goals. Goals first gives the user stakes. Spending then shows what those stakes mean. The companion prompt earns its place after the user has reviewed everything — a natural follow-up, not an interruption. Note: PENDING Daniel sign-off before being locked as the app-wide standard.
+
+**Companion prompt rule:** Never a static generic prompt. Must be contextually triggered by what the user just reviewed:
+- Goal behind schedule → "Your [goal] is running [X] months behind. Want to talk through what would move it?"
+- Spending high mid-month → "You've spent [X]% of your plan with [Y] days to go. Want to look at where it's going?"
+- Default (no trigger): "Anything on your mind?" with chips for common questions
+
+---
+
+## MANDATORY: Audit questions — ask before EVERY change, on ALL breakpoints
+
+Run on: 375px, 768px, 1024px, 1440px, and 2560px. Run on default dark theme AND at least one light theme (ivory).
+
+**Hierarchy**
+- Does the most important number have the most visual weight?
+- Is there ONE story per card/section? If the user must subtract or compare to understand it, it's wrong.
+- Does reading order match the user's thought process (context before value, label before number)?
+- Would removing this element make the page clearer? If yes, remove it.
+
+**First-time user comprehension (highest bar — applies to ALL pages and ALL breakpoints)**
+The baseline is someone who has NEVER used a financial planning app. If they can understand it without guidance, it works for everyone.
+- Can a financial-app newcomer understand every section header, label, button, and data point just by looking?
+- Does every section of content have a header or label that explains what the user is looking at? Floating content with no context label = failure.
+- Does every button/link make it explicit WHAT WILL HAPPEN when tapped — not just what it is, but what doing it means?
+- After seeing any number, does the user immediately know what action (if any) they should take? If the number produces no action and no clarity, it doesn't earn its place.
+- Does the section order tell a story? Each section should make the NEXT section make sense. Context → stakes → data → action.
+- Would a user expect the behaviour they get? (e.g. tapping "Life check-in" should land somewhere that matches what that label implies)
+
+**User mental model**
+- Any jargon that maps to system internals rather than how a person thinks about money?
+- Is this section appearing WHEN the user needs it?
+- Does this colour mean what users expect (green = gain, red = problem, gold = primary action)?
+
+**Earn-your-place test (EVERY visible element)**
+- Information value: does it tell the user something they need RIGHT NOW?
+- Functional value: does it enable an action they might want?
+- Trust value: does it reduce anxiety or build confidence?
+- ONE "no" = remove it before Victoria sees it.
+
+**"So what?" test (companion to earn-your-place)**
+A data point can earn its place but still fail if the user doesn't know what to do with it. After every number, label, or card, ask: does this create actionable clarity? If the user's response is "okay... and?" — it needs a CTA, a label, or removal. Surplus-first means every piece of data answers "what can I DO?" not "what happened?"
+
+**Color semantics**
+- Green: only actual gains (income received, goal funded, positive surplus)?
+- Gold: only btn-primary, AI card "CLARO" label, or goal savings bar fill?
+- Red/danger: calm information, not alarming?
+- Pink/goal-color mid-sentence: reads as link or error? If yes — bold-only instead.
+
+**Section order (ALL pages and ALL breakpoints)**
+The order information appears in is a UX superpower. It frames everything that follows. Same data in a different order creates a completely different mental model. This applies to EVERY page, not just overview.
+
+Core principle: Context before data. Stakes before numbers. Summary before detail. Action after understanding.
+
+- Overview standard: Plan status → Goals → Spending reality → Companion prompt → Act. (PENDING Daniel sign-off for app-wide propagation; implemented on overview.)
+- Does the page open with the answer to the user's most urgent question?
+- Goals before spending — always. Goals give stakes. Spending without stakes is just information.
+- Actions (CTAs, quick actions) appear AFTER the user has enough context to act meaningfully.
+- Every section group has a label that tells the user what they are about to read.
+- On mobile: does the stacked order still make sense without the desktop right panel?
+- On desktop: two-column layout with primary content left, secondary context right?
+- At every breakpoint: is the most important content above the fold without scrolling?
+
+**Competitor alignment**
+- Revolut: ring center = REMAINING amount. Is there a clear label so users know what the number means?
+- Wealthfront: date/outcome as goal hero. Is goal_detail showing the answer first, not the balance?
+- Monarch: goals framed as priorities. Does Claro's goals section communicate importance?
+
+**Copy quality**
+- Em dash anywhere? → remove.
+- Hedge language (may, possibly, appears to)? → state it or don't.
+- Jargon (redirect, allocate, surplus directed, pots, phases)? → plain English.
+- Generic AI copy not referencing user's actual data? → rewrite with specific numbers.
+- Parenthetical restatements (£3,000 (that's £250/month))? → remove.
+
+**Layout + breakpoint-specific**
+Mobile:
+- Most important content above fold at 375px?
+- Mobile section order makes sense WITHOUT the desktop right panel?
+- Touch targets ≥ 44px?
+- Inputs/selects ≥ 16px font-size (prevents iOS Safari zoom)?
+
+Desktop (768px and above):
+- Two-column layout using hierarchy correctly — primary content left, secondary/contextual right?
+- At 1440px: does the right panel add value or just fill space? Every right-panel item earns its place by the same test.
+- At 2560px: content has a max-width. Nothing spans edge-to-edge on 4K.
+- Sidebar and nav remain functional and uncluttered at all desktop widths.
+
+**Spacing + layout**
+- Every gap on the 8pt grid (4, 8, 12, 16, 20, 24, 32, 40, 48px)?
+- Content has max-width at 2560px? Nothing edge-to-edge on 4K?
+
+**Theme check**
+- Does this work on dark gradient themes (racing-green is default)?
+- Does this work on light themes (ivory)?
+- No hardcoded rgba colors — only CSS tokens?
+- Nav blur visible on dark themes (frosted glass, not opaque)?
+
+**Workflow note — active routes list**
+After any sprint that adds new routes, update the active routes list in the `/ui-audit` skill definition. Outdated route lists = missed pages in audits.
+
+---
+
 ## Copy rules
 
 - Zero em dashes (—) anywhere — in templates AND service/route files. Use commas, full stops, or `·` midpoints.

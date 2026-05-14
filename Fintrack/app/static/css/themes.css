@@ -411,6 +411,19 @@ body.theme-soft-modern .mobile-header-bar {
     border-bottom-color: var(--glass-border);
 }
 
+/* Dark gradient themes: frosted glass mobile nav.
+   Opaque --sidebar-bg makes backdrop-filter invisible. Semi-transparent
+   black lets the blur show through, creating the frosted glass effect. */
+body.theme-racing-green   .mobile-header-bar,
+body.theme-midnight-navy  .mobile-header-bar,
+body.theme-oxford-saddle  .mobile-header-bar,
+body.theme-amethyst       .mobile-header-bar,
+body.theme-rosso          .mobile-header-bar,
+body.theme-obsidian       .mobile-header-bar {
+    background: rgba(0, 0, 0, 0.42);
+    border-bottom-color: var(--glass-border);
+}
+
 /* ===== LIGHT THEME TOAST OVERRIDES ===== */
 
 body.theme-ivory .flash-success,
