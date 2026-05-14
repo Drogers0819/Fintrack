@@ -559,6 +559,71 @@ a:hover {
     padding-top: 0;
 }
 
+/* Library background image for the emotional onboarding screens
+   (/welcome, /plan-reveal). The ::before pseudo-element carries the
+   image and fades in from black over 1.2s; ::after applies a flat
+   dark overlay so the cream text and gold accents stay legible. Direct
+   children of the .onboarding-library-bg element sit on z-index 2
+   above both layers.
+
+   Photo by Peter Herrmann on Unsplash
+   https://unsplash.com/photos/O_DUcg4cDlc
+   Unsplash License — free for commercial use, no attribution required. */
+.onboarding-library-bg {
+    position: relative;
+    min-height: 100vh;
+    background-color: var(--obsidian);
+}
+
+.onboarding-library-bg::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background-image: image-set(
+        url("/static/images/onboarding/library-bg.webp") type("image/webp"),
+        url("/static/images/onboarding/library-bg.jpg") type("image/jpeg")
+    );
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    opacity: 0;
+    animation: onboarding-bg-emerge 1.2s ease-in forwards;
+    z-index: 0;
+}
+
+.onboarding-library-bg::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background-color: rgba(2, 4, 8, 0.65);
+    z-index: 1;
+}
+
+.onboarding-library-bg > * {
+    position: relative;
+    z-index: 2;
+}
+
+@media (max-width: 768px) {
+    .onboarding-library-bg::before {
+        background-image: image-set(
+            url("/static/images/onboarding/library-bg-mobile.webp") type("image/webp"),
+            url("/static/images/onboarding/library-bg.jpg") type("image/jpeg")
+        );
+    }
+}
+
+@keyframes onboarding-bg-emerge {
+    to { opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .onboarding-library-bg::before {
+        animation: none;
+        opacity: 1;
+    }
+}
+
 .glass-card {
     background: var(--glass);
     backdrop-filter: blur(20px);

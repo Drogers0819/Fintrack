@@ -244,6 +244,7 @@
             to { transform: rotate(360deg); }
         }
     </style>
+    {% block head_extra %}{% endblock %}
 </head>
 <body class="{% if current_user.is_authenticated %}theme-{{ current_user.theme or 'obsidian-vault' }}{% else %}theme-obsidian-vault{% endif %}{% if show_header is defined and not show_header %} no-app-header{% endif %}{% if use_slim_shell %} has-slim-shell{% endif %}">
     <!-- PWA install banner (shown when installable; hidden if already installed or recently dismissed) -->
