@@ -24,7 +24,7 @@
                 </div>
             </div>
             <div class="transaction-amount {{ t.type }}">
-                {% if t.type == "income" %}+£{{ "%.2f" | format(t.amount) }}{% else %}−£{{ "%.2f" | format(t.amount) }}{% endif %}
+                {% if t.type == "income" %}+£{{ "{:,.2f}".format(t.amount) }}{% else %}−£{{ "{:,.2f}".format(t.amount) }}{% endif %}
             </div>
             <form action="{{ url_for('pages.delete_transaction', transaction_id=t.id) }}" method="POST" style="margin: 0;"
                   data-confirm-title="Delete transaction?"

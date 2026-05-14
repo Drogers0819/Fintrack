@@ -45,10 +45,9 @@
 {% elif view_state == "scheduled" %}
 <!-- Outside the check-in window -->
 <div data-empty-state="checkin-scheduled" style="padding-top: 8px;">
-    <p style="font-size: 0.95rem; color: var(--text-primary); font-weight: 500; margin-bottom: 8px;">Your next check-in is on {{ next_checkin_str }}</p>
-    <p style="font-size: 0.8rem; color: var(--text-tertiary); line-height: 1.6; margin-bottom: 6px;">We'll let you know when it's time. Until then, your plan is running quietly in the background.</p>
-    <p style="font-size: 0.72rem; color: var(--text-tertiary); margin-bottom: 20px;">{{ next_checkin_days }} day{{ 's' if next_checkin_days != 1 else '' }} to go</p>
-    <a href="{{ url_for('pages.life_checkin') }}" style="font-size: 0.78rem; color: var(--text-secondary); text-decoration: underline; text-underline-offset: 2px;">Want to log something now?</a>
+    <p style="font-size: 1.1rem; color: var(--text-primary); font-weight: 600; margin-bottom: 10px; line-height: 1.3;">Your next check-in is {{ next_checkin_str }}</p>
+    <p style="font-size: 0.85rem; color: var(--text-secondary); line-height: 1.65; margin-bottom: 20px;">{{ next_checkin_days }} day{{ 's' if next_checkin_days != 1 else '' }} away. Until then, your plan is running quietly in the background.</p>
+    <a href="{{ url_for('pages.life_checkin') }}" style="font-size: 0.82rem; color: var(--text-secondary); text-decoration: underline; text-underline-offset: 2px;">Want to log something now?</a>
 </div>
 
 {% elif already_done %}
@@ -110,15 +109,13 @@
         <span style="font-size: 0.85rem; color: var(--text-secondary);">
             {{ ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"][ci.month - 1] }} {{ ci.year }}
         </span>
-        <div>
+        <div style="text-align: right;">
             {% set total_planned = ci.entries | sum(attribute='planned_amount') %}
             {% set total_actual = ci.entries | sum(attribute='actual_amount') %}
-            <span style="font-size: 0.85rem; color: var(--text-primary);">£{{ "{:,.2f}".format(total_actual) }}</span>
-            {% if total_actual != total_planned %}
-            <span style="font-size: 0.7rem; color: var(--text-tertiary); margin-left: 4px;">
-                of £{{ "{:,.2f}".format(total_planned) }} planned
-            </span>
-            {% endif %}
+            <span style="font-size: 0.85rem; color: var(--text-primary);">£{{ "{:,.0f}".format(total_actual) }}</span>
+            <div style="font-size: 0.72rem; color: var(--text-tertiary); margin-top: 1px;">
+                {% if total_actual != total_planned %}of £{{ "{:,.0f}".format(total_planned) }} planned{% else %}saved toward goals{% endif %}
+            </div>
         </div>
     </div>
     {% endfor %}
