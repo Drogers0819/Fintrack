@@ -151,6 +151,9 @@
     <div class="slim-stat">
         <div class="slim-stat__label">Monthly surplus</div>
         <div class="slim-stat__value">£{{ "{:,.0f}".format(plan_surplus_value) }}</div>
+        {% if smart_plan and plan_surplus_value > 0 %}
+        <div style="font-size: 0.72rem; color: var(--text-tertiary); margin-top: 6px;">after bills &amp; commitments</div>
+        {% endif %}
     </div>
 
     {# 2. Combined Net Worth + This Month — two-column internal layout #}
@@ -165,9 +168,11 @@
                 <div class="slim-stat__label">Net worth</div>
                 {% if net_worth.has_started %}
                 <div class="slim-stat__value">{{ '-£' if net_worth.current < 0 else '£' }}{{ "{:,.0f}".format(net_worth.current | abs) }}</div>
+                {% if net_worth.progress != 0 %}
                 <div style="font-size: 0.62rem; color: var(--text-tertiary); margin-top: 6px;">Progress</div>
-                {% set _nw_color = 'var(--success)' if net_worth.progress > 0 else ('var(--danger)' if net_worth.progress < 0 else 'var(--text-secondary)') %}
-                <div style="font-size: 0.85rem; color: {{ _nw_color }}; font-weight: 500; line-height: 1; margin-top: 2px;">{{ '+£' if net_worth.progress > 0 else ('-£' if net_worth.progress < 0 else '£') }}{{ "{:,.0f}".format(net_worth.progress | abs) }}</div>
+                {% set _nw_color = 'var(--success)' if net_worth.progress > 0 else 'var(--danger)' %}
+                <div style="font-size: 0.85rem; color: {{ _nw_color }}; font-weight: 500; line-height: 1; margin-top: 2px;">{{ '+£' if net_worth.progress > 0 else '-£' }}{{ "{:,.0f}".format(net_worth.progress | abs) }}</div>
+                {% endif %}
                 {% else %}
                 <div style="font-size: 0.72rem; color: var(--text-tertiary); line-height: 1.4; margin-top: 4px;">Complete onboarding to see your net worth.</div>
                 {% endif %}
@@ -223,10 +228,8 @@
             <p class="slim-card__body">{{ (plan_summary_html | safe) if plan_summary_html else plan_summary }}</p>
             {% if has_debt_goals and debt_allocation > 0 %}
             <div class="slim-card__meta">
-                £{{ "{:,.0f}".format(plan_surplus_value) }}/month available · <span style="color: var(--goal-stroke-debt);">£{{ "{:,.0f}".format(debt_allocation) }} paying off debt</span> · £{{ "{:,.0f}".format(available_surplus) }} toward goals
+                £{{ "{:,.0f}".format(debt_allocation) }} paying off debt · £{{ "{:,.0f}".format(available_surplus) }} toward goals
             </div>
-            {% elif plan_surplus_value > 0 %}
-            <div class="slim-card__meta">£{{ "{:,.0f}".format(plan_surplus_value) }}/month going toward your plan</div>
             {% endif %}
 
             {% if plan_status == 'payday' and action_whisper and action_whisper.message %}
@@ -317,7 +320,7 @@
                opacity + single disclaimer at the top.
              • Empty (neither) — informational copy. #}
         {% if not is_frozen and spending_breakdown %}
-        <section data-spending-breakdown
+        <section data-spending-breakdown class="stagger-5"
                  style="margin: 18px 0 0; padding: 18px 20px; background: var(--card-bg); border: 0.5px solid var(--card-border); border-radius: 12px;">
             <div class="section-label" style="margin-top: 0;">THIS MONTH</div>
 
@@ -407,7 +410,7 @@
            companion_context is server-generated: references the nearest or
            most at-risk goal. Falls back to generic prompt when no context. #}
         {% if not is_frozen and can_access_companion %}
-        <div style="margin-top: 18px;">
+        <div class="stagger-5" style="margin-top: 18px;">
             {% if companion_context and companion_context.message %}
             <a href="{{ url_for('companion.companion_page', q=companion_context.pre_fill) }}" class="slim-companion-prompt">
                 <span class="slim-companion-prompt__icon">
@@ -440,7 +443,7 @@
 
         {# Quick action buttons — mobile only (right panel handles them on desktop) #}
         {% if not is_frozen %}
-        <div class="slim-overview__side--mobile">
+        <div class="slim-overview__side--mobile stagger-5">
             <div class="section-label" style="margin-top: 0; margin-bottom: 8px;">QUICK ACTIONS</div>
             <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:8px;">
                 <a href="{{ url_for('pages.plan', withdraw=1) }}" class="slim-stat press-scale" style="text-align:center; text-decoration:none; padding:12px 6px;">
@@ -482,6 +485,7 @@
         {% set _obligations = monthly_commitments["obligations"] %}
         {% set _goal_contributions = monthly_commitments["goal_contributions"] %}
         {% set _has_any_commitment = _obligations or _goal_contributions %}
+        {% set _multi_group = (_obligations and _goal_contributions) or (_obligations and monthly_commitments["estimates"]) or (_goal_contributions and monthly_commitments["estimates"]) %}
         <div class="slim-side-card">
             <div class="section-label" style="margin-top: 0;">THIS MONTH'S COMMITMENTS</div>
             {% if _has_any_commitment %}
@@ -489,7 +493,9 @@
             {# Fixed obligations — rent, bills, subscriptions. #}
             {% if _obligations %}
             <div style="margin-top: 12px;">
-                <div class="section-label" style="margin-top: 0; margin-bottom: 6px; opacity: 0.75;">Fixed obligations</div>
+                {% if _multi_group %}
+                <div style="font-size: 0.65rem; color: var(--text-tertiary); margin-bottom: 6px; opacity: 0.8;">Fixed obligations</div>
+                {% endif %}
                 <div style="display: flex; flex-direction: column; gap: 0;">
                     {% for item in _obligations %}
                     <div style="display: flex; justify-content: space-between; align-items: baseline; padding: 6px 0; {% if not loop.last %}border-bottom: 0.5px solid var(--glass-border-subtle);{% endif %}">
@@ -497,10 +503,12 @@
                         <span style="font-family: var(--font-sans); font-size: 0.82rem; color: var(--text-primary); font-weight: 500; flex-shrink: 0;">£{{ "{:,.0f}".format(item.amount) }}</span>
                     </div>
                     {% endfor %}
+                    {% if _multi_group %}
                     <div style="display: flex; justify-content: space-between; align-items: baseline; padding: 8px 0 0; margin-top: 2px;">
-                        <span style="font-family: var(--font-sans); font-size: 0.66rem; color: var(--text-tertiary);">Obligations subtotal</span>
+                        <span style="font-family: var(--font-sans); font-size: 0.66rem; color: var(--text-tertiary);">Subtotal</span>
                         <span style="font-family: var(--font-sans); font-size: 0.82rem; color: var(--text-secondary); font-weight: 400;">£{{ "{:,.0f}".format(monthly_commitments["obligations_total"]) }}</span>
                     </div>
+                    {% endif %}
                 </div>
             </div>
             {% endif %}
@@ -508,7 +516,9 @@
             {# Towards your goals — active goals with monthly_allocation. #}
             {% if _goal_contributions %}
             <div style="margin-top: 14px;">
-                <div class="section-label" style="margin-top: 0; margin-bottom: 6px; opacity: 0.75;">Towards your goals</div>
+                {% if _multi_group %}
+                <div style="font-size: 0.65rem; color: var(--text-tertiary); margin-bottom: 6px; opacity: 0.8;">Towards your goals</div>
+                {% endif %}
                 <div style="display: flex; flex-direction: column; gap: 0;">
                     {% for item in _goal_contributions %}
                     <div style="display: flex; justify-content: space-between; align-items: baseline; padding: 6px 0; {% if not loop.last %}border-bottom: 0.5px solid var(--glass-border-subtle);{% endif %}">
@@ -516,10 +526,12 @@
                         <span style="font-family: var(--font-sans); font-size: 0.82rem; color: var(--text-primary); font-weight: 500; flex-shrink: 0;">£{{ "{:,.0f}".format(item.amount) }}</span>
                     </div>
                     {% endfor %}
+                    {% if _multi_group %}
                     <div style="display: flex; justify-content: space-between; align-items: baseline; padding: 8px 0 0; margin-top: 2px;">
-                        <span style="font-family: var(--font-sans); font-size: 0.66rem; color: var(--text-tertiary);">Goals subtotal</span>
+                        <span style="font-family: var(--font-sans); font-size: 0.66rem; color: var(--text-tertiary);">Subtotal</span>
                         <span style="font-family: var(--font-sans); font-size: 0.82rem; color: var(--text-secondary); font-weight: 400;">£{{ "{:,.0f}".format(monthly_commitments["goal_contributions_total"]) }}</span>
                     </div>
+                    {% endif %}
                 </div>
             </div>
             {% endif %}

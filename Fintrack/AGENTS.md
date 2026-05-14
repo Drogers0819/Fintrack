@@ -4,6 +4,31 @@ Project-specific rules for Claude working on this codebase. These are not design
 
 ---
 
+## MANDATORY: Verify memories before acting on them
+
+Before acting on any memory that names a CSS value, file path, function, class, or variable:
+- CSS variable → grep for it in the current CSS files to confirm the current value
+- File path → verify the file exists
+- Function or class → grep for it in the codebase
+
+Stale memory + confident action = wrong fix. Verify first, act second.
+
+---
+
+## MANDATORY: Earn-your-place card and element test
+
+Before building or keeping ANY visible element, answer all three:
+1. **What can the user DO with this information right now?** (If nothing → it probably doesn't belong here)
+2. **Does it pass earn-your-place?** Information value / Functional value / Trust value — one "no" = remove it
+3. **Is the hierarchy clear?** One story per card. Label before value. Context before number.
+
+Apply this to every card on every page. Ask it from the perspective of:
+- A lead designer: does this earn space?
+- A first-time user: do I know what to do with this?
+- The user 3 weeks in: is this still useful or is it noise?
+
+---
+
 ## MANDATORY: Read DESIGN-SYSTEM.md before writing any UI
 
 Before writing or editing any template, read `DESIGN-SYSTEM.md`. It defines every visual pattern: typography, colour, cards, spacing, buttons, forms, icons, navigation, data display, animation. AGENTS.md handles dev/routing rules. DESIGN-SYSTEM.md handles visual decisions.
