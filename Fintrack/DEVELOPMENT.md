@@ -1448,6 +1448,18 @@ The 8 test accounts from the 11 May 2026 `wipe-users-by-email` invocation are al
 
 ## Testing patterns worth reusing
 
+### Anti-pattern: side effects at module import time in `test_*.py`
+
+If you write a one-shot verification script (Resend keys, Stripe webhook setup, Anthropic API check, Beehiiv newsletter test, future provider integrations), **do NOT name it `test_*.py`**. pytest's collector imports every `test_*.py` file under the rootdir to look for test functions, so any network call or side effect at module top level fires every time pytest runs. There is no warning — pytest reports "collected 0 items" and moves on, while the side effect already happened.
+
+Pick one of:
+
+- Name the script with a non-test prefix: `verify_resend.py`, `check_stripe.py`, `probe_anthropic.py`. Pytest ignores it.
+- Wrap every side effect in `if __name__ == "__main__":` so import-time runs are inert.
+- Stash the script in a directory pytest doesn't crawl (e.g. `scripts/` if it isn't in the test discovery path) **and** keep it untracked or `.gitignore`d so a teammate's checkout doesn't inherit the trap.
+
+Discovered in May 2026 after `test_resend.py` — a one-shot Block 2 setup script that printed "DELETE THIS FILE after the test passes" at the bottom — fired one live Resend email per pytest invocation for roughly two weeks before anyone noticed. The file was at the project root, untracked, and matched pytest's `test_*.py` pattern; its `resend.Emails.send(...)` call lived at module top level inside a try/except. Every test run silently consumed one Resend quota slot.
+
 ### Static-asset fetch via test client
 
 When a feature adds image, font, or other static-file references in CSS or templates, add a test that fetches the URL via `client.get(path)` and asserts both `200` status and the expected `Content-Type`. The pattern is small:
