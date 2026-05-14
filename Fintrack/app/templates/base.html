@@ -24,8 +24,8 @@
     <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='favicon.ico') }}">
     <link rel="icon" type="image/png" sizes="32x32" href="{{ url_for('static', filename='images/logo.png') }}">
     <link rel="apple-touch-icon" href="{{ url_for('static', filename='images/logo.png') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}?v=20260514b">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/themes.css') }}?v=20260514b">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}?v=20260514c">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/themes.css') }}?v=20260514c">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
     <style>
         .pwa-install-banner[hidden] { display: none !important; }
@@ -78,6 +78,11 @@
         .pwa-install-banner__btn--primary:hover {
             background: var(--roman-gold-dim);
             color: var(--roman-gold);
+        }
+        @media (max-width: 767px) {
+            body.has-slim-shell .pwa-install-banner {
+                bottom: calc(60px + max(12px, env(safe-area-inset-bottom, 0px)));
+            }
         }
         @media (min-width: 901px) {
             .pwa-install-banner {
