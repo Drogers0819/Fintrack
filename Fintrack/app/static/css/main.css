@@ -2930,6 +2930,16 @@ html {
    OVERVIEW — slim shell layout
    ===================================================================== */
 
+/* Shared max-width wrapper: aligns greeting + stats strip with the overview
+   grid at wide viewports. Without it, the slim-shell main-content has
+   max-width:none, so the stats stretch full-width while slim-overview
+   centers at 1080px — they appear disconnected at 1440px+. */
+.slim-page-wrap {
+    max-width: 1080px;
+    margin: 0 auto;
+    width: 100%;
+}
+
 .slim-overview {
     display: flex;
     flex-direction: column;
