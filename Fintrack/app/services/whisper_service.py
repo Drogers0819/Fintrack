@@ -220,7 +220,7 @@ def _milestone_whisper(pots, plan):
             next_pot = _find_next_pot(pots, pot)
             redirect_msg = ""
             if next_pot:
-                redirect_msg = f" That \u00a3{pot.get('monthly_amount', 0):,.0f}/month now redirects to your {next_pot['name']}."
+                redirect_msg = f" That \u00a3{pot.get('monthly_amount', 0):,.0f}/month now goes toward your {next_pot['name']}."
 
             return {
                 "message": f"You did it! {name} is fully funded.{redirect_msg}",
@@ -487,7 +487,7 @@ def _credit_card_whisper(user):
     return (
         f"Your credit card clears in roughly {months} "
         f"month{'s' if months != 1 else ''}. After that, that "
-        f"£{amount} per month redirects automatically to your next goal."
+        f"£{amount} per month goes automatically toward your next goal."
     )
 
 
@@ -542,7 +542,7 @@ WHISPER_LIBRARY = [
 ]
 
 
-_WHISPER_FALLBACK = "Your plan is quiet today. That's the planner doing its job."
+_WHISPER_FALLBACK = None
 
 
 def get_todays_whisper(user):

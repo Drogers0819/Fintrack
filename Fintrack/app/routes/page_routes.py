@@ -89,12 +89,7 @@ def _decorate_plan_summary_with_goal_dots(plan_summary, smart_plan):
     def _wrap(match):
         matched = match.group(0)
         token = name_to_token.get(matched, "--roman-gold")
-        dot = (
-            '<span aria-hidden="true" style="display:inline-block; width:7px; '
-            f'height:7px; border-radius:50%; background:var({token}); '
-            'margin-right:6px; vertical-align:middle;"></span>'
-        )
-        return f'{dot}<span style="vertical-align:middle;">{matched}</span>'
+        return f'<span style="color:var({token}); font-weight:500;">{matched}</span>'
 
     decorated = pattern.sub(_wrap, safe_text)
     if decorated == safe_text:

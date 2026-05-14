@@ -105,7 +105,7 @@
         </div>
 
         <!-- Insight -->
-        <div style="font-size: 0.75rem; color: var(--text-secondary); font-style: italic; margin-top: 8px;">
+        <div style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 8px;">
             {{ b.insight }}
         </div>
 
@@ -163,7 +163,7 @@
 {% if suggestions | length > 0 %}
 <div class="section-label">Suggested budgets</div>
 <div class="glass-card" style="margin-bottom: 32px;">
-    <p style="font-size: 0.8rem; color: var(--text-tertiary); margin-bottom: 16px; font-style: italic;">
+    <p style="font-size: 0.8rem; color: var(--text-tertiary); margin-bottom: 16px;">
         Based on your spending history. Limits are set 10% above your average to give breathing room.
     </p>
     {% for s in suggestions %}

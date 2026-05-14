@@ -913,7 +913,7 @@ def _generate_alerts(phases, monthly_projections, pots):
                     "severity": "info",
                     "message": f"Your {' and '.join(completed)} will be fully funded in "
                               f"{next_change} month{'s' if next_change != 1 else ''}. "
-                              f"That money will automatically redirect to your next priority."
+                              f"That money automatically goes toward your next goal."
                 })
 
     for pot in pots:
@@ -1095,13 +1095,13 @@ def get_plan_summary(plan):
             next_name = next_pot["name"]
             return (
                 f"Your {soon_name} is closest to completion (~{soon_months} month{'s' if soon_months != 1 else ''}). "
-                f"Once done, that £{soon_amount:,.0f}/month redirects to your {next_name}, "
+                f"Once done, that £{soon_amount:,.0f}/month goes toward {next_name}, "
                 f"accelerating it automatically."
             )
         else:
             return (
                 f"Your {soon_name} completes in ~{soon_months} month{'s' if soon_months != 1 else ''}. "
-                f"After that, £{soon_amount:,.0f}/month is yours to redirect however you like."
+                f"After that, £{soon_amount:,.0f}/month is yours to use however you like."
             )
 
     # Fallback: underfunded goals warning
