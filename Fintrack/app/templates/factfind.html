@@ -101,8 +101,9 @@
         </div>
         <div class="form-group" style="margin-bottom: 0;">
             <label class="form-label">Monthly bills combined (£)</label>
-            <input type="number" name="bills_amount" class="form-input{% if errors and errors.bills_amount %} field-invalid{% endif %}" step="0.01" min="0"
+            <input type="number" name="bills_amount" id="ff-bills" class="form-input{% if errors and errors.bills_amount %} field-invalid{% endif %}" step="0.01" min="0"
                    placeholder="e.g. 150" required
+                   oninput="updatePartialProjection()"
                    value="{{ form_data.bills_amount if (form_data and form_data.bills_amount) else ('%g' | format(profile.bills_amount) if profile.bills_amount else '') }}">
             {% if errors and errors.bills_amount %}<span class="field-error-msg">{{ errors.bills_amount }}</span>{% endif %}
         </div>
@@ -112,14 +113,14 @@
         Council tax, phone, utilities, internet and similar fixed costs.
     </p>
 
-    <!-- ─── PARTIAL PROJECTION — shown as soon as income + rent are entered ─── -->
+    <!-- ─── PARTIAL PROJECTION — shown as soon as income is entered ─── -->
     <div id="partial-projection" style="display: none; margin: 16px 0 4px; padding: 14px 16px; border-radius: 12px; background: var(--card-bg); border: 0.5px solid var(--glass-border);">
         <div style="font-size: 0.65rem; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 6px;">Early estimate</div>
         <div style="display: flex; align-items: baseline; gap: 6px;">
             <span id="partial-surplus" style="font-size: 1.5rem; font-weight: 600; color: var(--text-primary); font-variant-numeric: tabular-nums;">£0</span>
-            <span style="font-size: 0.8rem; color: var(--text-secondary);">/month left after rent</span>
+            <span style="font-size: 0.8rem; color: var(--text-secondary);">/month after rent and bills</span>
         </div>
-        <p style="font-size: 0.7rem; color: var(--text-tertiary); margin-top: 4px; line-height: 1.5;">Based on income alone, before bills and spending. This will update as you fill in the rest.</p>
+        <p style="font-size: 0.7rem; color: var(--text-tertiary); margin-top: 4px; line-height: 1.5;">Based on income, rent, and bills. Subscriptions and spending still to come.</p>
     </div>
 
     <!-- ─── SUBSCRIPTIONS ─── -->
@@ -594,10 +595,11 @@ function updateEmploymentChips() {
 function updatePartialProjection() {
     var income = parseFloat(document.getElementById('ff-income').value) || 0;
     var rent = parseFloat(document.getElementById('ff-rent').value) || 0;
+    var bills = parseFloat(document.getElementById('ff-bills').value) || 0;
     var projection = document.getElementById('partial-projection');
     var surplusEl = document.getElementById('partial-surplus');
-    if (income > 0 && rent > 0) {
-        var surplus = income - rent;
+    if (income > 0) {
+        var surplus = income - rent - bills;
         surplusEl.textContent = (surplus < 0 ? '\u2212' : '') + '\u00a3' + Math.abs(Math.round(surplus)).toLocaleString('en-GB');
         surplusEl.style.color = surplus < 0 ? 'var(--danger)' : 'var(--text-primary)';
         projection.style.display = 'block';
