@@ -1446,46 +1446,24 @@ The 8 test accounts from the 11 May 2026 `wipe-users-by-email` invocation are al
 
 ---
 
-## 2026-05-13 — Onboarding library backdrop
+## Testing patterns worth reusing
 
-The emotional onboarding screens now render against a warm library photograph (Peter Herrmann via Unsplash) instead of flat black. A 0.65 dark overlay holds text readability; a 1.2s fade-in animation lets the room emerge from darkness on page load. `prefers-reduced-motion: reduce` skips the animation and renders the image at full opacity immediately.
+### Static-asset fetch via test client
 
-**Original plan: three screens.** The brief listed `/welcome`, `/plan-reveal`, and `/plan-review` as the atmospheric surfaces. At HEAD only **two** are live:
+When a feature adds image, font, or other static-file references in CSS or templates, add a test that fetches the URL via `client.get(path)` and asserts both `200` status and the expected `Content-Type`. The pattern is small:
 
-- `/welcome` — `welcome.html`. Backdrop applied.
-- `/plan-reveal` — `plan_reveal.html`. Backdrop applied.
-- `/plan-review` — `plan_review.html` is **no longer rendered**. The route at `/onboarding/plan-review` (`pages.plan_review`) now redirects to `/plan-reveal`. Victoria's UI audit commit `c060aae` merged the per-pot reasoning section into `plan_reveal.html` so the user sees the hero plus the reasoning on one screen. The `plan_review.html` template still exists in the tree but is unreachable.
+```python
+def test_image_assets_are_served(app, client):
+    paths_and_types = [
+        ("/static/images/x.webp", "image/webp"),
+    ]
+    for path, expected_type in paths_and_types:
+        resp = client.get(path)
+        assert resp.status_code == 200
+        assert resp.headers.get("Content-Type", "").startswith(expected_type)
+```
 
-If `/plan-review` is ever reinstated as a distinct surface, add `{% block main_class %}onboarding-library-bg{% endblock %}` to `plan_review.html` at that time.
-
-**Other onboarding screens stay flat black.** `/factfind`, `/goals/choose`, and `/trial` are dense input surfaces where atmospheric imagery hurts focus. The smoke tests pin both rules — what gets the backdrop and what does not.
-
-### Asset pipeline
-
-Build-time script: `scripts/generate_library_bg.py`. Reads the original Unsplash JPEG from `~/Downloads/peter-herrmann-O_DUcg4cDlc-unsplash.jpg` (2.9MB) and emits three variants to `app/static/images/onboarding/`:
-
-- `library-bg.webp` — 1920px desktop WebP, quality 80. Output: 184KB.
-- `library-bg-mobile.webp` — 768px mobile WebP, quality 80. Output: 36KB.
-- `library-bg.jpg` — 1920px JPEG fallback, quality 85, progressive. Output: 362KB.
-
-`Pillow` is installed in the venv as a build-time tool. It is **not** added to `requirements.txt` — image generation is one-off; production never imports PIL.
-
-### Integration
-
-- New CSS class `.onboarding-library-bg` in `main.css` immediately after `.main-content--solo`, under the existing onboarding section comment.
-- Uses `image-set()` to swap WebP / JPEG; a `(max-width: 768px)` media query swaps in the mobile WebP.
-- A `::before` carries the image at z-index 0 with a 1.2s ease-in opacity fade; `::after` paints the `rgba(2, 4, 8, 0.65)` overlay at z-index 1; direct children (the template content) sit at z-index 2.
-- `var(--obsidian)` is the fallback background colour beneath the image — kept consistent with the rest of the dark theme palette. The spec referenced a `--deep-space` token that does not exist in `:root`; using the real one.
-- `{% block head_extra %}{% endblock %}` added to `base.html` just before `</head>` so templates can inject head content. `welcome.html` uses it to preload the desktop WebP via `<link rel="preload" as="image">`. `/plan-reveal` does not preload because the same image is already warm in the browser cache by the time the user reaches it.
-
-### Tests
-
-`tests/test_onboarding_backgrounds.py` (+2 smoke tests):
-
-- `test_emotional_onboarding_screens_have_library_backdrop` — pins `.onboarding-library-bg` on `/welcome` and `/plan-reveal`. Welcome additionally pins the preload `<link>` for the desktop WebP.
-- `test_functional_onboarding_screens_do_not_have_library_backdrop` — pins the class is absent on `/factfind`, `/goals/choose`, `/trial`.
-
-Test count: 829 → 831 (+2).
+**Why it matters:** a class-rendering test ("the markup says `class='x'`") passes even when every referenced image is missing — the HTML is right, the CSS rule is right, the asset just isn't on disk or on the static path. The fetch-and-check pattern is the only thing that catches a missing/misplaced file from the test layer. This pattern was added during the library-backdrop work (since reverted) and is the takeaway worth carrying forward.
 
 ---
 

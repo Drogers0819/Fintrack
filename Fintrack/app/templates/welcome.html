@@ -1,17 +1,6 @@
 {% extends "base.html" %}
 {% block title %}Welcome – Claro{% endblock %}
 
-{% block head_extra %}
-{# Preload the desktop image so the fade-in animation has bytes to paint.
-   Only needed on /welcome (the first onboarding screen); /plan-reveal
-   reuses a warmed cache. #}
-<link rel="preload" as="image"
-      href="{{ url_for('static', filename='images/onboarding/library-bg.webp') }}"
-      type="image/webp">
-{% endblock %}
-
-{% block main_class %}onboarding-library-bg{% endblock %}
-
 {% block content %}
 <div style="max-width: 480px; width: 100%; margin: 0 auto; min-height: 100vh; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; padding-bottom: var(--sp-2xl); animation: fadeInUp 0.5s ease-out both;">
     <div class="page-header" style="margin-bottom: var(--sp-lg); width: 100%;">

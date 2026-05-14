@@ -30,7 +30,12 @@
       "Bash(venv/Scripts/python.exe -m pytest tests/test_budget.py -q)",
       "Bash(python -m pytest tests/ -x --tb=short)",
       "Bash(venv/Scripts/pytest.exe tests/ --tb=short -q)",
-      "Bash(venv/Scripts/python.exe -c ' *)"
+      "Bash(venv/Scripts/python.exe -c ' *)",
+      "Bash(venv/Scripts/python.exe -m pytest -q --tb=line)",
+      "Bash(venv/Scripts/python.exe run.py)",
+      "Bash(DATABASE_URL= venv/Scripts/python.exe run.py)",
+      "Bash(kill 141 139)",
+      "Bash(venv/Scripts/python.exe -m pytest tests/test_dashboard_restructure.py tests/test_whisper_service.py tests/test_empty_states.py -q)"
     ]
   }
 }
