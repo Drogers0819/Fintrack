@@ -1375,4 +1375,159 @@ The metric uses the existing `_is_debt_goal_name` heuristic (shared via `app/ser
 
 ---
 
+## 2026-05-13 — Account Deletion: Silent Failure Bug (May 2026)
+
+### What the bug was
+
+On **11 May 2026** the `wipe-users-by-email` CLI was run on production Render with `--confirm` and 8 email addresses. The command printed `→ DELETED` for each of the 8 users and reported `Wiped 8 user(s)`.
+
+On **13 May 2026** a follow-up backfill command revealed that all 8 users **still existed** in the production database. The wipe had silently failed for every user while reporting success.
+
+The same `delete_user_account` function powers the UK GDPR Article 17 user-initiated deletion flow at `/settings/delete-account` (shipped 1 May 2026). Any user who used that flow between 1 May and the fix landing could have hit the same silent failure — seeing the "Account deleted" confirmation page while their row and related personal data persisted. **Launch blocker.**
+
+### What the silent failure looked like
+
+The function was reaching `return True` on line 83 (the success branch) without the user row ever being removed from the database. Code inspection alone could not pin the exact upstream trigger — production logs would be needed — but the function had three converging defects that together let the symptom slip through:
+
+1. **No post-condition verification.** The function returned `True` whenever `db.session.commit()` did not raise, without confirming via a database query that the row was actually gone. In Postgres, a deactivated transaction's `COMMIT` can be silently downgraded to `ROLLBACK` without raising at the SQLAlchemy layer. Any session-state mismatch, transaction abort, or autoflush-recovery sequence that lands in this state was rewarded with a false-success.
+
+2. **Narrow exception handling.** `except stripe.error.StripeError` did not catch network-library exceptions raised through the Stripe SDK (`requests.exceptions.Timeout`, `urllib3.exceptions.MaxRetryError`, SDK regressions). These could propagate out of the function or leave the session in a bad state.
+
+3. **Trusted session identity-map.** The `if user is None: return True` early-exit accepted `db.session.get(User, user_id)` returning `None` as definitive proof the row was gone. An expired session, a recent rollback, or an identity-map quirk after a previous iteration's failure could make this return `None` for a row that genuinely existed.
+
+### What the fix does (app/services/account_service.py)
+
+- **Post-condition verification.** A new helper `_user_row_is_absent(user_id)` issues a fresh `SELECT COUNT(*)` inside a `no_autoflush` block, bypassing any pending session state. After every commit the function calls this helper and returns `False` if the row is still present — even though commit did not raise.
+- **Defensive helper contract.** The helper itself catches any exception, logs it with `logger.exception`, rolls back the session, and returns `False`. "Could not confirm absence" is never reported as success. The function never raises to its caller — return value is always `True` or `False`.
+- **Broadened exception handling.** The Stripe `try/except` now catches `Exception`, not just `stripe.error.StripeError`. The DB delete/commit `try/except` likewise catches `Exception`. Both log the exception class name via `type(exc).__name__` so future debugging is easier.
+- **track_event hardened.** Wrapped in its own `try/except Exception` as defence in depth, even though `track_event` already swallows internally. A future refactor that lets it raise must not break the delete.
+- **Three-tier early-exit check.** When `db.session.get` returns `None`, the function now verifies with the fresh-query helper. If the row really is absent → return `True`. If the session lied → re-fetch and proceed to delete. If still unresolvable → return `False` (no silent claim of success).
+
+### The new invariant
+
+> `delete_user_account` returns `True` ONLY when a fresh database query confirms the User row is absent. Any other outcome — row still present, verification query raised, exception during delete, Stripe failure interrupting the flow — returns `False`.
+
+Encoded as a property test in `tests/test_account_deletion.py::TestDeleteUserAccountPostFix::test_core_invariant_true_only_when_row_verifiably_absent`, which exercises three silent-failure simulations and asserts the contract in each.
+
+### Tests
+
+`tests/test_account_deletion.py` grew from 9 to 18 tests (+9). Test count for the full suite: 815 → 824.
+
+- `TestDeleteUserAccountSilentFailureRegression` (3 tests) — reproduces three distinct silent-failure mechanisms (no-op delete, no-op commit, identity-map miss) and pins the return-False contract.
+- `TestDeleteUserAccountPostFix` (6 tests) — idempotency on genuinely-missing user, full cascade success path, non-StripeError tolerance, DB error rollback, track_event failure tolerance, and the over-arching invariant property test.
+
+---
+
+## 2026-05-13 — Follow-up: real-user GDPR audit needed
+
+The silent-failure bug went live with the GDPR Article 17 user-initiated deletion flow on **1 May 2026** and was fixed on **13 May 2026**. Any user who used `/settings/delete-account` in that window could have seen "Account deleted" while their data persisted — a documented Article 17 erasure request that did not actually erase. **This is a compliance issue and must be triaged before launch.**
+
+### Audit procedure
+
+1. **Pull Render logs** from 2026-05-01 onwards for the production service. Grep for the line written by the service on the success branch:
+   ```
+   delete_user_account: user_id=<N> deleted (reason=...)
+   ```
+2. **Extract every `user_id`** that appears in such a line.
+3. **Cross-reference** that list against the current `users` table — `SELECT id FROM users WHERE id IN (...)`.
+4. **Any ID that appears in both is a real user whose GDPR erasure silently failed.**
+
+### Remediation
+
+For each identified user:
+
+- **Honour the original erasure request.** Run `delete_user_account(user_id, reason="post-incident-honour")` (now safe — the fix verifies removal). Confirm the row is gone via a second SQL query.
+- **Consider notification.** The user submitted an erasure request and was told it succeeded. ICO guidance on the UK GDPR is that material correction of a prior data-protection failure should be communicated to the data subject. Loop in legal / DPO before reaching out — the wording matters, and a notification that admits a compliance failure has its own consequences.
+- **Record the incident.** Log to the internal data-protection register with date detected, scope, affected user count, remediation taken, and notification status. Keep the audit query and its result set with the record.
+
+### Known internal accounts
+
+The 8 test accounts from the 11 May 2026 `wipe-users-by-email` invocation are also still present and should be cleaned up via the now-fixed CLI in the same operation. They are internal test users, not in scope for the real-user audit above, but documenting here for completeness.
+
+---
+
+## 2026-05-13 — Dashboard layout reversal (same day)
+
+Same-day reversal of the Commitments + Whisper repositioning from `04d4112`. Business review concluded:
+
+- The compact Commitments chip lost too much density. Users care about which obligations and estimates make up their total, not just the aggregate.
+- The Whisper card belongs in the contemplative right-rail zone, not the at-a-glance top row. Top row = stats. Right column = reflective content.
+
+The full detailed Commitments panel and the Today's Whisper card return to the right column in that order, top to bottom, above Quick Actions. The top row reduces from 4 items to 2 (Monthly Surplus + Combined NW+This Month). Grid min-width on the top row bumped from 200px to 280px so the two chips grow naturally to fill the row.
+
+Everything else from `04d4112` stays: Plan Phase removal, ring chart cleanup, goal colour dots in the plan whisper, Plan page "Has something changed?" card, Companion input position above the ring chart. Only the Commitments + Whisper positioning is reversed.
+
+Six test assertions reverted to their pre-`04d4112` strings: 5 in `test_monthly_commitments_service.py` (`TestOverviewRender` + `TestEstimates` + `TestObligationsAndGoalContributions` integration tests) and 1 in `test_whisper_service.py` (`test_overview_renders_whisper_card`). Test count unchanged at 829.
+
+---
+
+## 2026-05-13 — Dashboard visual restructure
+
+Business decision after co-founder meeting: the dashboard top row was 3 stat pills with a right rail holding five stacked panels (Quick Actions, This Month, Today's Whisper, Plan Phase, Commitments). After this commit:
+
+- **Top row** is 4 items spanning the full dashboard width: Monthly Surplus, a combined Net Worth + This Month chip, This Month's Commitments (compact), Today's Whisper.
+- **Right column** is Quick Actions only.
+- **Plan Phase** panel removed entirely. The phase data in `smart_plan["phases"]` stays — `plan.html` still uses it.
+- **Main column** reordered: Your Plan, Companion input, Ring chart, Goals (Companion moved above the ring chart to position it as a primary action surface rather than a footer).
+- **Ring chart** lost the per-row `(estimate)` suffix and the inner "estimated typical month" label. The single disclaimer "Preview from your profile. These figures update once you log transactions." sits above the ring in preview mode.
+- **Your Plan whisper** gets inline coloured dots before each active-goal name. The mapping lives in `goal_classification.goal_colour_token`; the route-side decorator `_decorate_plan_summary_with_goal_dots` produces a `markupsafe.Markup` string that the template renders with `| safe`. Custom goal names that don't match a keyword fall back to Roman Gold.
+- **"If something's changed, tell us here" link** removed from the dashboard.
+
+### "Has something changed?" card on /plan
+
+The Plan page becomes the canonical "tell us what changed" surface. A new card sits between the plan-summary whisper and the monthly breakdown, with a Cormorant Garamond italic question, an Inter subtitle, and a Roman Gold "Update →" button that links to `/factfind?edit=1`. Stacks below the question on narrow viewports via `flex-wrap`.
+
+### Tests
+
+`tests/test_dashboard_restructure.py` adds 5 tests:
+
+- The combined NW + This Month chip renders both halves.
+- The "Has something changed?" card renders with the correct factfind link.
+- `_decorate_plan_summary_with_goal_dots` emits a coloured dot when a goal name matches.
+- The decorator returns None when no goal name appears in the summary (template falls back to plain text).
+- HTML injection via a malicious goal name (`<script>alert(1)</script>`) is escaped — the markupsafe wrapper survives a hostile name end-to-end.
+
+Test count: 824 → 829.
+
+---
+
+## Post-launch roadmap
+
+Items deliberately deferred from pre-launch commits. Each entry names what needs to happen and the rough shape of the work; they live here so the deferral is visible rather than implicit.
+
+### Plan Health stat (5th top-row item)
+
+A status pill — `On track` / `Behind` — derived by comparing each goal's actual progress against the expected progress for the time elapsed since the goal was created. Deferred because the thresholds need real user data to calibrate; calling someone "Behind" on day 12 of a 36-month house deposit goal is a UX accident waiting to happen. Slot reserved in the overview top-row comment; when implemented, it becomes a 5th item in the existing `repeat(auto-fit, minmax(200px, 1fr))` grid.
+
+### Plan whisper intelligence
+
+The text rendered by `get_plan_summary` is currently a templated sentence. Follow-up work: make it react to recent state (a check-in just completed, a goal just hit, a debt just cleared, a surplus that shrank) so the whisper reads as live commentary rather than a static line. Tracked as a separate commit from the May 13 visual restructure so the layout change can ship without waiting on the text work.
+
+### Goal-colour mapping extension for custom goals
+
+`goal_colour_token` recognises six keyword families (debt, house, emergency, wedding, car, holiday). Anything else falls back to Roman Gold, which works at launch but flattens the visual distinction for users who type custom goal names (a goal called "MBA tuition" gets the same dot as "Wedding venue"). Two options for post-launch: (a) widen the keyword list as patterns emerge from real users, or (b) let users pick a colour at goal creation time. (b) is more flexible but needs a small picker UI on the add-goal flow.
+
+### Standing-orders onboarding prompt
+
+A factfind step that asks the user to list their standing orders so the commitments panel is populated from day one instead of waiting for transactions to flow in. Deferred because onboarding length is already a measured drop-off point and adding a step without an A/B framework risks worsening completion.
+
+---
+
+## 2026-05-13 — Follow-up audits needed for similar patterns
+
+The silent-failure root cause — narrow exception catch + commit + return success, with no post-condition verification — is generic enough that it likely exists in other services that mix external API calls with DB writes. **Each needs its own focused investigation; none are in scope for the May 2026 commit that fixed `delete_user_account`.**
+
+- **`app/services/pause_service.py`** — subscription pause/resume flow. Calls Stripe to pause/resume subscriptions and writes `SubscriptionEvent` audit rows. Same shape: external API call, DB write, return value reported back to the user. Audit for: narrow stripe-error catches, missing post-condition checks, "commit didn't raise so report success" patterns.
+
+- **`app/routes/billing_routes.py:54, 78, 102, 185`** — Stripe webhook handlers. Each `except stripe.error.StripeError` may follow the same shape as the old `delete_user_account`: narrow catch, commit, return success. Webhook silent-failure has a smaller user-facing blast radius (idempotency via `stripe_event_id` unique constraint should catch repeats) but a billing-state silent-failure would still surface as "I was charged but my subscription doesn't reflect it" support tickets.
+
+For each, the focused investigation looks like the one done for `delete_user_account`:
+
+1. Identify the function's `return True` paths.
+2. For each, ask "what guarantees the work actually happened?"
+3. If the answer is "commit didn't raise" — that's not a guarantee. Add a post-condition check.
+4. Broaden exception handling around any external API call that sits between the work and the commit.
+
+---
+
 *This journal is part of the FinTrack project. It documents genuine learning, not polished retrospection. Mistakes, confusion, and wrong turns are included deliberately — they're where the real growth happened.*

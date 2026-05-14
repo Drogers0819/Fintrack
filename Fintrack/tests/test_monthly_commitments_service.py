@@ -255,7 +255,7 @@ class TestOverviewRender:
         assert "No commitments tracked yet" in body
 
     def test_overview_renders_ring_chart_section(self, app, client):
-        """Sanity check that Commit A's section also still renders."""
+        """Sanity check that the ring chart THIS MONTH section still renders."""
         _make_user(app)
         _login(client)
 
@@ -478,7 +478,7 @@ class TestObligationsAndGoalContributions:
             )
 
     def test_overview_renders_both_subsections_when_goals_present(self, app, client):
-        """Integration: the new subsection labels render on /overview
+        """Integration: the subsection labels render on /overview
         when the user has both obligations and goal contributions."""
         uid = _make_user(app, rent=900, bills=180)
         _add_goal(app, uid, "Car", monthly_allocation=300)

@@ -27,7 +27,7 @@
 
 <!-- Plan summary whisper -->
 {% if plan_summary %}
-<div class="gold-card stagger-1" style="margin-bottom: 28px;">
+<div class="gold-card stagger-1" style="margin-bottom: 24px;">
     <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 10px;">
         <span class="ai-pulse"></span>
         <span style="font-size: 0.65rem; color: var(--roman-gold); text-transform: uppercase; letter-spacing: 0.06em;">Plan overview</span>
@@ -35,6 +35,24 @@
     <p style="font-size: 0.9rem; color: var(--text-secondary); line-height: 1.7; font-style: italic;">{{ plan_summary }}</p>
 </div>
 {% endif %}
+
+{# ── Has something changed? — canonical update-your-plan surface.
+   Moved here from the dashboard (May 2026 restructure). The dashboard
+   is for at-a-glance state; the Plan page is where the user re-enters
+   the factfind to keep things accurate. #}
+<div class="stagger-1 has-something-changed" style="margin-bottom: 24px; padding: 20px 22px; border-radius: 14px; border: 0.5px solid rgba(197, 163, 93, 0.35); background: linear-gradient(135deg, rgba(197, 163, 93, 0.08), rgba(197, 163, 93, 0.02));">
+    <div style="display: flex; align-items: center; justify-content: space-between; gap: 18px; flex-wrap: wrap;">
+        <div style="flex: 1; min-width: 240px;">
+            <div style="font-size: 0.62rem; color: var(--roman-gold); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px;">Has something changed?</div>
+            <p style="font-family: var(--font-serif), 'Cormorant Garamond', Georgia, serif; font-style: italic; font-size: 1.2rem; color: var(--text-primary); line-height: 1.4; margin: 0 0 6px;">Salary changed, new bill, lost income, big purchase coming up?</p>
+            <p style="font-size: 0.78rem; color: var(--text-tertiary); line-height: 1.6; margin: 0;">Update your plan so it stays accurate. The numbers below adapt instantly.</p>
+        </div>
+        <a href="{{ url_for('pages.factfind') }}?edit=1"
+           style="flex-shrink: 0; padding: 12px 20px; border-radius: 8px; background: #C5A35D; color: #020408; font-size: 0.85rem; font-weight: 500; text-decoration: none; white-space: nowrap; align-self: center;">
+            Update →
+        </a>
+    </div>
+</div>
 
 <!-- Monthly breakdown -->
 <div class="stagger-2" style="margin-bottom: 32px;">
