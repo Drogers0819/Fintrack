@@ -62,7 +62,7 @@
         {% endif %}
 
         {% elif p.message is defined %}
-        <p style="font-size: 0.85rem; color: var(--text-secondary); font-style: italic;">{{ p.message }}</p>
+        <p style="font-size: 0.85rem; color: var(--text-secondary);">{{ p.message }}</p>
         {% endif %}
 
         <div style="margin-top: 16px;">
@@ -82,7 +82,7 @@
 <!-- Habit Cost Calculator -->
 <div class="section-label">What does your habit actually cost?</div>
 <div style="max-width: 560px; margin-bottom: 24px;">
-    <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 16px; font-style: italic;">
+    <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 16px;">
         Enter a monthly spending habit to see its true cost over time, including the growth you miss out on.
     </p>
     <form method="POST" action="{{ url_for('pages.my_goals') }}">
@@ -162,7 +162,7 @@
 <!-- Scenario Link — bare teaser, no card -->
 <div class="section-label">What if?</div>
 <div style="max-width: 560px; margin-bottom: 32px;">
-    <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 16px; font-style: italic;">
+    <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 16px;">
         See how changing your spending, income, or goals shifts your entire financial future.
     </p>
     <a href="{{ url_for('pages.scenario_page') }}" class="btn-secondary">

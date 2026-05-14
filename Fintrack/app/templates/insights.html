@@ -21,7 +21,7 @@
 <div class="gold-card" style="margin-bottom: 28px;">
     <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
         <span class="ai-pulse"></span>
-        <span style="font-size: 0.65rem; color: var(--roman-gold); text-transform: uppercase; letter-spacing: 0.06em;">Prediction</span>
+        <span style="font-size: 0.65rem; color: var(--roman-gold); text-transform: uppercase; letter-spacing: 0.06em;">Claro</span>
     </div>
     <p style="font-size: 0.9rem; font-style: italic; color: var(--text-secondary); line-height: 1.7;">
         "{{ predictions.insight.summary }}"
@@ -69,7 +69,7 @@
 </div>
 {% else %}
 <div style="padding: 8px 0 32px;">
-    <p style="font-size: 0.95rem; color: var(--text-primary); font-weight: 500; margin-bottom: 8px;">No transactions this month yet</p>
+    <p style="font-size: 0.9rem; color: var(--text-primary); font-weight: 500; margin-bottom: 8px;">No transactions this month yet</p>
     <p style="font-size: 0.8rem; color: var(--text-tertiary); line-height: 1.6; margin-bottom: 20px;">{% if predictions.insight %}The prediction above is based on your previous months. {% endif %}Add transactions or upload a statement and Claro will track this month in real time.</p>
     <a href="{{ url_for('pages.upload_statement') }}" class="btn-primary btn-sm">Upload a statement</a>
 </div>

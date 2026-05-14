@@ -80,7 +80,7 @@
         With these numbers, you'd have
     </div>
     <div style="display: flex; align-items: baseline; gap: 8px; margin-bottom: 4px; flex-wrap: wrap;">
-        <span style="font-size: 1.6rem; font-weight: 600; {% if change > 0 %}color: var(--success);{% else %}color: var(--danger);{% endif %}">
+        <span style="font-size: 1.5rem; font-weight: 600; {% if change > 0 %}color: var(--success);{% else %}color: var(--danger);{% endif %}">
             £{{ "{:,.2f}".format(scenario_result.summary.proposed_surplus) }}
         </span>
         <span style="font-size: 0.8rem; color: var(--text-tertiary);">/month free</span>

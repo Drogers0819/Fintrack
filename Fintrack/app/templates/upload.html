@@ -58,7 +58,7 @@
                     <div style="color: var(--text-tertiary); line-height: 1.5;">My Accounts → Download → CSV format</div>
                 </div>
             </div>
-            <p style="font-size: 0.7rem; color: var(--text-tertiary); font-style: italic; margin-top: 12px; margin-bottom: 0;">
+            <p style="font-size: 0.7rem; color: var(--text-tertiary); margin-top: 12px; margin-bottom: 0;">
                 Choose the largest date range available for the best picture.
             </p>
         </div>
@@ -77,7 +77,7 @@
             <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--roman-gold)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
         </div>
         <div>
-            <div style="font-size: 0.95rem; color: var(--text-primary); font-weight: 500;">
+            <div style="font-size: 0.9rem; color: var(--text-primary); font-weight: 500;">
                 {% if result.bank_detected and result.bank_detected != "unknown" %}
                     {{ result.created }} transactions from {{ result.bank_detected | capitalize }}: analysed.
                 {% else %}

@@ -17,34 +17,34 @@
     </div>
 
     {% if reason == "no_subscription" or reason == "free_tier" %}
-    <p style="font-size: 0.92rem; color: var(--text-secondary); line-height: 1.7; margin: 0 0 24px;">
+    <p style="font-size: 0.9rem; color: var(--text-secondary); line-height: 1.7; margin: 0 0 24px;">
         You're not currently on a paid plan, so there's nothing to pause. Whatever's going on, your data stays where it is and you can pick the plan back up whenever you're ready.
     </p>
     {% elif reason == "trial" %}
-    <p style="font-size: 0.92rem; color: var(--text-secondary); line-height: 1.7; margin: 0 0 24px;">
+    <p style="font-size: 0.9rem; color: var(--text-secondary); line-height: 1.7; margin: 0 0 24px;">
         You're on a free trial right now, so there's nothing to pause. The trial ends on its own; you only start paying if you decide to. If life's changed in the meantime and you'd rather not move to paid, you can simply not enter a card.
     </p>
     {% elif reason == "in_dunning" %}
-    <p style="font-size: 0.92rem; color: var(--text-secondary); line-height: 1.7; margin: 0 0 14px;">
+    <p style="font-size: 0.9rem; color: var(--text-secondary); line-height: 1.7; margin: 0 0 14px;">
         Your subscription has a payment issue we should sort first. Once that's resolved, we can talk about pausing if you still need to.
     </p>
     <div style="display: flex; flex-direction: column; gap: 10px; margin: 0 0 24px;">
         <a href="{{ url_for('billing.billing_portal') }}" class="btn-primary btn-full" style="text-decoration: none; text-align: center;">Open billing settings</a>
     </div>
     {% elif reason == "already_paused" %}
-    <p style="font-size: 0.92rem; color: var(--text-secondary); line-height: 1.7; margin: 0 0 14px;">
+    <p style="font-size: 0.9rem; color: var(--text-secondary); line-height: 1.7; margin: 0 0 14px;">
         Your subscription is already paused. You can manage it from settings.
     </p>
     <div style="display: flex; flex-direction: column; gap: 10px; margin: 0 0 24px;">
         <a href="{{ url_for('pages.settings') }}" class="btn-primary btn-full" style="text-decoration: none; text-align: center;">Open settings</a>
     </div>
     {% elif reason == "recently_paused" %}
-    <p style="font-size: 0.92rem; color: var(--text-secondary); line-height: 1.7; margin: 0 0 14px;">
+    <p style="font-size: 0.9rem; color: var(--text-secondary); line-height: 1.7; margin: 0 0 14px;">
         You paused recently. Pause is available again
         {% if next_available %}from {{ next_available.strftime("%d %B %Y") }}{% else %}in a few months{% endif %}.
     </p>
     {% else %}
-    <p style="font-size: 0.92rem; color: var(--text-secondary); line-height: 1.7; margin: 0 0 24px;">
+    <p style="font-size: 0.9rem; color: var(--text-secondary); line-height: 1.7; margin: 0 0 24px;">
         Pause isn't available on your account right now.
     </p>
     {% endif %}

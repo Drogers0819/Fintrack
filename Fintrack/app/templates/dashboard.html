@@ -66,7 +66,7 @@
                 {% elif primary_goal.type == "spending_allocation" %}Monthly spending budget
                 {% else %}Building over time{% endif %}
             </div>
-            <div style="font-size: 1.1rem; color: var(--text-primary);">{{ primary_goal.name }}</div>
+            <div style="font-size: 0.9rem; color: var(--text-primary); font-weight: 500;">{{ primary_goal.name }}</div>
         </div>
         {% if active_goals_count > 1 %}
         <a href="{{ url_for('pages.my_goals') }}" style="font-size: 0.75rem; color: var(--roman-gold); text-decoration: none;">

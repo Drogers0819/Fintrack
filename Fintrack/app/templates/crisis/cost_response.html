@@ -14,7 +14,7 @@
 
     <div style="padding: 14px 18px; border-radius: 12px; background: var(--card-bg); border: 0.5px solid var(--card-border); margin-bottom: 18px;">
         <div style="font-size: 0.7rem; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 4px;">{{ description }}</div>
-        <div style="font-size: 1.1rem; color: var(--text-primary); font-weight: 500;">£{{ "{:,.2f}".format(amount) }}{% if already_paid %} <span style="font-size: 0.72rem; color: var(--text-tertiary); font-weight: normal;">already paid</span>{% endif %}</div>
+        <div style="font-size: 1.2rem; color: var(--text-primary); font-weight: 500;">£{{ "{:,.2f}".format(amount) }}{% if already_paid %} <span style="font-size: 0.72rem; color: var(--text-tertiary); font-weight: normal;">already paid</span>{% endif %}</div>
     </div>
 
     {% if absorption.impact == "no_plan" %}
@@ -22,24 +22,24 @@
         We've recorded the cost. Your plan needs setting up before we can show you exactly how it absorbs.
     </p>
     {% elif absorption.affordable and absorption.impact == "none" %}
-    <p style="font-size: 0.95rem; color: var(--text-primary); line-height: 1.65; margin: 0 0 14px;">
+    <p style="font-size: 0.9rem; color: var(--text-primary); line-height: 1.65; margin: 0 0 14px;">
         Your plan can absorb this cleanly.
     </p>
-    <p style="font-size: 0.88rem; color: var(--text-secondary); line-height: 1.7; margin: 0 0 18px;">
+    <p style="font-size: 0.85rem; color: var(--text-secondary); line-height: 1.7; margin: 0 0 18px;">
         It comes out of your {{ absorption.source }}, leaving £{{ "{:,.0f}".format(absorption.balance_after) }} for the rest of the month.
     </p>
     {% elif absorption.affordable and absorption.impact == "minor" %}
-    <p style="font-size: 0.95rem; color: var(--text-primary); line-height: 1.65; margin: 0 0 14px;">
+    <p style="font-size: 0.9rem; color: var(--text-primary); line-height: 1.65; margin: 0 0 14px;">
         Tight, but doable.
     </p>
-    <p style="font-size: 0.88rem; color: var(--text-secondary); line-height: 1.7; margin: 0 0 18px;">
+    <p style="font-size: 0.85rem; color: var(--text-secondary); line-height: 1.7; margin: 0 0 18px;">
         Your lifestyle pot covers £{{ "{:,.0f}".format(absorption.balance_before) }} and the remaining £{{ "{:,.0f}".format(absorption.shortfall) }} comes from your safety-net buffer.
     </p>
     {% else %}
-    <p style="font-size: 0.95rem; color: var(--text-primary); line-height: 1.65; margin: 0 0 14px;">
+    <p style="font-size: 0.9rem; color: var(--text-primary); line-height: 1.65; margin: 0 0 14px;">
         This cost is bigger than your plan can absorb in one go.
     </p>
-    <p style="font-size: 0.88rem; color: var(--text-secondary); line-height: 1.7; margin: 0 0 18px;">
+    <p style="font-size: 0.85rem; color: var(--text-secondary); line-height: 1.7; margin: 0 0 18px;">
         {{ absorption.message }}
     </p>
     {% endif %}

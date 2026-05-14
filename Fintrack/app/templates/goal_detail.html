@@ -23,18 +23,17 @@
 
 {% if projection.reachable %}
 
-<!-- The arrival card — the most important number on the page -->
-<div class="gold-card" style="margin-bottom: 32px;">
-    <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
-        <span class="ai-pulse"></span>
-        <span style="font-size: 0.65rem; color: var(--roman-gold); text-transform: uppercase; letter-spacing: 0.06em;">Projection</span>
+<!-- Outcome section: amount → projected date → contribution -->
+<div style="padding-bottom: 20px; border-bottom: 0.5px solid var(--glass-border-subtle); margin-bottom: 24px;">
+    <div style="font-size: 1.5rem; font-weight: 500; color: var(--text-primary); font-variant-numeric: tabular-nums; line-height: 1; margin-bottom: 8px;">
+        £{{ "{:,.0f}".format(projection.target_amount) }}
     </div>
-    <div id="arrival-date" class="metric-value gold sm" style="margin-bottom: 4px; transition: all 0.3s ease;">
-        {{ projection.completion_date_human }}
+    <div style="font-size: 1.2rem; font-weight: 400; color: var(--text-secondary); margin-bottom: 6px; transition: color 0.3s ease;">
+        Ready <span id="arrival-date">{{ projection.completion_date_human }}</span>
     </div>
-    <p style="font-size: 0.85rem; color: var(--text-secondary);">
-        <span id="months-display">{{ projection.months_to_target }} month{{ 's' if projection.months_to_target != 1 else '' }}</span> away at
-        <span id="slider-value">£{{ "{:,.2f}".format(projection.monthly_contribution) }}</span>/month
+    <p style="font-size: 0.78rem; color: var(--text-tertiary); margin: 0; font-variant-numeric: tabular-nums;">
+        £<span id="slider-value">{{ "{:,.0f}".format(projection.monthly_contribution) }}</span>/month
+        · <span id="months-display">{{ projection.months_to_target }} month{{ 's' if projection.months_to_target != 1 else '' }}</span> away
     </p>
 </div>
 
@@ -53,7 +52,7 @@
            style="background: linear-gradient(to right, var(--roman-gold) 0%, var(--roman-gold) {{ slider_percent }}%, var(--glass-chip) {{ slider_percent }}%, var(--glass-chip) 100%);">
 
     <div style="text-align: center; margin-top: 12px;">
-        <span id="slider-amount" style="font-size: 1.05rem; font-family: var(--font-sans); font-variant-numeric: tabular-nums; color: var(--text-primary);">
+        <span id="slider-amount" style="font-size: 0.9rem; font-family: var(--font-sans); font-variant-numeric: tabular-nums; color: var(--text-primary);">
             £{{ "{:,.2f}".format(projection.monthly_contribution) }}/month
         </span>
     </div>
@@ -95,7 +94,7 @@
     <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px 0;
         {% if not loop.last %}border-bottom: 0.5px solid var(--glass-border);{% endif %}">
         <div style="display: flex; align-items: center; gap: 10px;">
-            <span style="font-size: 0.7rem; font-weight: 600; {% if m.percent == 100 %}color: var(--success-text);{% else %}color: var(--text-tertiary);{% endif %}">{{ m.percent }}%</span>
+            <span style="font-size: 0.7rem; font-weight: 500; {% if m.percent == 100 %}color: var(--success-text);{% else %}color: var(--text-tertiary);{% endif %}">{{ m.percent }}%</span>
             <span style="font-size: 0.85rem; color: var(--text-primary);">£{{ "{:,.0f}".format(m.balance) }}</span>
         </div>
         <span style="font-size: 0.8rem; color: var(--text-tertiary);">{{ m.date }}</span>
@@ -107,7 +106,7 @@
 
 {% elif projection.reachable is defined and not projection.reachable %}
 <div style="margin-bottom: 24px; padding-top: 8px;">
-    <p style="font-size: 0.95rem; color: var(--text-primary); font-weight: 500; margin-bottom: 8px;">Set a monthly amount to get started</p>
+    <p style="font-size: 0.9rem; color: var(--text-primary); font-weight: 500; margin-bottom: 8px;">Set a monthly amount to get started</p>
     <p style="font-size: 0.82rem; color: var(--text-secondary); line-height: 1.6;">Once you set a monthly saving amount, Claro will project exactly when you'll reach this goal and show you a timeline. Use the button above to set one.</p>
 </div>
 {% endif %}
@@ -157,6 +156,12 @@
                 // Update slider value display
                 if (elements.sliderValue) {
                     elements.sliderValue.textContent = '£' + newContribution.toLocaleString('en-GB', {minimumFractionDigits: 2, maximumFractionDigits: 2}) + '/month';
+                }
+
+                // Update gold-card contribution text
+                const goldContrib = document.getElementById('slider-value');
+                if (goldContrib) {
+                    goldContrib.textContent = newContribution.toLocaleString('en-GB', {maximumFractionDigits: 0});
                 }
 
                 updateSliderBackground();

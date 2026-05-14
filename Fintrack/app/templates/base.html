@@ -24,8 +24,10 @@
     <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='favicon.ico') }}">
     <link rel="icon" type="image/png" sizes="32x32" href="{{ url_for('static', filename='images/logo.png') }}">
     <link rel="apple-touch-icon" href="{{ url_for('static', filename='images/logo.png') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}?v=20260514c">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/themes.css') }}?v=20260514c">
+    {# Critical: set body background before external CSS loads — prevents white flash in PWA and on page load #}
+    <style>html,body{background-color:{% if _is_light_theme %}#f5f3ee{% else %}#020408{% endif %};margin:0;}</style>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}?v=20260514s">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/themes.css') }}?v=20260514s">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
     <style>
         .pwa-install-banner[hidden] { display: none !important; }
@@ -92,6 +94,36 @@
                 left: 12px;
                 max-width: 300px;
             }
+        }
+        /* PWA banner: mobile-only — JS already guards this but belt-and-suspenders */
+        @media (min-width: 768px) {
+            .pwa-install-banner { display: none !important; }
+        }
+        /* When banner is visible, push page content up so nothing hides behind it */
+        @media (max-width: 767px) {
+            body.has-slim-shell.pwa-banner-active .main-content,
+            body.has-slim-shell.pwa-banner-active .main-content--solo {
+                padding-bottom: calc(140px + env(safe-area-inset-bottom, 0px)) !important;
+            }
+        }
+        /* Light themes: glass-bg is near-transparent on cream — use solid white instead */
+        body.theme-ivory .pwa-install-banner,
+        body.theme-pearl .pwa-install-banner,
+        body.theme-sage .pwa-install-banner,
+        body.theme-paper .pwa-install-banner,
+        body.theme-soft-modern .pwa-install-banner {
+            background: rgba(255, 255, 255, 0.95);
+            border-color: rgba(0, 0, 0, 0.10);
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.10);
+            backdrop-filter: none;
+            -webkit-backdrop-filter: none;
+        }
+        body.theme-ivory .pwa-install-banner__btn,
+        body.theme-pearl .pwa-install-banner__btn,
+        body.theme-sage .pwa-install-banner__btn,
+        body.theme-paper .pwa-install-banner__btn,
+        body.theme-soft-modern .pwa-install-banner__btn {
+            border-color: rgba(0, 0, 0, 0.12);
         }
 
         /* ── Labelled sidebar overrides (Block 2: nav restructure) ──
@@ -278,30 +310,29 @@
     </div>
 
     {% if use_slim_shell %}
-    {# ── Slim bottom tabs (mobile) ── #}
+    {# ── Slim bottom tabs (mobile) — matches desktop sidebar order exactly:
+       Overview · Check-in · Goals · Companion · Plan
+       Settings lives in the top-right avatar, not the tab bar. #}
     <nav class="slim-bottom-tabs" aria-label="Primary">
         <a href="{{ url_for('pages.overview') }}" class="slim-tab{% if _slim_active_overview %} is-active{% endif %}">
             <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></svg>
             Overview
         </a>
+        <a href="{{ url_for('pages.checkin') }}" class="slim-tab{% if _slim_active_checkin %} is-active{% endif %}">
+            <svg viewBox="0 0 24 24"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+            Check-in
+        </a>
         <a href="{{ url_for('pages.my_goals') }}" class="slim-tab{% if _slim_active_goals %} is-active{% endif %}">
             <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>
             Goals
         </a>
-        <div class="slim-tab-fab-cell">
-            <a href="{{ url_for('pages.checkin') }}" class="slim-tab-fab" aria-label="Quick check-in">
-                <svg viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
-            </a>
-        </div>
-        {% if can_access_companion %}
         <a href="{{ url_for('companion.companion_page') }}" class="slim-tab{% if _slim_active_companion %} is-active{% endif %}">
             <svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-            Chat
+            Companion
         </a>
-        {% endif %}
-        <a href="{{ url_for('pages.settings') }}" class="slim-tab{% if _slim_active_settings %} is-active{% endif %}">
-            <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
-            Settings
+        <a href="{{ url_for('pages.plan') }}" class="slim-tab{% if _slim_active_plan %} is-active{% endif %}">
+            <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+            Plan
         </a>
     </nav>
     {% else %}
@@ -317,30 +348,27 @@
     </div>
     {% endif %}
 
-    <!-- Mobile bottom tab bar (legacy) -->
+    <!-- Mobile bottom tab bar (legacy) — matches sidebar order -->
     <nav class="bottom-tab-bar" aria-label="Primary">
         <a href="{{ url_for('pages.overview') }}" class="bottom-tab {% if request.endpoint == 'pages.overview' %}is-active{% endif %}">
             <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></svg>
             Overview
         </a>
+        <a href="{{ url_for('pages.checkin') }}" class="bottom-tab {% if request.endpoint == 'pages.checkin' %}is-active{% endif %}">
+            <svg viewBox="0 0 24 24"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+            Check-in
+        </a>
         <a href="{{ url_for('pages.my_goals') }}" class="bottom-tab {% if request.endpoint in ['pages.my_goals', 'pages.add_goal', 'pages.goal_detail', 'pages.edit_goal'] %}is-active{% endif %}">
             <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>
             Goals
         </a>
-        <div class="bottom-tab-fab-cell">
-            <a href="{{ url_for('pages.checkin') }}" class="bottom-tab-fab" aria-label="Quick check-in">
-                <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-            </a>
-        </div>
-        {% if can_access_companion %}
         <a href="{{ url_for('companion.companion_page') }}" class="bottom-tab {% if request.endpoint == 'companion.companion_page' %}is-active{% endif %}">
             <svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-            Chat
+            Companion
         </a>
-        {% endif %}
-        <a href="{{ url_for('pages.settings') }}" class="bottom-tab {% if request.endpoint == 'pages.settings' %}is-active{% endif %}">
-            <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
-            Settings
+        <a href="{{ url_for('pages.plan') }}" class="bottom-tab {% if request.endpoint in ['pages.plan', 'pages.scenario_page'] %}is-active{% endif %}">
+            <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+            Plan
         </a>
     </nav>
     {% endif %}
@@ -659,10 +687,12 @@
                     if (installBtn) installBtn.hidden = false;
                 }
                 banner.hidden = false;
+                document.body.classList.add('pwa-banner-active');
             }
 
             function hideBanner() {
                 if (banner) banner.hidden = true;
+                document.body.classList.remove('pwa-banner-active');
             }
 
             function updateSettingsRow() {

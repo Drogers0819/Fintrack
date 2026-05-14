@@ -59,7 +59,7 @@
         <div style="display: flex; justify-content: space-between; align-items: baseline;">
             <span style="font-size: 0.85rem; color: var(--text-secondary); font-weight: 500;">Your surplus</span>
             <div>
-                <span style="font-size: 1.8rem; font-weight: 600; color: var(--text-primary); font-variant-numeric: tabular-nums;">£{{ "{:,.0f}".format(surplus) }}</span>
+                <span style="font-size: 2rem; font-weight: 600; color: var(--text-primary); font-variant-numeric: tabular-nums;">£{{ "{:,.0f}".format(surplus) }}</span>
                 <span style="font-size: 0.75rem; font-weight: 400; color: var(--text-tertiary);">/month</span>
             </div>
         </div>
@@ -74,7 +74,7 @@
     <form method="POST" action="{{ url_for('pages.surplus_reveal') }}">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <div style="margin-bottom: 24px; padding-top: 20px; border-top: 0.5px solid var(--glass-border);">
-            <div style="font-size: 0.95rem; color: var(--text-primary); font-weight: 500; margin-bottom: 4px;">Monthly lifestyle budget</div>
+            <div style="font-size: 0.9rem; color: var(--text-primary); font-weight: 500; margin-bottom: 4px;">Monthly lifestyle budget</div>
             <p style="font-size: 0.78rem; color: var(--text-tertiary); margin-bottom: 16px; line-height: 1.5;">
                 How much do you need each month to still enjoy life. Meals out, social plans, hobbies. We'll ring-fence this so your plan doesn't squeeze you.
             </p>

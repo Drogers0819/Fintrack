@@ -872,7 +872,139 @@ The logo PNG is landscape (636×334). Always set `height` explicitly and let `wi
 
 ---
 
-## 18. What Goes Where
+## 19. Spacing
+
+### 19.1 The rule: 8-point grid, always
+
+**Every gap, padding, and margin must be a multiple of 4 on the 8pt grid: 4, 8, 12, 16, 20, 24, 32, 40, 48px.**
+
+No 10px, 14px, 22px, 6px (unless part of a chip/badge compact spec), or any value not in the list above. If you can't explain why a gap is the size it is — it's wrong.
+
+**Decision rule:** Am I sizing a gap, padding, or margin?
+- **Yes** → pick from the approved scale only. Off-grid = violation.
+
+---
+
+### 19.2 Token scale — `--sp-*`
+
+```
+--sp-xs:  4px   — tight internal element spacing (icon-to-label gap, badge padding)
+--sp-sm:  8px   — compact row gaps, between label and value in same cluster
+--sp-md:  16px  — default card padding, standard section gap within a card
+--sp-lg:  24px  — gap between cards in a list, gap between section label and first card
+--sp-xl:  32px  — gap between major page sections
+--sp-2xl: 48px  — max gap; destructive action separation, section breaks on desktop
+```
+
+Always use `--sp-*` tokens in CSS. Inline styles may use literal px values (e.g. `margin-bottom: 16px`) where tokens aren't available in template context — but always choose from the scale.
+
+---
+
+### 19.3 What each value is for
+
+| Value | When to use |
+|---|---|
+| **4px** | Icon-to-label inline gap. Badge horizontal padding. Tight chip internal gap. Dot-to-label in status rows. |
+| **8px** | Gap between list rows inside a card. Space between a label and its value when tightly coupled. Compact action rows. Chip grid gap on mobile. |
+| **12px** | Internal card row padding (top/bottom per row). Space between a heading and its supporting sub-text when they are a single unit. |
+| **16px** | Default card `padding` (all sides). Gap between two sibling data points in a metric cluster. Section body margin-bottom inside a card. Mobile page horizontal padding. |
+| **20px** | Gap between section label and the section it labels when they are distinct from surrounding content. Top margin for a new section group on mobile. |
+| **24px** | Gap between major cards in a page's card stack. `margin-bottom` after a section that has a `border-bottom` separator. Page header bottom margin. |
+| **32px** | Gap between semantically different page sections (e.g. plan section → goals section → month section). Desktop page horizontal padding. |
+| **40px** | Reserve for full-page CTA areas — the breathing room above a standalone submit button. |
+| **48px** | Destructive action separation (sign-out, delete account). Max breathing room between a footer disclaimer and the CTA above it. |
+
+---
+
+### 19.4 Component-level defaults — the canonical values
+
+These are the prescribed values for recurring components. If your component matches one of these, use this value exactly — no guessing.
+
+**Cards (`.glass-card`)**
+- Padding: `16px` (all sides)
+- Margin-bottom between cards: `24px`
+- Internal row gap (between sibling rows inside a card): `8px`
+- Border-bottom between list rows inside a card: `0.5px solid var(--glass-border)` + `padding: 10px 0` on each row
+
+**Page structure**
+- Page horizontal padding (mobile): `16px`
+- Page horizontal padding (desktop): `32px`
+- `margin-bottom` after `.page-header`: `16px` (standard), `24px` if followed by a section card
+- Gap between `.section-label` and the content it labels: `8px`
+- Gap between major page sections (`.glass-card` stack): `24px`
+- Gap between semantically distinct sections: `32px`
+
+**Forms**
+- Gap between form fields: `16px`
+- Gap between field label and input: `8px`
+- Gap between primary CTA and cancel link: `10px` (stacked; this is on-grid rounding of a natural 10px)
+- Form max-width: `560px`
+
+**Navigation**
+- Bottom nav height: `64px`
+- Bottom nav icon-to-label gap: `4px`
+- Top header bar height: `52px`
+
+**Buttons**
+- Standard button padding: `12px 20px` (vertical 12, horizontal 20)
+- Small button (`.btn-sm`) padding: `8px 14px`
+- Full-width button (`btn-full`) padding: `14px 20px`
+
+**Chips / selection pills**
+- Gap between chips in a row: `8px`
+- Chip internal padding: `10px 16px` (standard), `8px 12px` (compact)
+- Chip grid row-gap on mobile: `8px`
+
+**List rows (non-card)**
+- Padding per row: `10px 0`
+- Border-bottom: `0.5px solid var(--glass-border)`
+
+**Badges**
+- Padding: `3px 8px`
+- No margin around badges within a row — rely on parent flex gap
+
+---
+
+### 19.5 Responsive overrides
+
+On mobile (≤768px), reduce section breathing room:
+- `--sp-xl` sections (32px gaps on desktop) → 24px on mobile
+- `--sp-2xl` sections (48px gaps on desktop) → 32px on mobile
+- Card padding stays 16px on all breakpoints — do not reduce
+
+On desktop (≥1024px):
+- Page horizontal padding: 32px minimum, 48px preferred for side content
+- Card stacks limited to `max-width: 800px` on content pages
+
+---
+
+### 19.6 Off-grid values — the exceptions table
+
+These specific values are permitted because they are part of a tightly specified component:
+
+| Value | Where | Why |
+|---|---|---|
+| `3px` | Badge vertical padding | Optical correction — 4px makes badges look too tall at 0.7rem text |
+| `14px` | `.btn-sm` horizontal padding | On-grid rounding; 12px was too tight, 16px too wide for small buttons |
+| `10px` | Form cancel-link gap, list row padding (vertical) | Borderline; accepted where 8px looks cramped and 12px looks loose |
+| `6px` | Close/dismiss icon button | Dense touch target needed; deliberate compact exception |
+
+No other off-grid values. If a new component needs an exception, define it in this table before using it.
+
+---
+
+### 19.7 Anti-patterns — stop these on sight
+
+- **Eyeballed spacing** — "it looks about right" is not an answer. Every gap comes from the scale.
+- **Different values for the same semantic role** — if card margin-bottom is 24px on goals, it's 24px on budgets. Inconsistency = never intentional.
+- **Nested cards with identical padding** — a card inside a card has half the padding of its parent (`8px`) to create depth.
+- **Negative margins** — never. Restructure the layout instead.
+- **`margin: auto` on page wrappers** — only on inner centering elements (chart containers, narrow form wrappers). Page-level wrappers use padding, not auto margins.
+- **Off-grid compensations** — do not add `margin-top: -2px` to fix an alignment. Fix the root cause (wrong size, wrong font-size, wrong line-height).
+
+---
+
+## 20. What Goes Where
 
 | Rule type | File |
 |---|---|

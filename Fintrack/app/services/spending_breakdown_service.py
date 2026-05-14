@@ -38,16 +38,16 @@ from datetime import date
 # DEFAULT_CATEGORIES seed colour, tuned to sit on deep-navy without
 # fighting the Roman Gold accents elsewhere on the page.
 RING_CATEGORY_COLOURS: dict[str, str] = {
-    "Food":          "#B8704F",  # warmer terracotta, desaturated
-    "Transport":     "#3D6585",  # deeper steel blue
-    "Bills":         "#5F8A7A",  # deeper sage
-    "Entertainment": "#C2A569",  # muted ochre, close to Roman Gold
-    "Shopping":      "#8E5670",  # deeper plum
-    "Health":        "#5F7E9D",  # muted slate blue
-    "Education":     "#8E8EA8",  # muted lavender-grey
-    "Subscriptions": "#7A6E9A",  # deeper purple
-    "Rent":          "#5F8270",  # deeper green-sage
-    "Other":         "#6B6B65",  # muted warm grey
+    "Food":          "#C07A55",  # warm rust-orange (~25°) — distinct warm anchor
+    "Transport":     "#4A8EC4",  # clear sky blue (~210°) — wide hue gap from Food
+    "Bills":         "#52A882",  # sage-teal (~155°) — green quadrant
+    "Entertainment": "#9E7DC4",  # violet (~275°) — clearly not gold
+    "Shopping":      "#C45278",  # dusty rose (~345°) — cool red
+    "Health":        "#52A0A8",  # steel teal (~185°) — blue-green
+    "Education":     "#8A8FC4",  # periwinkle (~235°) — blue-violet
+    "Subscriptions": "#7B5CA8",  # medium purple (~265°) — distinct from Entertainment
+    "Rent":          "#C49A55",  # warm amber (~40°) — warm but lighter than Food
+    "Other":         "#7A7872",  # warm grey — neutral fallback
 }
 
 _FALLBACK_RING_COLOUR = "#6B6B65"

@@ -27,7 +27,7 @@
 <div class="gold-card" style="margin-bottom: 24px;">
     <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 12px;">
         <span class="ai-pulse"></span>
-        <span style="font-size: 0.65rem; color: var(--roman-gold); text-transform: uppercase; letter-spacing: 0.06em;">Savings spotted</span>
+        <span style="font-size: 0.65rem; color: var(--roman-gold); text-transform: uppercase; letter-spacing: 0.06em;">Claro</span>
     </div>
     <div style="display: flex; align-items: baseline; gap: 6px; margin-bottom: 4px;">
         <div class="metric-value sm">£{{ "{:,.2f}".format(savings.total_potential_annual_saving) }}</div>
@@ -53,7 +53,7 @@
 
         <!-- Line 1: name [left] · spent/limit + edit + delete [right] -->
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-            <span style="font-size: 0.875rem; color: var(--text-primary); font-weight: 500;">{{ b.category_name }}</span>
+            <span style="font-size: 0.85rem; color: var(--text-primary); font-weight: 500;">{{ b.category_name }}</span>
             <div style="display: flex; align-items: center; gap: 6px;">
                 <!-- Spent / limit -->
                 <span style="font-size: 0.8rem; color: var(--text-secondary);">
@@ -116,7 +116,7 @@
 <!-- Set a spending limit -->
 {% if budget_statuses | length == 0 %}
 <div style="padding-top: 8px; margin-bottom: 20px;">
-    <p style="font-size: 0.95rem; color: var(--text-primary); font-weight: 500; margin-bottom: 8px;">Set a spending limit</p>
+    <p style="font-size: 0.9rem; color: var(--text-primary); font-weight: 500; margin-bottom: 8px;">Set a spending limit</p>
     <p style="font-size: 0.8rem; color: var(--text-tertiary); line-height: 1.6;">Choose a category and a monthly cap. Claro shows a progress bar as you spend so you always know where you stand.</p>
 </div>
 {% endif %}

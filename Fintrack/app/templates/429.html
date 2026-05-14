@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block title %}Too many attempts – Claro{% endblock %}
+
+{% macro _429_body() %}
+<div class="empty-page-center">
+    <p style="font-size: 0.9rem; color: var(--text-primary); font-weight: 500; margin-bottom: 8px; max-width: 280px;">Too many attempts.</p>
+    <p style="font-size: 0.8rem; color: var(--text-tertiary); line-height: 1.6; margin-bottom: 20px; max-width: 280px;">Wait a minute, then try again.</p>
+    {% if current_user.is_authenticated %}
+    <a href="{{ url_for('pages.overview') }}" class="btn-primary btn-sm">Take me home</a>
+    {% else %}
+    <a href="{{ url_for('pages.login') }}" class="btn-primary btn-sm">Back to sign in</a>
+    {% endif %}
+</div>
+{% endmacro %}
+
+{% block content %}{{ _429_body() }}{% endblock %}
+{% block auth_content %}{{ _429_body() }}{% endblock %}

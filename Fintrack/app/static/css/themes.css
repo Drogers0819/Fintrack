@@ -140,7 +140,7 @@ body.theme-ivory .sidebar {
 
 body.theme-ivory .glass-card {
     background: rgba(255, 255, 255, 0.70);
-    border-color: rgba(139, 115, 64, 0.14);
+    border-color: rgba(139, 115, 64, 0.24);
 }
 
 body.theme-ivory .gold-card {
@@ -191,7 +191,7 @@ body.theme-pearl .sidebar {
 
 body.theme-pearl .glass-card {
     background: rgba(255, 255, 255, 0.70);
-    border-color: rgba(74, 111, 165, 0.12);
+    border-color: rgba(74, 111, 165, 0.22);
 }
 
 body.theme-pearl .gold-card {
@@ -296,7 +296,7 @@ body.theme-sage .sidebar {
 
 body.theme-sage .glass-card {
     background: rgba(255, 255, 255, 0.70);
-    border-color: rgba(74, 115, 88, 0.1);
+    border-color: rgba(74, 115, 88, 0.20);
 }
 
 body.theme-sage .gold-card {
@@ -322,13 +322,143 @@ body.theme-ivory,
 body.theme-pearl,
 body.theme-sage,
 body.theme-paper,
-    body.theme-soft-modern {
-    /* AI whisper quote text: use readable dark text on light backgrounds
-       (accent colors don't have sufficient contrast for body text on these themes) */
+body.theme-soft-modern {
+    /* AI whisper quote text: use readable dark text on light backgrounds */
     --ai-whisper: var(--text-secondary);
     --shadow-float: 0 4px 20px rgba(0, 0, 0, 0.08), 0 1px 6px rgba(0, 0, 0, 0.05);
     --shadow-float-lg: 0 8px 28px rgba(0, 0, 0, 0.10), 0 2px 8px rgba(0, 0, 0, 0.06);
     --shadow-toast: 0 4px 16px rgba(0, 0, 0, 0.10), 0 1px 4px rgba(0, 0, 0, 0.06);
+    /* Ring chart track: white-rgba is invisible on light bg */
+    --ring-track: rgba(0, 0, 0, 0.06);
+
+    /* Goal progress ring colours — same stroke hues as dark themes,
+       lower-opacity tinted backgrounds that work on any light page bg.
+       soft-modern overrides these in its own block with opaque hex values. */
+    --goal-circle-house: rgba(24, 95, 165, 0.12);
+    --goal-stroke-house: #185FA5;
+    --goal-circle-emergency: rgba(59, 109, 17, 0.12);
+    --goal-stroke-emergency: #3B6D11;
+    --goal-circle-wedding: rgba(153, 53, 86, 0.12);
+    --goal-stroke-wedding: #993556;
+    --goal-circle-debt: rgba(201, 138, 63, 0.12);
+    --goal-stroke-debt: #c98a3f;
+    --goal-circle-car: rgba(110, 110, 122, 0.12);
+    --goal-stroke-car: #6e6e7a;
+    --goal-circle-holiday: rgba(197, 163, 93, 0.12);
+    --goal-stroke-holiday: #c5a35d;
+    --goal-circle-default: rgba(0, 0, 0, 0.06);
+    --goal-stroke-default: rgba(0, 0, 0, 0.40);
+
+    /* Sidebar nav state tokens */
+    --nav-active-bg: rgba(0, 0, 0, 0.05);
+    --nav-hover-bg: rgba(0, 0, 0, 0.03);
+    --nav-icon-color: rgba(0, 0, 0, 0.55);
+    --nav-icon-active-color: rgba(0, 0, 0, 0.85);
+
+    /* FAB — dark pill on light background */
+    --fab-bg: #1a1916;
+    --fab-icon: #f5f3ee;
+    --fab-fg: #f5f3ee;
+}
+
+/* ===== LIGHT THEME SLIM-SHELL CARD / STAT TOKENS =====
+   These four themes were missing --card-bg / --card-border / --stat-bg entirely.
+   Without them var(--card-bg) resolves to transparent, making every slim-card,
+   stat tile, and section that uses the token invisible on the light background —
+   the "flat wall" effect. soft-modern already defines these in its own block. */
+
+body.theme-ivory {
+    --card-bg: rgba(255, 255, 255, 0.88);
+    --card-border: rgba(139, 115, 64, 0.22);
+    --card-hover-border: rgba(139, 115, 64, 0.38);
+    --stat-bg: rgba(255, 255, 255, 0.88);
+    --qa-chip-bg: rgba(255, 255, 255, 0.80);
+    --qa-chip-border: rgba(139, 115, 64, 0.20);
+    --whisper-bg: rgba(139, 115, 64, 0.04);
+    --whisper-border-left: #8B7340;
+    --tab-bar-bg: rgba(240, 235, 226, 0.96);
+    --tab-bar-border: rgba(139, 115, 64, 0.12);
+    --glass-bg: rgba(255, 255, 255, 0.70);
+    --sidebar-bg: rgba(240, 235, 226, 0.98);
+}
+
+body.theme-pearl {
+    --card-bg: rgba(255, 255, 255, 0.88);
+    --card-border: rgba(74, 111, 165, 0.20);
+    --card-hover-border: rgba(74, 111, 165, 0.35);
+    --stat-bg: rgba(255, 255, 255, 0.88);
+    --qa-chip-bg: rgba(255, 255, 255, 0.80);
+    --qa-chip-border: rgba(74, 111, 165, 0.18);
+    --whisper-bg: rgba(74, 111, 165, 0.04);
+    --whisper-border-left: #4A6FA5;
+    --tab-bar-bg: rgba(235, 240, 248, 0.96);
+    --tab-bar-border: rgba(74, 111, 165, 0.12);
+    --glass-bg: rgba(255, 255, 255, 0.70);
+    --sidebar-bg: rgba(235, 240, 248, 0.98);
+}
+
+body.theme-sage {
+    --card-bg: rgba(255, 255, 255, 0.88);
+    --card-border: rgba(74, 115, 88, 0.20);
+    --card-hover-border: rgba(74, 115, 88, 0.35);
+    --stat-bg: rgba(255, 255, 255, 0.88);
+    --qa-chip-bg: rgba(255, 255, 255, 0.80);
+    --qa-chip-border: rgba(74, 115, 88, 0.18);
+    --whisper-bg: rgba(74, 115, 88, 0.04);
+    --whisper-border-left: #4A7358;
+    --tab-bar-bg: rgba(235, 242, 237, 0.96);
+    --tab-bar-border: rgba(74, 115, 88, 0.12);
+    --glass-bg: rgba(255, 255, 255, 0.70);
+    --sidebar-bg: rgba(235, 242, 237, 0.98);
+}
+
+body.theme-paper {
+    --card-bg: rgba(0, 0, 0, 0.03);
+    --card-border: rgba(0, 0, 0, 0.09);
+    --card-hover-border: rgba(0, 0, 0, 0.16);
+    --stat-bg: #ffffff;
+    --qa-chip-bg: #ffffff;
+    --qa-chip-border: rgba(0, 0, 0, 0.09);
+    --whisper-bg: rgba(139, 107, 61, 0.04);
+    --whisper-border-left: #8B6B3D;
+    --glass-bg: rgba(255, 255, 255, 0.70);
+    --sidebar-bg: rgba(250, 248, 245, 0.98);
+}
+
+/* ===== LIGHT THEME SLIM-CARD ELEVATION =====
+   Replace invisible glass-layer depth with box-shadow lift on light backgrounds.
+   soft-modern already defines this in its own block above. */
+
+body.theme-ivory .slim-card,
+body.theme-ivory .slim-goal-card,
+body.theme-ivory .slim-companion-prompt,
+body.theme-ivory .slim-side-card,
+body.theme-pearl .slim-card,
+body.theme-pearl .slim-goal-card,
+body.theme-pearl .slim-companion-prompt,
+body.theme-pearl .slim-side-card,
+body.theme-sage .slim-card,
+body.theme-sage .slim-goal-card,
+body.theme-sage .slim-companion-prompt,
+body.theme-sage .slim-side-card,
+body.theme-paper .slim-card,
+body.theme-paper .slim-goal-card,
+body.theme-paper .slim-companion-prompt,
+body.theme-paper .slim-side-card {
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05), 0 4px 12px rgba(0, 0, 0, 0.04);
+}
+
+/* Stat pills and chips: explicit border so white tiles separate from the
+   coloured page background. */
+body.theme-ivory .slim-stat,
+body.theme-ivory .slim-chip,
+body.theme-pearl .slim-stat,
+body.theme-pearl .slim-chip,
+body.theme-sage .slim-stat,
+body.theme-sage .slim-chip,
+body.theme-paper .slim-stat,
+body.theme-paper .slim-chip {
+    border-color: rgba(0, 0, 0, 0.07);
 }
 
 /* ===== LIGHT THEME BUTTON OVERRIDES ===== */
@@ -358,6 +488,26 @@ body.theme-soft-modern .btn-secondary:hover {
     background: var(--roman-gold-dim);
     border-color: var(--roman-gold);
     color: var(--roman-gold);
+}
+
+/* Disabled primary on light themes: neutral grey instead of washed-out gold
+   (opacity: 0.38 on gold turns it into a beige blob on cream backgrounds). */
+body.theme-ivory .btn-primary:disabled,
+body.theme-ivory .btn-primary[disabled],
+body.theme-pearl .btn-primary:disabled,
+body.theme-pearl .btn-primary[disabled],
+body.theme-sage .btn-primary:disabled,
+body.theme-sage .btn-primary[disabled],
+body.theme-paper .btn-primary:disabled,
+body.theme-paper .btn-primary[disabled],
+body.theme-soft-modern .btn-primary:disabled,
+body.theme-soft-modern .btn-primary[disabled] {
+    background: rgba(0, 0, 0, 0.06);
+    color: rgba(0, 0, 0, 0.30);
+    border-color: rgba(0, 0, 0, 0.08);
+    opacity: 1;
+    cursor: not-allowed;
+    pointer-events: auto;
 }
 
 /* Autofill: dark fallback (#0d1117) fires on light themes because --bg-secondary is undefined. Override with page bg. */
@@ -461,9 +611,9 @@ body.theme-pearl .flash-info,
 body.theme-sage .flash-info,
 body.theme-paper .flash-info,
 body.theme-soft-modern .flash-info {
-    background: rgba(0,0,0,0.04);
-    border-left-color: rgba(0,0,0,0.2);
-    color: var(--text-secondary);
+    background: #f3f4f6;
+    border-left-color: rgba(0,0,0,0.25);
+    color: rgba(0,0,0,0.68);
 }
 
 /* ===== LIGHT THEME AVATAR OVERRIDES ===== */
@@ -726,8 +876,8 @@ body.theme-pearl .suggestion-chip,
 body.theme-sage .suggestion-chip,
 body.theme-paper .suggestion-chip,
 body.theme-soft-modern .suggestion-chip {
-    border-color: rgba(0, 0, 0, 0.12);
-    background: rgba(0, 0, 0, 0.02);
+    border-color: rgba(0, 0, 0, 0.18);
+    background: rgba(0, 0, 0, 0.04);
 }
 
 /* Sidebar hover/active states use hardcoded white rgba — override for light themes */
@@ -827,6 +977,9 @@ body.theme-obsidian {
     --goal-stroke-holiday: #C5A35D;
     --goal-circle-default: rgba(255, 255, 255, 0.10);
     --goal-stroke-default: rgba(255, 255, 255, 0.7);
+
+    /* Ring chart track — low-visibility on dark bg */
+    --ring-track: rgba(255, 255, 255, 0.04);
 
     /* Tab bar / FAB — accent uses theme's roman-gold (cobalt blue, etc.) */
     --tab-bar-bg: rgba(2, 4, 8, 0.95);
@@ -947,7 +1100,7 @@ body.theme-soft-modern {
     --glass-border: rgba(0, 0, 0, 0.06);
     --text-primary: #1a1916;
     --text-secondary: #5c5a54;
-    --text-tertiary: #8c8a82;
+    --text-tertiary: #6e6c64;
     --progress-track: rgba(0, 0, 0, 0.10);
     --popover-bg: #f8f6f0;
     --sidebar-bg: rgba(245, 243, 238, 0.92);

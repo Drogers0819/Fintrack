@@ -29,9 +29,13 @@ Apply this to every card on every page. Ask it from the perspective of:
 
 ---
 
-## MANDATORY: Read DESIGN-SYSTEM.md before writing any UI
+## MANDATORY: Read the relevant AGENTS.md section AND DESIGN-SYSTEM.md rule before touching any element. Every time. No exceptions.
 
-Before writing or editing any template, read `DESIGN-SYSTEM.md`. It defines every visual pattern: typography, colour, cards, spacing, buttons, forms, icons, navigation, data display, animation. AGENTS.md handles dev/routing rules. DESIGN-SYSTEM.md handles visual decisions.
+Before touching any template element — a label, a border, a font weight, a card type, a colour token, anything — stop and read:
+1. The relevant section of THIS file (AGENTS.md) that covers the element type
+2. The relevant section of DESIGN-SYSTEM.md that covers the visual rule
+
+This is not a suggestion. It is the only fix for repeatedly applying patterns from memory that turn out to be wrong or stale. Memory drifts. The files don't. There is no shortcut.
 
 ---
 
@@ -388,7 +392,7 @@ Read before ANY UI change, feature addition, or copy edit.
 - Revolut Premium: dark UI, clean analytics, ring center = REMAINING (actionable)
 - Wealthfront: outcome-as-hero (date and amount, not balance saved), contribution slider
 - Plum: UK savings pockets — reference UX patterns only, NOT tone (too gamified)
-- Emma: UK AI transaction insights, categorisation
+- Emma: UK AI transaction insights, categorisation. **Researched 2026-05-14.** Home screen is spending-first (transaction feed, categories, weekly spend reports). Goals secondary. Tone is casual/friendly ("your best financial friend") — non-punitive, warm. Both choices are coherent for their market but are NOT Claro targets. Claro is surplus-first and advisor-tone. Emma patterns worth considering: pay-cycle budget resets (syncs to payday, not calendar month), time-based spending cuts (weekend vs weekday breakdowns). Emma anti-patterns to reject: vague category buckets ("General"), spending-first section order, friendly-app tone.
 - NOT: Mint, YNAB, Buddy, Copilot — US budgeting trackers, wrong category
 
 **Wealthfront pattern (goal cards):** The primary number on any goal card should be the DATE or outcome ("March 2027"), not the balance saved ("£12,400 of £35,000"). The date is the answer to what the user is actually asking. Balance is context. This applies to goal_detail and goal cards. (Pending implementation — flag when touching goal cards.)

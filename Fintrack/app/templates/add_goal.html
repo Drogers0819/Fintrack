@@ -22,7 +22,7 @@
             <label class="form-label">Goal name</label>
             <input type="text" name="name" class="form-input{% if errors and errors.name %} field-invalid{% endif %}"
                 placeholder="e.g. Manchester house deposit"
-                value="{{ form_data.name if form_data else '' }}" required
+                value="{{ form_data.name if form_data else (prefill_name or '') }}" required
                 oninvalid="this.setCustomValidity('Please enter a name for your goal')"
                 oninput="this.setCustomValidity('')">
             {% if errors and errors.name %}

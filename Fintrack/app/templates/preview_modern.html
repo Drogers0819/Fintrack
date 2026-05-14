@@ -7,7 +7,7 @@
     <meta name="theme-color" content="#f5f3ee">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
-    <title>Claro — Modern preview</title>
+    <title>Claro · Modern preview</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -539,7 +539,7 @@
             </h2>
             <p class="hero-meta">
                 {% if directed_amount %}
-                    Your plan has been quietly working in the background — that's <span class="gold">£{{ "{:,.0f}".format(directed_amount) }}</span> placed where it matters.
+                    Your plan has been quietly working in the background. That's <span class="gold">£{{ "{:,.0f}".format(directed_amount) }}</span> placed where it matters.
                 {% else %}
                     Once your plan is live, this is where you'll see what Claro has put toward your goals.
                 {% endif %}
@@ -553,16 +553,14 @@
         </div>
         <div class="goal-stack">
             {% set palette = ['#5b8a72', '#c5a35d', '#7d6f99', '#c47b6b', '#3f6c8a', '#8a6f5b'] %}
-            {% set emojis  = ['🎯', '✈️', '🏠', '📚', '💍', '💼'] %}
             {% if goals %}
                 {% for g in goals %}
                     {% set p = palette[loop.index0 % 6] %}
-                    {% set e = emojis[loop.index0 % 6] %}
                     {% set tgt = (g.target_amount | float) if g.target_amount else 0 %}
                     {% set cur = (g.current_amount | float) if g.current_amount else 0 %}
                     {% set pct = ((cur / tgt) * 100) | round(0) | int if tgt > 0 else 0 %}
                     <a href="{{ url_for('pages.goal_detail', goal_id=g.id) }}" class="goal-row tappable">
-                        <span class="goal-icon" style="background: {{ p }};">{{ e }}</span>
+                        <span class="goal-icon" style="background: {{ p }};"></span>
                         <div class="goal-text">
                             <div class="goal-name">{{ g.name }}</div>
                             <div class="goal-meta">
@@ -577,7 +575,7 @@
                     </a>
                 {% endfor %}
             {% else %}
-                <div class="goal-empty">No active goals yet — add one to start tracking.</div>
+                <div class="goal-empty">No active goals yet. Add one to start tracking.</div>
             {% endif %}
         </div>
 

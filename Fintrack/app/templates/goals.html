@@ -24,7 +24,7 @@
                     {% elif g.type == "spending_allocation" %}Monthly spending budget
                     {% else %}Building over time{% endif %}
                 </div>
-                <div style="font-size: 1.1rem; color: var(--text-primary);">{{ g.name }}</div>
+                <div style="font-size: 0.9rem; color: var(--text-primary); font-weight: 500;">{{ g.name }}</div>
             </div>
             <div style="display: flex; align-items: center; gap: 8px;">
                 <span class="badge {% if g.status == 'active' %}badge-success{% elif g.status == 'completed' %}badge-warning{% else %}badge-default{% endif %}">

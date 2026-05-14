@@ -9,8 +9,8 @@
 </div>
 
 {% if is_frozen %}
-<div style="margin-bottom: 24px; padding: 16px 18px; border-radius: 12px; border: 1px solid var(--roman-gold); background: var(--glass-bg);">
-    <div style="font-size: 0.72rem; color: var(--roman-gold); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 6px;">Trial ended</div>
+<div style="margin-bottom: 24px; padding: 16px 18px; border-radius: 12px; border: 0.5px solid var(--glass-border); background: var(--card-bg);">
+    <div style="font-size: 0.72rem; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 6px;">Trial ended</div>
     <p style="font-size: 0.85rem; color: var(--text-primary); line-height: 1.6; margin: 0 0 12px;">Your trial has ended. Your plan and data are safe. Pick a plan to reactivate.</p>
     <a href="{{ url_for('pages.trial_gate') }}" class="btn-primary btn-sm" style="text-decoration: none;">Reactivate</a>
 </div>
@@ -19,8 +19,8 @@
 {% if smart_plan and not smart_plan.error %}
 
 {% if has_debt_goals and debt_monthly > 0 %}
-<div class="stagger-1" style="margin-bottom: 20px; padding: 14px 16px; border-radius: 12px; background: rgba(201, 138, 63, 0.08); border: 0.5px solid rgba(201, 138, 63, 0.4);">
-    <div style="font-size: 0.65rem; color: #c98a3f; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 6px;">Debt first</div>
+<div class="stagger-1" style="margin-bottom: 20px; padding: 14px 16px; border-radius: 12px; background: var(--card-bg); border: 0.5px solid var(--glass-border);">
+    <div style="font-size: 0.65rem; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 6px;">Debt first</div>
     <p style="font-size: 0.82rem; color: var(--text-primary); line-height: 1.6; margin: 0;">Debt is being cleared first. Once done, £{{ "{:,.0f}".format(debt_monthly) }}/month redirects to your other goals and everything accelerates.</p>
 </div>
 {% endif %}
@@ -30,29 +30,24 @@
 <div class="gold-card stagger-1" style="margin-bottom: 24px;">
     <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 10px;">
         <span class="ai-pulse"></span>
-        <span style="font-size: 0.65rem; color: var(--roman-gold); text-transform: uppercase; letter-spacing: 0.06em;">Plan overview</span>
+        <span style="font-size: 0.65rem; color: var(--roman-gold); text-transform: uppercase; letter-spacing: 0.06em;">Claro</span>
     </div>
     <p style="font-size: 0.9rem; color: var(--text-secondary); line-height: 1.7; font-style: italic;">{{ plan_summary }}</p>
 </div>
 {% endif %}
 
-{# ── Has something changed? — canonical update-your-plan surface.
-   Moved here from the dashboard (May 2026 restructure). The dashboard
-   is for at-a-glance state; the Plan page is where the user re-enters
-   the factfind to keep things accurate. #}
-<div class="stagger-1 has-something-changed" style="margin-bottom: 24px; padding: 20px 22px; border-radius: 14px; border: 0.5px solid rgba(197, 163, 93, 0.35); background: linear-gradient(135deg, rgba(197, 163, 93, 0.08), rgba(197, 163, 93, 0.02));">
-    <div style="display: flex; align-items: center; justify-content: space-between; gap: 18px; flex-wrap: wrap;">
-        <div style="flex: 1; min-width: 240px;">
-            <div style="font-size: 0.62rem; color: var(--roman-gold); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px;">Has something changed?</div>
-            <p style="font-family: var(--font-serif), 'Cormorant Garamond', Georgia, serif; font-style: italic; font-size: 1.2rem; color: var(--text-primary); line-height: 1.4; margin: 0 0 6px;">Salary changed, new bill, lost income, big purchase coming up?</p>
-            <p style="font-size: 0.78rem; color: var(--text-tertiary); line-height: 1.6; margin: 0;">Update your plan so it stays accurate. The numbers below adapt instantly.</p>
-        </div>
-        <a href="{{ url_for('pages.factfind') }}?edit=1"
-           style="flex-shrink: 0; padding: 12px 20px; border-radius: 8px; background: #C5A35D; color: #020408; font-size: 0.85rem; font-weight: 500; text-decoration: none; white-space: nowrap; align-self: center;">
-            Update →
-        </a>
-    </div>
+{# ── Has something changed? — shown only when subscription active. #}
+{% if not is_frozen %}
+<div class="stagger-1" style="margin-bottom: 24px; padding: 16px 18px; border-radius: 12px; border: 0.5px solid var(--glass-border); background: var(--card-bg);">
+    <div style="font-size: 0.62rem; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px;">Has something changed?</div>
+    <p style="font-size: 0.85rem; font-weight: 500; color: var(--text-primary); line-height: 1.5; margin: 0 0 6px;">Salary changed, new bill, lost income, big purchase coming up?</p>
+    <p style="font-size: 0.78rem; color: var(--text-tertiary); line-height: 1.6; margin: 0 0 16px;">Update your plan so it stays accurate. The numbers below adapt instantly.</p>
+    <a href="{{ url_for('pages.factfind') }}?edit=1" class="btn-primary btn-sm" style="text-decoration: none; display: inline-flex; align-items: center; gap: 6px;">
+        Update my details
+        <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>
+    </a>
 </div>
+{% endif %}
 
 <!-- Monthly breakdown -->
 <div class="stagger-2" style="margin-bottom: 32px;">
@@ -129,7 +124,7 @@
     <div style="padding: 18px 0 14px 0; border-top: 1px solid var(--glass-border); margin-top: 6px;">
         <div style="display: flex; justify-content: space-between; align-items: baseline;">
             <span style="font-size: 0.85rem; color: var(--text-primary); font-weight: 500;">Total allocated</span>
-            <span style="font-size: 1.1rem; color: var(--text-primary); font-weight: 600; font-variant-numeric: tabular-nums;">£{{ "{:,.2f}".format(smart_plan.surplus) }} per month</span>
+            <span style="font-size: 1.2rem; color: var(--text-primary); font-weight: 600; font-variant-numeric: tabular-nums;">£{{ "{:,.2f}".format(smart_plan.surplus) }} per month</span>
         </div>
     </div>
 </div>
@@ -255,7 +250,7 @@
 {% elif smart_plan and smart_plan.error %}
 <!-- Plan error fallback -->
 <div data-empty-state="plan-error" style="padding: 8px 0 32px;">
-    <p style="font-size: 0.95rem; color: var(--text-primary); font-weight: 500; margin-bottom: 8px;">We can't quite build your plan yet</p>
+    <p style="font-size: 0.9rem; color: var(--text-primary); font-weight: 500; margin-bottom: 8px;">We can't quite build your plan yet</p>
     <p style="font-size: 0.8rem; color: var(--text-tertiary); line-height: 1.6; margin-bottom: 20px;">Something in your profile needs another look. Let's go back and check.</p>
     <a href="{{ url_for('pages.factfind') }}?edit=1" class="btn-primary">Review my profile</a>
     <div style="margin-top: 24px; padding: 12px 14px; border-radius: 10px; border: 0.5px solid var(--glass-border); font-size: 0.72rem; color: var(--text-tertiary); line-height: 1.5;">{{ smart_plan.error }}</div>
@@ -264,7 +259,7 @@
 {% else %}
 <!-- Factfind not yet complete -->
 <div data-empty-state="plan-no-factfind" style="padding: 8px 0 32px;">
-    <p style="font-size: 0.95rem; color: var(--text-primary); font-weight: 500; margin-bottom: 8px;">Your plan is waiting to be built</p>
+    <p style="font-size: 0.9rem; color: var(--text-primary); font-weight: 500; margin-bottom: 8px;">Your plan is waiting to be built</p>
     <p style="font-size: 0.8rem; color: var(--text-tertiary); line-height: 1.6; margin-bottom: 20px;">Take 4 minutes to share your situation. We'll show you exactly when your goals become real.</p>
     <a href="{{ url_for('pages.factfind') }}" class="btn-primary">Build my plan</a>
 </div>
@@ -320,9 +315,9 @@
         <div class="gold-card" style="margin-bottom: 16px;">
             <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 10px;">
                 <span class="ai-pulse"></span>
-                <span style="font-size: 0.65rem; color: var(--roman-gold); text-transform: uppercase; letter-spacing: 0.06em;">Recommendation</span>
+                <span style="font-size: 0.65rem; color: var(--roman-gold); text-transform: uppercase; letter-spacing: 0.06em;">Claro</span>
             </div>
-            <p style="font-size: 0.88rem; color: var(--text-secondary); line-height: 1.7;">{{ wp.plan_impact_summary }}</p>
+            <p style="font-size: 0.85rem; color: var(--text-secondary); line-height: 1.7;">{{ wp.plan_impact_summary }}</p>
         </div>
 
         {% if wp.withdrawals %}
@@ -331,8 +326,8 @@
             {% for w in wp.withdrawals %}
             <div style="padding: 12px 0; border-bottom: 0.5px solid var(--glass-border);">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
-                    <span style="font-size: 0.88rem; color: var(--text-primary);">{{ w.pot_name }}</span>
-                    <span style="font-size: 0.88rem; font-weight: 500; color: {% if w.impact_severity == 'low' %}var(--text-secondary){% elif w.impact_severity == 'medium' %}var(--roman-gold){% else %}var(--danger){% endif %}; font-variant-numeric: tabular-nums;">£{{ "{:,.0f}".format(w.amount) }}</span>
+                    <span style="font-size: 0.85rem; color: var(--text-primary);">{{ w.pot_name }}</span>
+                    <span style="font-size: 0.85rem; font-weight: 500; color: {% if w.impact_severity == 'low' %}var(--text-secondary){% elif w.impact_severity == 'medium' %}var(--roman-gold){% else %}var(--danger){% endif %}; font-variant-numeric: tabular-nums;">£{{ "{:,.0f}".format(w.amount) }}</span>
                 </div>
                 <p style="font-size: 0.75rem; color: var(--text-tertiary); line-height: 1.5;">{{ w.impact }}</p>
             </div>
@@ -340,7 +335,7 @@
 
             <div style="display: flex; justify-content: space-between; padding: 14px 0 6px;">
                 <span style="font-size: 0.85rem; color: var(--text-secondary);">Total covered</span>
-                <span style="font-size: 0.95rem; font-weight: 500; color: var(--text-primary); font-variant-numeric: tabular-nums;">£{{ "{:,.0f}".format(wp.total_covered) }}</span>
+                <span style="font-size: 0.9rem; font-weight: 500; color: var(--text-primary); font-variant-numeric: tabular-nums;">£{{ "{:,.0f}".format(wp.total_covered) }}</span>
             </div>
         </div>
         {% endif %}
@@ -353,7 +348,7 @@
 
         {% if wp.withdrawals and not withdrawal_preview.decided %}
         <div style="padding: 16px 0; border-top: 1px solid var(--glass-border);">
-            <p style="font-size: 0.88rem; color: var(--text-primary); line-height: 1.6; margin-bottom: 14px;">Would you like Claro to recalculate your plan with this withdrawal?</p>
+            <p style="font-size: 0.85rem; color: var(--text-primary); line-height: 1.6; margin-bottom: 14px;">Would you like Claro to recalculate your plan with this withdrawal?</p>
             <div style="display: flex; gap: 10px; flex-wrap: wrap;">
                 <form method="POST" action="{{ url_for('pages.plan_withdraw_confirm') }}" style="display: inline;">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">

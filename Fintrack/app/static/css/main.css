@@ -106,7 +106,7 @@ h3 { font-size: 1.125rem; }
 a {
     color: var(--roman-gold);
     text-decoration: none;
-    transition: opacity 0.3s ease;
+    transition: opacity 0.15s ease-out;
 }
 
 a:hover {
@@ -174,7 +174,7 @@ a:hover {
 .app-breadcrumb a {
     color: var(--text-tertiary);
     text-decoration: none;
-    transition: color 0.15s;
+    transition: color 0.15s ease-out;
 }
 
 .app-breadcrumb a:hover {
@@ -220,7 +220,7 @@ a:hover {
     color: var(--text-secondary);
     font-size: 0.85rem;
     font-weight: 400;
-    transition: color 0.2s ease, background 0.2s ease;
+    transition: color 0.15s ease-out, background 0.15s ease-out;
 }
 
 .nav-link:hover {
@@ -374,7 +374,7 @@ a:hover {
         font-weight: 600;
         letter-spacing: 0.02em;
         text-decoration: none;
-        transition: background 0.2s ease, border-color 0.2s ease;
+        transition: background 0.15s ease-out, border-color 0.15s ease-out;
         flex-shrink: 0;
     }
 
@@ -395,7 +395,7 @@ a:hover {
     text-decoration: none;
     color: inherit;
     border: 0.5px solid transparent;
-    transition: background 0.15s, border-color 0.15s;
+    transition: background 0.15s ease-out, border-color 0.15s ease-out;
 }
 
 .sidebar-profile-link:hover {
@@ -565,7 +565,7 @@ a:hover {
     border: 0.5px solid var(--glass-border);
     border-radius: 16px;
     padding: 28px;
-    transition: border-color 0.3s ease;
+    transition: border-color 0.15s ease-out;
 }
 
 .glass-card:hover {
@@ -643,7 +643,7 @@ a:hover {
     text-decoration: none;
     white-space: nowrap;
     box-sizing: border-box;
-    transition: filter 0.2s ease, box-shadow 0.2s ease;
+    transition: filter 0.15s ease-out, box-shadow 0.15s ease-out;
 }
 
 .btn-primary {
@@ -672,7 +672,7 @@ a:hover {
     color: var(--roman-gold);
     border: 1px solid var(--roman-gold-glow);
     font-weight: 500;
-    transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+    transition: background 0.15s ease-out, border-color 0.15s ease-out, color 0.15s ease-out;
 }
 
 .btn-secondary:hover {
@@ -729,7 +729,7 @@ a:hover {
     font-family: var(--font-sans);
     font-size: 0.9rem;
     font-weight: 300;
-    transition: border-color 0.3s ease;
+    transition: border-color 0.15s ease-out;
     outline: none;
     box-sizing: border-box;
     min-height: 52px;
@@ -778,7 +778,7 @@ input[type="checkbox"] {
     cursor: pointer;
     position: relative;
     flex-shrink: 0;
-    transition: border-color 0.2s ease, background 0.2s ease;
+    transition: border-color 0.15s ease-out, background 0.15s ease-out;
 }
 input[type="checkbox"]:checked {
     background: var(--roman-gold);
@@ -860,7 +860,7 @@ input[type="number"] {
     border: 0.5px dashed rgba(255, 255, 255, 0.15);
     border-radius: 10px;
     cursor: pointer;
-    transition: border-color 0.2s ease, background 0.2s ease;
+    transition: border-color 0.15s ease-out, background 0.15s ease-out;
     text-align: center;
 }
 
@@ -876,7 +876,7 @@ input[type="number"] {
 
 .file-upload-icon {
     color: var(--text-tertiary);
-    transition: color 0.2s ease;
+    transition: color 0.15s ease-out;
 }
 
 .file-upload-zone:hover .file-upload-icon,
@@ -927,7 +927,7 @@ input[type="number"] {
     align-items: center;
     justify-content: center;
     padding: 4px;
-    transition: color 0.2s ease;
+    transition: color 0.15s ease-out;
 }
 
 .password-toggle:hover {
@@ -982,7 +982,7 @@ input[type="number"] {
     font-size: 0.9rem;
     font-weight: 300;
     cursor: pointer;
-    transition: border-color 0.2s ease;
+    transition: border-color 0.15s ease-out;
     user-select: none;
     box-sizing: border-box;
     min-height: 52px;
@@ -1004,7 +1004,7 @@ input[type="number"] {
 .cs-chevron {
     color: var(--text-tertiary);
     flex-shrink: 0;
-    transition: transform 0.2s ease;
+    transition: transform 0.15s ease-out;
 }
 
 .cs-wrapper.cs-open .cs-chevron {
@@ -1681,25 +1681,32 @@ input[type="number"] {
     color: var(--text-tertiary);
 }
 
-/* Light theme badge overrides */
+/* Light theme badge overrides — darker semantic colors for WCAG AA compliance on light backgrounds */
 body.theme-ivory .badge-success,
 body.theme-pearl .badge-success,
-body.theme-sandstone .badge-success,
 body.theme-sage .badge-success,
-body.theme-lavender .badge-success,
-body.theme-mist .badge-success {
+body.theme-paper .badge-success,
+body.theme-soft-modern .badge-success {
     background: rgba(39, 103, 73, 0.10);
     color: var(--success);
 }
 
 body.theme-ivory .badge-danger,
 body.theme-pearl .badge-danger,
-body.theme-sandstone .badge-danger,
 body.theme-sage .badge-danger,
-body.theme-lavender .badge-danger,
-body.theme-mist .badge-danger {
+body.theme-paper .badge-danger,
+body.theme-soft-modern .badge-danger {
     background: rgba(197, 48, 48, 0.10);
-    color: var(--danger);
+    color: #991B1B;
+}
+
+body.theme-ivory .badge-warning,
+body.theme-pearl .badge-warning,
+body.theme-sage .badge-warning,
+body.theme-paper .badge-warning,
+body.theme-soft-modern .badge-warning {
+    background: rgba(155, 125, 58, 0.12);
+    color: #685124;
 }
 
 /* ===== PROGRESS BAR ===== */
@@ -1768,7 +1775,7 @@ body.theme-mist .badge-danger {
     border-radius: 10px;
     border: 2px solid transparent;
     margin-bottom: 4px;
-    transition: border-color 0.2s ease;
+    transition: border-color 0.15s ease-out;
     cursor: pointer;
 }
 
@@ -1797,7 +1804,7 @@ input[type="range"]::-webkit-slider-thumb {
     background: var(--roman-gold);
     cursor: pointer;
     box-shadow: 0 0 10px rgba(197, 163, 93, 0.4);
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    transition: transform 0.15s ease-out, box-shadow 0.15s ease-out;
 }
 
 input[type="range"]::-webkit-slider-thumb:hover {
@@ -1854,7 +1861,7 @@ input[type="range"]::-moz-range-thumb:hover {
     cursor: pointer;
     text-decoration: none;
     white-space: nowrap;
-    transition: background 0.2s ease, opacity 0.2s ease;
+    transition: background 0.15s ease-out, opacity 0.15s ease-out;
 }
 
 .btn-destructive:hover {
@@ -1869,7 +1876,7 @@ input[type="range"]::-moz-range-thumb:hover {
     letter-spacing: 0.1em;
     color: var(--roman-gold);
     text-decoration: none;
-    transition: opacity 0.2s ease;
+    transition: opacity 0.15s ease-out;
 }
 
 .link-nav:hover {
@@ -2224,7 +2231,7 @@ body.has-slim-shell .companion-input-zone {
     .form-input-sm {
         font-size: 16px;
         padding: 7px 12px;
-        min-height: 36px;
+        min-height: 44px;
     }
 
     .form-label {
@@ -2484,14 +2491,14 @@ html {
 
 .glass-card,
 .gold-card {
-    transition: background 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+    transition: background 0.15s ease-out, border-color 0.15s ease-out, box-shadow 0.15s ease-out;
 }
 
 .btn-primary,
 .btn-secondary,
 .nav-link,
 .transaction-row {
-    transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease, opacity 0.2s ease;
+    transition: background 0.15s ease-out, color 0.15s ease-out, border-color 0.15s ease-out, opacity 0.15s ease-out;
 }
 
 /* ===== SPLASH SCREEN ===== */
@@ -2858,7 +2865,10 @@ html {
         display: flex;
         align-items: center;
         justify-content: space-between;
-        background: var(--page-bg, var(--bg-primary));
+        background: var(--tab-bar-bg);
+        border-bottom: 0.5px solid var(--tab-bar-border);
+        backdrop-filter: saturate(140%) blur(14px);
+        -webkit-backdrop-filter: saturate(140%) blur(14px);
         z-index: 90;
     }
 
@@ -3088,9 +3098,9 @@ html {
 }
 
 .slim-card__body {
-    font-size: 0.86rem;
+    font-size: 0.9rem;
     color: var(--text-secondary);
-    line-height: 1.65;
+    line-height: 1.7;
     margin: 0;
     font-style: italic;
     font-family: var(--font-serif);
@@ -3482,8 +3492,8 @@ body { -webkit-text-size-adjust: 100%; }
         padding: 14px 14px;
     }
     .slim-card__body {
-        font-size: 0.84rem;
-        line-height: 1.6;
+        font-size: 0.88rem;
+        line-height: 1.65;
     }
     .slim-card__meta {
         font-size: 0.7rem;

@@ -2409,7 +2409,8 @@ def add_goal():
         flash("Goal created", "success")
         return redirect(url_for("pages.my_goals"))
 
-    return render_template("add_goal.html")
+    prefill_name = request.args.get("name", "")
+    return render_template("add_goal.html", prefill_name=prefill_name)
 
 
 @page_bp.route("/delete-goal/<int:goal_id>", methods=["POST"])

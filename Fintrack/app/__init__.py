@@ -103,6 +103,13 @@ def create_app(config_class=None):
         from flask import render_template
         return render_template("404.html"), 404
 
+    @app.errorhandler(429)
+    def too_many_requests(e):
+        from flask import render_template, request as req, jsonify
+        if req.path.startswith("/api/") or req.headers.get("Accept", "").startswith("application/json"):
+            return jsonify({"error": "Too many requests. Please wait and try again."}), 429
+        return render_template("429.html"), 429
+
     @app.errorhandler(500)
     def server_error(e):
         # Roll back any in-flight transaction so this request's failure

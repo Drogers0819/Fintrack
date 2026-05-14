@@ -73,7 +73,9 @@
         <p class="slim-greet__date">Goals</p>
         <h1 class="slim-greet__title">Your goals</h1>
     </div>
+    {% if goals | length > 0 %}
     <a href="{{ url_for('pages.add_goal') }}" class="btn-primary btn-sm" style="white-space:nowrap;">+ Add goal</a>
+    {% endif %}
 </div>
 
 {% if goals | length > 0 %}
@@ -158,12 +160,15 @@
 
 {% else %}
 <div data-empty-state="goals" style="padding-top: 8px;">
-    <p style="font-size: 0.95rem; color: var(--text-primary); font-weight: 500; margin-bottom: 8px;">What are you saving for?</p>
+    <p style="font-size: 0.9rem; color: var(--text-primary); font-weight: 500; margin-bottom: 8px;">What are you saving for?</p>
     <p style="font-size: 0.8rem; color: var(--text-tertiary); line-height: 1.6; margin-bottom: 20px;">A house deposit. A holiday. Peace of mind. Add what matters and Claro shows you when it becomes real.</p>
     <a href="{{ url_for('pages.add_goal') }}" class="btn-primary btn-sm">Add my first goal</a>
     <div style="display: flex; gap: 6px; margin-top: 18px; flex-wrap: wrap;">
         {% for chip in ["House deposit", "Holiday", "Emergency fund", "Pay off debt"] %}
-        <span style="padding: 6px 14px; border-radius: 50px; border: 0.5px solid var(--glass-border); background: var(--glass-bg); font-size: 0.72rem; color: var(--text-tertiary);">{{ chip }}</span>
+        <a href="{{ url_for('pages.add_goal') }}?name={{ chip | urlencode }}"
+           style="padding: 6px 14px; border-radius: 50px; border: 0.5px solid var(--glass-border); background: var(--glass-bg); font-size: 0.72rem; color: var(--text-tertiary); text-decoration: none; transition: border-color 0.15s ease-out, color 0.15s ease-out;"
+           onmouseover="this.style.borderColor='var(--roman-gold)';this.style.color='var(--text-primary)'"
+           onmouseout="this.style.borderColor='';this.style.color='var(--text-tertiary)'">{{ chip }}</a>
         {% endfor %}
     </div>
 </div>
