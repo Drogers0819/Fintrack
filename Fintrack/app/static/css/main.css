@@ -579,16 +579,29 @@ a:hover {
     content: "";
     position: absolute;
     inset: 0;
-    background-image: image-set(
-        url("/static/images/onboarding/library-bg.webp") type("image/webp"),
-        url("/static/images/onboarding/library-bg.jpg") type("image/jpeg")
-    );
+    /* Plain url() fallback first — browsers that can't parse the
+       image-set() type() syntax (older Safari, anything that chokes
+       on CSS Images Level 4) still get the WebP. The image-set()
+       declaration below overrides this in supporting browsers. */
+    background-image: url("/static/images/onboarding/library-bg.webp");
     background-size: cover;
     background-position: center;
     background-repeat: no-repeat;
     opacity: 0;
     animation: onboarding-bg-emerge 1.2s ease-in forwards;
     z-index: 0;
+}
+
+/* Modern path: image-set() with explicit type() so the browser can
+   pick the best format. Wrapped in @supports so failed parses can't
+   take down the fallback above. */
+@supports (background-image: image-set(url("x") type("image/webp"))) {
+    .onboarding-library-bg::before {
+        background-image: image-set(
+            url("/static/images/onboarding/library-bg.webp") type("image/webp"),
+            url("/static/images/onboarding/library-bg.jpg") type("image/jpeg")
+        );
+    }
 }
 
 .onboarding-library-bg::after {
@@ -606,10 +619,15 @@ a:hover {
 
 @media (max-width: 768px) {
     .onboarding-library-bg::before {
-        background-image: image-set(
-            url("/static/images/onboarding/library-bg-mobile.webp") type("image/webp"),
-            url("/static/images/onboarding/library-bg.jpg") type("image/jpeg")
-        );
+        background-image: url("/static/images/onboarding/library-bg-mobile.webp");
+    }
+    @supports (background-image: image-set(url("x") type("image/webp"))) {
+        .onboarding-library-bg::before {
+            background-image: image-set(
+                url("/static/images/onboarding/library-bg-mobile.webp") type("image/webp"),
+                url("/static/images/onboarding/library-bg.jpg") type("image/jpeg")
+            );
+        }
     }
 }
 

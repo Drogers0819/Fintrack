@@ -126,3 +126,37 @@ def test_functional_onboarding_screens_do_not_have_library_backdrop(app, client)
     trial = client.get("/trial", follow_redirects=False)
     assert trial.status_code == 200
     assert "onboarding-library-bg" not in trial.data.decode("utf-8")
+
+
+def test_library_background_image_assets_are_served(app, client):
+    """The CSS path /static/images/onboarding/library-bg.* must
+    actually resolve to the optimised image files. Without this
+    test, a missing/misplaced asset or a static-serving path issue
+    would slip through the class-rendering smoke tests above —
+    the HTML would have the class, the CSS would have the rule,
+    and the browser would 404 the image with nothing visible to
+    the user. This is the gap that bit us on the first deploy of
+    the library backdrop work.
+
+    Asserts the three variants the CSS references are reachable
+    with a 200 response and an image content-type. Doesn't try to
+    validate the actual image bytes — Pillow would be needed for
+    that and we don't carry it as a runtime dep.
+    """
+    paths_and_types = [
+        ("/static/images/onboarding/library-bg.webp", "image/webp"),
+        ("/static/images/onboarding/library-bg-mobile.webp", "image/webp"),
+        ("/static/images/onboarding/library-bg.jpg", "image/jpeg"),
+    ]
+    for path, expected_type in paths_and_types:
+        resp = client.get(path)
+        assert resp.status_code == 200, (
+            f"{path} returned {resp.status_code}; the CSS rule "
+            f"references this URL and the browser will 404 it"
+        )
+        content_type = resp.headers.get("Content-Type", "")
+        assert content_type.startswith(expected_type), (
+            f"{path} served as {content_type!r}; expected "
+            f"{expected_type!r}. Wrong mime makes the browser refuse "
+            f"to render the image even when bytes are correct."
+        )
