@@ -116,7 +116,10 @@ class TestWhisperLibrary:
 
     def test_fallback_returned_when_no_conditions_match(self, app):
         """User has factfind done, has a goal, no checkins, no debt
-        nearing completion, no streak — falls through to the fallback."""
+        nearing completion, no streak — no rule matches. The new
+        contract (c060aae) is "emit nothing rather than a generic
+        fallback"; the overview template's {% if todays_whisper %}
+        guard hides the card cleanly when the return is None."""
         from app.services.whisper_service import get_todays_whisper
         uid = _make_user(app)
         _add_goal(app, uid, "Holiday fund", target=5000, current=200,
@@ -124,7 +127,7 @@ class TestWhisperLibrary:
         with app.app_context():
             user = db.session.get(User, uid)
             result = get_todays_whisper(user)
-            assert "quiet today" in result.lower()
+            assert result is None
 
     def test_priority_paused_subscription_above_survival(self, app):
         """Subscription paused has priority over survival mode (it's
@@ -169,12 +172,19 @@ class TestWhisperLibrary:
             assert "ahead of your savings target" in result.lower()
 
     def test_returns_fallback_when_user_is_none(self, app):
+        """user=None short-circuits to the fallback (None). New
+        contract since c060aae."""
         from app.services.whisper_service import get_todays_whisper
         result = get_todays_whisper(None)
-        assert "quiet today" in result.lower()
+        assert result is None
 
     def test_raising_helper_does_not_blank_whisper(self, app):
-        """If a helper raises, the loop logs and continues to the next."""
+        """If a helper raises, the loop logs and continues to the
+        next. The function must never propagate the exception. When
+        no other helper matches the contrived test state, the
+        fallback (None) is returned — the dashboard template hides
+        the whisper card cleanly via its truthiness guard.
+        """
         from app.services import whisper_service
 
         uid = _make_user(app)
@@ -189,9 +199,9 @@ class TestWhisperLibrary:
             whisper_service.WHISPER_LIBRARY = [boom] + original_lib
             with app.app_context():
                 user = db.session.get(User, uid)
+                # Must not raise. None is an acceptable result.
                 result = whisper_service.get_todays_whisper(user)
-                # The fallback or another helper should still produce a string.
-                assert isinstance(result, str) and result
+                assert result is None or isinstance(result, str)
         finally:
             whisper_service.WHISPER_LIBRARY = original_lib
 
@@ -293,13 +303,15 @@ class TestOverviewIntegration:
 
     def test_overview_renders_whisper_card(self, app, client):
         """A user with no goals should land on the 'pick a goal' whisper
-        and the card should render with the gold left border + section
-        label and the whisper text."""
+        and the card should render with the gold left border + eyebrow
+        label and the whisper text. Eyebrow casing standardised to
+        sentence case in c060aae ('Today's whisper', not 'TODAY'S
+        WHISPER'); CSS handles any uppercase styling."""
         _make_user(app)
         _login(client)
         resp = client.get("/overview")
         assert resp.status_code == 200
         body = resp.get_data(as_text=True)
-        assert "TODAY'S WHISPER" in body
+        assert "Today's whisper" in body
         # The whisper text itself.
         assert "pick a goal" in body.lower()

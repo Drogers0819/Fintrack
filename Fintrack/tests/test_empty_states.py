@@ -72,6 +72,10 @@ class TestOverviewEmptyStates:
         assert "Will appear here once your plan is built" in body
 
     def test_factfind_complete_no_goals_shows_banner_and_placeholder(self, app, client):
+        """No-goals empty-state copy was redesigned in c060aae from
+        a single "What are you saving for?" line into an inline card
+        with an "Add your first goal" heading, an explanatory line,
+        and a "Choose your goals" CTA."""
         _make_user(
             app,
             factfind_completed=True,
@@ -83,9 +87,9 @@ class TestOverviewEmptyStates:
         response = client.get("/overview")
         assert response.status_code == 200
         body = response.data.decode("utf-8")
-        assert "Your plan is ready. What are you saving for?" in body
         assert 'data-empty-state="overview-no-goals"' in body
-        assert "Will appear here as you add them" in body
+        assert "Add your first goal" in body
+        assert "Choose your goals" in body
 
     def test_factfind_complete_with_goal_does_not_show_empty_state(self, app, client):
         user_id = _make_user(

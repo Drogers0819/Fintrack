@@ -478,8 +478,11 @@ class TestObligationsAndGoalContributions:
             )
 
     def test_overview_renders_both_subsections_when_goals_present(self, app, client):
-        """Integration: the subsection labels render on /overview
-        when the user has both obligations and goal contributions."""
+        """Integration: when the user has both obligations and goal
+        contributions (multi-group case), the subsection labels and
+        per-group subtotals render. c060aae renamed the prefixed
+        subtotal strings to a single "Subtotal" label — the group
+        identity comes from the parent subsection header above."""
         uid = _make_user(app, rent=900, bills=180)
         _add_goal(app, uid, "Car", monthly_allocation=300)
         _login(client)
@@ -487,25 +490,30 @@ class TestObligationsAndGoalContributions:
         resp = client.get("/overview")
         assert resp.status_code == 200
         body = resp.get_data(as_text=True)
-        # Sub-section labels (matched case-insensitively in template).
+        # Sub-section labels and the unprefixed subtotal label appear
+        # in the multi-group case.
         assert "Fixed obligations" in body
         assert "Towards your goals" in body
-        assert "Obligations subtotal" in body
-        assert "Goals subtotal" in body
+        assert "Subtotal" in body
         assert "Total committed" in body
 
-    def test_overview_hides_goals_subsection_when_no_active_goals(self, app, client):
-        """No goals → goals subsection (and its subtotal label) must
-        not appear. Obligations + total committed still render."""
+    def test_overview_suppresses_subsection_labels_when_single_group(self, app, client):
+        """No goals → only the obligations group is present. The
+        _multi_group gate in overview.html (c060aae) hides the
+        subsection labels and per-group subtotals in the single-group
+        case to reduce visual noise; just the rows and the grand
+        total render."""
         _make_user(app, rent=900, bills=180)
         _login(client)
 
         resp = client.get("/overview")
         assert resp.status_code == 200
         body = resp.get_data(as_text=True)
-        assert "Fixed obligations" in body
+        # Single-group case: labels are suppressed by design.
+        assert "Fixed obligations" not in body
         assert "Towards your goals" not in body
         assert "Goals subtotal" not in body
+        # Grand total still renders.
         assert "Total committed" in body
 
 

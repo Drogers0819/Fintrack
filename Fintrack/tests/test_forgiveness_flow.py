@@ -282,7 +282,10 @@ class TestForgivenessRouteRendering:
         assert resp.status_code == 200
         body = resp.get_data(as_text=True)
         assert "You missed last month's check-in" not in body
-        assert "Your next check-in is on" in body
+        # c060aae dropped the "on" preposition — next_checkin_str is
+        # now built as "{day} {month}" (e.g. "15 May") and the
+        # template reads "Your next check-in is 15 May".
+        assert "Your next check-in is" in body
 
     def test_get_in_window_does_not_show_forgiveness(self, app, client):
         """Even a user who qualifies for forgiveness sees the standard

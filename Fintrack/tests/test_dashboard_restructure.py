@@ -117,10 +117,15 @@ class TestPlanHasSomethingChangedCard:
 
 class TestPlanSummaryGoalDots:
 
-    def test_active_goal_name_gets_coloured_dot(self, app):
+    def test_active_goal_name_gets_bold_emphasis(self, app):
         """When the plan summary references an active goal, the
-        decorated output must include an inline coloured span whose
-        background uses the goal's CSS variable.
+        decorated output wraps the goal name in a bold span. The
+        helper was originally written to emit a coloured dot prefix
+        (--goal-stroke-* CSS variable); c060aae replaced that with
+        bold-text emphasis for WCAG colour-contrast reasons. The
+        function name retains 'with_goal_dots' for backward
+        compatibility — the marker on the goal mention is now
+        weight, not colour.
         """
         with app.app_context():
             plan_summary = "Your Emergency fund is closest to completion."
@@ -135,11 +140,9 @@ class TestPlanSummaryGoalDots:
             )
             assert decorated is not None
             html = str(decorated)
-            # Emergency fund maps to --goal-stroke-emergency.
-            assert "background:var(--goal-stroke-emergency)" in html
-            # The goal name itself is still in the output, wrapped in
-            # the inner span the helper emits.
-            assert "Emergency fund" in html
+            # Bold span wraps the matched goal name.
+            assert 'font-weight:600' in html
+            assert '<span style="font-weight:600;">Emergency fund</span>' in html
 
     def test_no_active_goals_returns_none(self, app):
         """When no active goals match the text, the helper returns
