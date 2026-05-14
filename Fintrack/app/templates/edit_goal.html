@@ -42,14 +42,14 @@
             <div class="form-group">
                 <label class="form-label">Target amount (£) <span style="font-size: 0.7rem; color: var(--text-tertiary); font-weight: 400;">(optional)</span></label>
                 <input type="number" name="target_amount" class="form-input{% if errors and errors.target_amount %} field-invalid{% endif %}" step="0.01" min="0"
-                       value="{{ form_data.target_amount if form_data and form_data.target_amount else ('%.2f' | format(goal.target_amount) if goal.target_amount else '') }}"
+                       value="{{ form_data.target_amount if form_data and form_data.target_amount else ("{:,.2f}".format(goal.target_amount) if goal.target_amount else '') }}"
                        placeholder="e.g. 10000">
                 {% if errors and errors.target_amount %}<span class="field-error-msg">{{ errors.target_amount }}</span>{% endif %}
             </div>
             <div class="form-group">
                 <label class="form-label">Already saved (£) <span style="font-size: 0.7rem; color: var(--text-tertiary); font-weight: 400;">(optional)</span></label>
                 <input type="number" name="current_amount" class="form-input{% if errors and errors.current_amount %} field-invalid{% endif %}" step="0.01" min="0"
-                       value="{{ form_data.current_amount if form_data and form_data.current_amount else ('%.2f' | format(goal.current_amount) if goal.current_amount else '0') }}">
+                       value="{{ form_data.current_amount if form_data and form_data.current_amount else ("{:,.2f}".format(goal.current_amount) if goal.current_amount else '0') }}">
                 {% if errors and errors.current_amount %}<span class="field-error-msg">{{ errors.current_amount }}</span>{% endif %}
             </div>
         </div>
@@ -58,7 +58,7 @@
             <div class="form-group">
                 <label class="form-label">Monthly contribution (£) <span style="font-size: 0.7rem; color: var(--text-tertiary); font-weight: 400;">(optional)</span></label>
                 <input type="number" name="monthly_allocation" class="form-input{% if errors and errors.monthly_allocation %} field-invalid{% endif %}" step="0.01" min="0"
-                       value="{{ form_data.monthly_allocation if form_data and form_data.monthly_allocation else ('%.2f' | format(goal.monthly_allocation) if goal.monthly_allocation else '') }}"
+                       value="{{ form_data.monthly_allocation if form_data and form_data.monthly_allocation else ("{:,.2f}".format(goal.monthly_allocation) if goal.monthly_allocation else '') }}"
                        placeholder="e.g. 412">
                 {% if errors and errors.monthly_allocation %}<span class="field-error-msg">{{ errors.monthly_allocation }}</span>{% endif %}
             </div>

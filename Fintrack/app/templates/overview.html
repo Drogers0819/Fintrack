@@ -65,7 +65,7 @@
 {% if is_frozen %}
 <div style="margin-bottom: 18px; padding: 14px 16px; border-radius: 12px; border: 0.5px solid var(--whisper-border-left); background: var(--card-bg);">
     <div style="font-size: 0.66rem; color: var(--whisper-border-left); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 6px;">Trial ended</div>
-    <p style="font-size: 0.85rem; color: var(--text-primary); line-height: 1.6; margin: 0 0 12px;">Your trial has ended. Your plan and data are safe — pick a plan to reactivate.</p>
+    <p style="font-size: 0.85rem; color: var(--text-primary); line-height: 1.6; margin: 0 0 12px;">Your trial has ended. Your plan and data are safe. Pick a plan to reactivate.</p>
     <a href="{{ url_for('pages.trial_gate') }}" class="btn-primary btn-sm" style="text-decoration: none;">Reactivate</a>
 </div>
 {% endif %}
@@ -92,7 +92,7 @@
         <span style="font-size:0.88rem; color:var(--text-primary); font-weight:500;">Add your first goal</span>
     </div>
     <p style="font-size:0.78rem; color:var(--text-tertiary); line-height:1.6; margin:0 0 14px; padding-left:42px;">We'll build it into your plan and show you exactly when it becomes real.</p>
-    <a href="{{ url_for('pages.goal_chips') }}" style="display:inline-flex; align-items:center; gap:6px; padding-left:42px; font-size:0.78rem; color:var(--roman-gold); text-decoration:none;">
+    <a href="{{ url_for('pages.goal_chips') }}" style="display:inline-flex; align-items:center; gap:6px; padding-left:42px; font-size:0.78rem; color:var(--text-secondary); text-decoration:underline; text-underline-offset:2px;">
         Choose your goals
         <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>
     </a>
@@ -159,8 +159,9 @@
                 <div class="slim-stat__label">Net worth</div>
                 {% if net_worth.has_started %}
                 <div class="slim-stat__value">{{ '-£' if net_worth.current < 0 else '£' }}{{ "{:,.0f}".format(net_worth.current | abs) }}</div>
-                <div style="font-size: 0.55rem; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.08em; margin-top: 6px;">Progress</div>
-                <div style="font-size: 0.85rem; color: var(--roman-gold); font-weight: 500; line-height: 1; margin-top: 2px;">{{ '+£' if net_worth.progress > 0 else ('-£' if net_worth.progress < 0 else '£') }}{{ "{:,.0f}".format(net_worth.progress | abs) }}</div>
+                <div style="font-size: 0.62rem; color: var(--text-tertiary); margin-top: 6px;">Progress</div>
+                {% set _nw_color = 'var(--success)' if net_worth.progress > 0 else ('var(--danger)' if net_worth.progress < 0 else 'var(--text-secondary)') %}
+                <div style="font-size: 0.85rem; color: {{ _nw_color }}; font-weight: 500; line-height: 1; margin-top: 2px;">{{ '+£' if net_worth.progress > 0 else ('-£' if net_worth.progress < 0 else '£') }}{{ "{:,.0f}".format(net_worth.progress | abs) }}</div>
                 {% else %}
                 <div style="font-size: 0.72rem; color: var(--text-tertiary); line-height: 1.4; margin-top: 4px;">Complete onboarding to see your net worth.</div>
                 {% endif %}
@@ -178,7 +179,7 @@
                 </div>
                 <div style="display: flex; justify-content: space-between; align-items: baseline; font-size: 0.78rem; margin-top: 4px;">
                     <span style="color: var(--text-tertiary);">Progress</span>
-                    <span style="color: var(--roman-gold); font-weight: 500;">{{ _overall_pct }}%</span>
+                    <span style="color: var(--text-primary); font-weight: 500;">{{ _overall_pct }}%</span>
                 </div>
             </div>
         </div>
@@ -216,10 +217,10 @@
             <p class="slim-card__body">{{ (plan_summary_html | safe) if plan_summary_html else plan_summary }}</p>
             {% if has_debt_goals and debt_allocation > 0 %}
             <div class="slim-card__meta">
-                £{{ "{:,.0f}".format(plan_surplus_value) }}/month surplus · <span style="color: var(--goal-stroke-debt);">£{{ "{:,.0f}".format(debt_allocation) }} clearing debt</span> · £{{ "{:,.0f}".format(available_surplus) }} building goals
+                £{{ "{:,.0f}".format(plan_surplus_value) }}/month available · <span style="color: var(--goal-stroke-debt);">£{{ "{:,.0f}".format(debt_allocation) }} paying off debt</span> · £{{ "{:,.0f}".format(available_surplus) }} toward goals
             </div>
             {% elif plan_surplus_value > 0 %}
-            <div class="slim-card__meta">£{{ "{:,.0f}".format(plan_surplus_value) }}/month surplus directed to your plan</div>
+            <div class="slim-card__meta">£{{ "{:,.0f}".format(plan_surplus_value) }}/month going toward your plan</div>
             {% endif %}
 
             {% if plan_status == 'payday' and action_whisper and action_whisper.message %}
@@ -300,8 +301,8 @@
                The "(estimate)" per-row suffix and the inner ring label
                were removed (May 2026 restructure); the disclaimer
                carries that message once for the whole section. #}
-            <p style="margin: 6px 0 14px; font-family: var(--font-sans); font-size: 0.74rem; font-style: italic; color: var(--text-tertiary); line-height: 1.5;">
-                <span style="color: var(--roman-gold); font-style: normal; font-weight: 500;">Preview from your profile.</span>
+            <p style="margin: 6px 0 14px; font-family: var(--font-sans); font-size: 0.74rem; color: var(--text-tertiary); line-height: 1.5;">
+                <span style="color: var(--roman-gold); font-weight: 500;">Preview from your profile.</span>
                 These figures update once you log transactions.
             </p>
             <div style="display: flex; gap: 28px; align-items: center; flex-wrap: wrap; opacity: 0.55;">
@@ -350,7 +351,7 @@
         <div class="stagger-4" style="margin-top: 18px;">
             <div class="slim-section-head">
                 <span class="slim-section-head__label">Goals</span>
-                <a href="{{ url_for('pages.my_goals') }}" class="slim-section-head__link">See all →</a>
+                <a href="{{ url_for('pages.my_goals') }}" class="slim-section-head__link" style="display:inline-flex; align-items:center; gap:3px;">See all <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg></a>
             </div>
             <div>
                 {% for pot in goal_pots %}
@@ -470,7 +471,7 @@
                     </div>
                     {% endfor %}
                     <div style="display: flex; justify-content: space-between; align-items: baseline; padding: 8px 0 0; margin-top: 2px;">
-                        <span style="font-family: var(--font-sans); font-size: 0.66rem; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 1px;">Obligations subtotal</span>
+                        <span style="font-family: var(--font-sans); font-size: 0.66rem; color: var(--text-tertiary);">Obligations subtotal</span>
                         <span style="font-family: var(--font-sans); font-size: 0.82rem; color: var(--text-secondary); font-weight: 400;">£{{ "{:,.0f}".format(monthly_commitments["obligations_total"]) }}</span>
                     </div>
                 </div>
@@ -489,7 +490,7 @@
                     </div>
                     {% endfor %}
                     <div style="display: flex; justify-content: space-between; align-items: baseline; padding: 8px 0 0; margin-top: 2px;">
-                        <span style="font-family: var(--font-sans); font-size: 0.66rem; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 1px;">Goals subtotal</span>
+                        <span style="font-family: var(--font-sans); font-size: 0.66rem; color: var(--text-tertiary);">Goals subtotal</span>
                         <span style="font-family: var(--font-sans); font-size: 0.82rem; color: var(--text-secondary); font-weight: 400;">£{{ "{:,.0f}".format(monthly_commitments["goal_contributions_total"]) }}</span>
                     </div>
                 </div>
@@ -498,8 +499,8 @@
 
             {# Grand total — Roman Gold, prominent. #}
             <div style="display: flex; justify-content: space-between; align-items: baseline; padding: 12px 0 4px; border-top: 0.5px solid var(--glass-border); margin-top: 12px;">
-                <span style="font-family: var(--font-sans); font-size: 0.7rem; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 1px;">Total committed</span>
-                <span style="font-family: var(--font-sans); font-size: 0.95rem; color: var(--roman-gold); font-weight: 500;">£{{ "{:,.0f}".format(monthly_commitments.total_committed) }}</span>
+                <span style="font-family: var(--font-sans); font-size: 0.7rem; color: var(--text-tertiary);">Total committed</span>
+                <span style="font-family: var(--font-sans); font-size: 0.95rem; color: var(--text-primary); font-weight: 500;">£{{ "{:,.0f}".format(monthly_commitments.total_committed) }}</span>
             </div>
 
             {% else %}
@@ -518,12 +519,12 @@
                 <div style="margin-top: 10px; display: flex; flex-direction: column; gap: 0;">
                     {% for item in _estimate_rows %}
                     <div style="display: flex; justify-content: space-between; align-items: baseline; padding: 5px 0; {% if not loop.last %}border-bottom: 0.5px solid var(--glass-border-subtle);{% endif %}">
-                        <span style="font-family: var(--font-sans); font-size: 0.78rem; color: var(--text-tertiary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; padding-right: 8px; font-style: italic;">{{ item.name }}</span>
+                        <span style="font-family: var(--font-sans); font-size: 0.78rem; color: var(--text-tertiary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; padding-right: 8px;">{{ item.name }}</span>
                         <span style="font-family: var(--font-sans); font-size: 0.78rem; color: var(--text-secondary); font-weight: 400; flex-shrink: 0;">£{{ "{:,.0f}".format(item.amount) }}</span>
                     </div>
                     {% endfor %}
                     <div style="display: flex; justify-content: space-between; align-items: baseline; padding: 8px 0 0; margin-top: 4px;">
-                        <span style="font-family: var(--font-sans); font-size: 0.66rem; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 1px; opacity: 0.7;">Total estimated</span>
+                        <span style="font-family: var(--font-sans); font-size: 0.66rem; color: var(--text-tertiary); opacity: 0.7;">Total estimated</span>
                         <span style="font-family: var(--font-sans); font-size: 0.85rem; color: var(--text-secondary); font-weight: 400;">£{{ "{:,.0f}".format(monthly_commitments["total_estimated"]) }}</span>
                     </div>
                 </div>
