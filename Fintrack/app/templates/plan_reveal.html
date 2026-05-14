@@ -125,24 +125,26 @@
         {% for item in reasoning %}
         <div style="padding: 14px 0; {% if not loop.last %}border-bottom: 0.5px solid var(--glass-border-subtle);{% endif %}">
             <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 6px;">
-                <div style="display: flex; align-items: flex-start; gap: 8px; flex: 1; min-width: 0;">
-                    {% if item.type == 'emergency' %}
-                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;opacity:0.5;margin-top:2px;"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-                    {% elif item.type == 'debt' or 'pay off' in item.name|lower or 'credit' in item.name|lower or 'loan' in item.name|lower or 'overdraft' in item.name|lower %}
-                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;opacity:0.5;margin-top:2px;"><rect width="22" height="16" x="1" y="4" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
-                    {% elif item.type == 'lifestyle' %}
-                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;opacity:0.5;margin-top:2px;"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
-                    {% elif item.type == 'buffer' %}
-                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;opacity:0.5;margin-top:2px;"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/></svg>
-                    {% else %}
-                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;opacity:0.5;margin-top:2px;"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>
-                    {% endif %}
-                    <div style="min-width: 0;">
-                        <span style="font-size: 0.85rem; color: var(--text-primary); font-weight: 500;">{{ item.name | replace(' (must-hit)', '') }}</span>
-                        {% if item.target %}
-                        <div style="font-size: 0.72rem; color: var(--text-tertiary); margin-top: 2px;">£{{ "{:,.0f}".format(item.target) }} target{% if item.months %} · ~{{ item.months }} month{{ 's' if item.months != 1 else '' }}{% endif %}</div>
+                <div style="flex: 1; min-width: 0;">
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        {% if item.type == 'emergency' %}
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;opacity:0.5;"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                        {% elif item.type == 'debt' or 'pay off' in item.name|lower or 'credit' in item.name|lower or 'loan' in item.name|lower or 'overdraft' in item.name|lower %}
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;opacity:0.5;"><rect width="22" height="16" x="1" y="4" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+                        {% elif item.type == 'lifestyle' %}
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;opacity:0.5;"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
+                        {% elif item.type == 'buffer' %}
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;opacity:0.5;"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/></svg>
+                        {% elif 'baby' in item.name|lower or 'infant' in item.name|lower %}
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;opacity:0.5;"><path d="M3 6h16l-2 9H5z"/><path d="M3 6L1 2"/><circle cx="6.5" cy="17" r="2"/><circle cx="15.5" cy="17" r="2"/></svg>
+                        {% else %}
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;opacity:0.5;"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>
                         {% endif %}
+                        <span style="font-size: 0.85rem; color: var(--text-primary); font-weight: 500;">{{ item.name | replace(' (must-hit)', '') }}</span>
                     </div>
+                    {% if item.target %}
+                    <div style="font-size: 0.72rem; color: var(--text-tertiary); margin-top: 3px; padding-left: 22px;">£{{ "{:,.0f}".format(item.target) }} target{% if item.months %} · ~{{ item.months }} month{{ 's' if item.months != 1 else '' }}{% endif %}</div>
+                    {% endif %}
                 </div>
                 <span style="font-size: 0.85rem; font-weight: 500; color: var(--text-secondary); font-variant-numeric: tabular-nums; white-space: nowrap; margin-left: 12px; flex-shrink: 0;">£{{ "{:,.0f}".format(item.monthly) }} per month</span>
             </div>

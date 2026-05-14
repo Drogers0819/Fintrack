@@ -732,6 +732,7 @@ def overview():
         todays_whisper=todays_whisper,
         spending_breakdown=spending_breakdown,
         monthly_commitments=monthly_commitments,
+        now=datetime.now(),
     )
 
 
