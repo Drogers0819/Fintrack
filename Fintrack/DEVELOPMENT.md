@@ -1563,4 +1563,30 @@ For each, the focused investigation looks like the one done for `delete_user_acc
 
 ---
 
+## 2026-05-15 — Planner — known Phase 2 work
+
+The May 2026 fix to `_staged_allocation` (snowball-on-tie within the equal-weight no-deadline group) is **Phase 1**. It breaks the mathematical degeneracy where every goal in the tie group received an identical `months_to_target`, but a deliberate Phase 2 item remains.
+
+**What Phase 1 does:**
+
+- Within the no-deadline tie group, allocates smallest-remaining-first up to each goal's `monthly_need` (= `remaining / 12`).
+- Once a goal's `monthly_need` is satisfied, the snowball moves on to the next-smallest. Pool exhaustion ends the snowball — later goals get £0 in that plan generation.
+- Cascade between plans happens **naturally over time**: as the user's current_amount grows, the smallest goal hits its target, its allocation falls out of the pool on the next regeneration, and the next-smallest goal becomes the snowball's smallest member.
+
+**What Phase 1 does NOT do — snowball cascade / rollover:**
+
+In a single plan generation, when the smallest goal reaches completion mid-projection, its allocation is **not** automatically re-flowed to the next-smallest goal within that same projection. The `_simulate_phases` engine already has a `_redistribute` step that re-flows freed allocations across the remaining pool, but that re-flow uses the old proportional logic — so the cascaded amounts still cluster on identical completion months for any tie-group survivors.
+
+Three design paths for Phase 2, in increasing order of engineering cost:
+
+1. **Time-series simulation in the engine.** Extend `_simulate_phases` to apply snowball ordering on each redistribute step. Cleanest mental model but touches the simulation loop, which is hot and has subtle invariants (`completed_month` tracking, phase boundaries, projection trimming).
+
+2. **Effective-allocation computation.** Run the snowball synthetically forward in time, compute the average effective monthly_amount per goal across the projection horizon, and expose that as a per-goal field for templates. Cheaper, but the "12 months to go" answer becomes a weighted average rather than a concrete rate the user can sanity-check.
+
+3. **Single-goal-at-a-time UX.** Display only the current snowball target as "active," show all others as "queued — next up when X completes." Removes the cascade math entirely by reframing the question. Most product-y, least engineering, but a bigger UX shift than a planner tweak.
+
+This is a separate design conversation, not a near-term task. The marker is here so future-me doesn't have to re-derive the context from scratch when revisiting.
+
+---
+
 *This journal is part of the FinTrack project. It documents genuine learning, not polished retrospection. Mistakes, confusion, and wrong turns are included deliberately — they're where the real growth happened.*

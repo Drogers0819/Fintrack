@@ -339,7 +339,9 @@ def _build_pots(surplus, essentials, goals, debts=None):
             "priority": 2 + i,
             "completed": already_completed,
             "completed_month": 0 if already_completed else None,
-            "goal_id": goal.get("goal_id")
+            "goal_id": goal.get("goal_id"),
+            "monthly_allocation_floor": float(goal.get("monthly_allocation") or 0),
+            "priority_rank": goal.get("priority_rank"),
         })
 
     pots.append({
@@ -410,7 +412,9 @@ def _parse_goals(goals, today):
             "goal_id": goal.get("id") or goal.get("goal_id"),
             "deadline": deadline,
             "months_until_deadline": months_until,
-            "pot_type": pot_type
+            "pot_type": pot_type,
+            "monthly_allocation": float(goal.get("monthly_allocation") or 0),
+            "priority_rank": goal.get("priority_rank"),
         })
 
     with_deadline = [g for g in parsed if g["months_until_deadline"] is not None]
@@ -543,6 +547,9 @@ def _staged_allocation(pots, surplus, essentials):
                 pot["monthly_amount"] = round(pot["monthly_amount"] + available, 2)
         return pots
 
+    # ── Apply user-set monthly_allocation floors before proportional split ──
+    available = _apply_user_floors(pool, available)
+
     # ── Proportional distribution with caps ──
     remaining_pool = list(pool)
     remaining_available = available
@@ -567,7 +574,9 @@ def _staged_allocation(pots, surplus, essentials):
 
         for pot in remaining_pool:
             share = (pot["_weighted_need"] / total_weighted) * remaining_available
-            cap = pot["_remaining"]  # Never allocate more than what's remaining
+            # Cap by what's still fundable after the user-set floor has been
+            # locked in. The floor portion is already in monthly_amount.
+            cap = max(pot["_remaining"] - pot.get("_user_floor", 0), 0)
 
             if share >= cap:
                 pot["monthly_amount"] = round(pot.get("monthly_amount", 0) + cap, 2)
@@ -594,12 +603,156 @@ def _staged_allocation(pots, surplus, essentials):
                 pot["monthly_amount"] = round(pot["monthly_amount"] + remaining_available, 2)
                 break
 
+    # Snowball-on-tie: within the equal-weight no-deadline group, replace
+    # the proportional shares with smallest-remaining-first ordering. Fixes
+    # the degeneracy where weighted-proportional + equal weights produces
+    # identical completion dates for every goal.
+    _snowball_redistribute_tie_group(pool, pots)
+
     # Calculate months_to_target for each funded pot
     for pot in pool:
         if pot["monthly_amount"] > 0 and pot.get("_remaining", 0) > 0:
             pot["months_to_target"] = max(1, round(pot["_remaining"] / pot["monthly_amount"]))
 
     return pots
+
+
+def _apply_user_floors(pool, available):
+    """Apply user-set monthly_allocation_floor across all pool members
+    before the proportional and snowball logic runs.
+
+    Floor contract:
+      • A user-set monthly_allocation (from the Goal model) is a hard
+        commitment, not a hint. The engine respects it even when it
+        exceeds the engine's own monthly_need inference — user intent
+        overrides engine inference.
+      • Each floor is capped at the goal's _remaining (target - current)
+        so we never over-fund a goal beyond completion.
+      • If the sum of floors exceeds available surplus, every floor is
+        scaled down by the same factor so the sum fits. We never error
+        on over-committed floors; we proportionally honour them.
+
+    Must-hit goals are excluded by design — they receive exact-deadline-need
+    allocation in STAGE 0 of _staged_allocation and never enter the pool.
+    Applying floors to must-hits would over-fund and break the deadline math.
+
+    Mutates each pot:
+      • monthly_amount += effective_floor
+      • _user_floor    = effective_floor   (preserved for later caps)
+
+    Returns the reduced available surplus (available - total_floor_consumed).
+    """
+    if not pool or available <= 0:
+        for pot in pool:
+            pot["_user_floor"] = 0
+        return available
+
+    requested_total = 0
+    for pot in pool:
+        raw_floor = float(pot.get("monthly_allocation_floor") or 0)
+        # Cap floor at remaining — never allocate past the target.
+        capped = max(min(raw_floor, pot.get("_remaining", 0)), 0)
+        pot["_user_floor"] = capped
+        requested_total += capped
+
+    if requested_total <= 0:
+        return available
+
+    # Scale floors down proportionally if collective floors > available.
+    if requested_total > available:
+        scale = available / requested_total
+        actual_total = 0
+        for pot in pool:
+            scaled = round(pot["_user_floor"] * scale, 2)
+            pot["_user_floor"] = scaled
+            actual_total += scaled
+    else:
+        actual_total = requested_total
+
+    for pot in pool:
+        pot["monthly_amount"] = round(pot.get("monthly_amount", 0) + pot["_user_floor"], 2)
+
+    return max(round(available - actual_total, 2), 0)
+
+
+def _snowball_redistribute_tie_group(pool, pots):
+    """Within the equal-weight no-deadline tie group (weight==1.0, no
+    deadline, not a debt goal), replace proportional shares with snowball
+    ordering: smallest _remaining first, up to its _monthly_need, until the
+    group's collective budget is exhausted.
+
+    Why snowball: when every member of the tie group shares the same weight,
+    the cross-group proportional split mathematically produces the same
+    completion month for every goal (months_i = total_remaining / available).
+    Snowball-on-tie breaks that degeneracy by sequencing rather than
+    proportionalising within the tie.
+
+    Tie-break order: (_remaining, priority_rank, goal_id) — deterministic
+    across plan regenerations so downstream consumers (whisper_service,
+    get_plan_summary) see consistent "nearest goal" picks.
+
+    The user-set floor portion is locked in and never reassigned. Only the
+    proportional excess above each pot's floor is redistributed.
+
+    Leftover handling: once every tie member is at its monthly_need cap,
+    any surplus inside the snowball budget flows to lifestyle. This
+    preserves the sum=surplus invariant and matches the leftover handling
+    already in _staged_allocation. Going beyond monthly_need is Phase 2
+    work — see DEVELOPMENT.md 'Planner — known Phase 2 work'.
+
+    No-op when fewer than two tie members exist.
+    """
+    tie_group = [
+        p for p in pool
+        if p.get("_weight") == 1.0
+        and not p.get("months_until_deadline")
+        and p.get("type") != "debt"
+        and not _is_debt_goal(p.get("name", ""))
+    ]
+
+    if len(tie_group) < 2:
+        return
+
+    # Salvage the proportional portion (floor stays locked in monthly_amount).
+    snowball_budget = 0
+    for pot in tie_group:
+        floor = pot.get("_user_floor", 0)
+        proportional_portion = max(pot.get("monthly_amount", 0) - floor, 0)
+        snowball_budget += proportional_portion
+        pot["monthly_amount"] = round(floor, 2)
+
+    if snowball_budget <= 0:
+        return
+
+    # Smallest remaining first; stable tie-breaker by priority then id.
+    sorted_pots = sorted(
+        tie_group,
+        key=lambda p: (
+            p.get("_remaining", 0),
+            p.get("priority_rank") if p.get("priority_rank") is not None else 999,
+            p.get("goal_id") if p.get("goal_id") is not None else 0,
+        ),
+    )
+
+    pool_left = snowball_budget
+    for pot in sorted_pots:
+        if pool_left <= 0:
+            break
+        already = pot.get("monthly_amount", 0)
+        need_remaining = max(pot.get("_monthly_need", 0) - already, 0)
+        room = max(pot.get("_remaining", 0) - already, 0)
+        give = min(need_remaining, pool_left, room)
+        if give <= 0:
+            continue
+        pot["monthly_amount"] = round(already + give, 2)
+        pool_left -= give
+
+    # Anything left after every tie member reached monthly_need → lifestyle.
+    if pool_left > 0.01:
+        for pot in pots:
+            if pot["type"] == "lifestyle":
+                pot["monthly_amount"] = round(pot["monthly_amount"] + pool_left, 2)
+                break
 
 
 def _distribute_by_deadline(goal_pots, available):
@@ -785,7 +938,7 @@ def _simulate_phases(pots, surplus):
             }
         monthly_projections.append(month_data)
 
-    last_completion = max((p.get("completed_month", 0) for p in sim_pots), default=0)
+    last_completion = max(((p.get("completed_month") or 0) for p in sim_pots), default=0)
     trim_to = min(last_completion + 12, len(monthly_projections))
     trim_to = max(trim_to, 24)
     monthly_projections = monthly_projections[:trim_to]

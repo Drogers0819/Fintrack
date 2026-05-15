@@ -555,3 +555,305 @@ class TestEdgeCases:
         assert "error" not in plan
         assert plan["essentials"] == 0
         assert plan["surplus"] == 2000
+
+
+# ─── SNOWBALL-ON-TIE (no-deadline tie group) ─────────────────
+
+class TestSnowballOnTie:
+    """When multiple goals share weight=1.0 (no deadline, no debt), the
+    proportional split mathematically forces every goal to complete on the
+    same date. Snowball-on-tie funds smallest-remaining first up to each
+    goal's monthly_need until the budget runs out — distinct completion
+    rates emerge for the goal(s) that the budget can't fully cover."""
+
+    def test_two_no_deadline_goals_have_distinct_months(self, basic_profile):
+        # Tight surplus (~£686) vs combined needs (£333 + £833 = £1166) →
+        # smallest fully funded, larger partial → distinct months.
+        goals = [
+            {"id": 1, "name": "Small fund", "type": "savings_target",
+             "target_amount": 4000, "current_amount": 0},
+            {"id": 2, "name": "Large fund", "type": "savings_target",
+             "target_amount": 10000, "current_amount": 0},
+        ]
+        plan = generate_financial_plan(basic_profile, goals)
+        small = next(p for p in plan["pots"] if p["name"] == "Small fund")
+        large = next(p for p in plan["pots"] if p["name"] == "Large fund")
+        # Smallest funded at its full need rate (target/12).
+        assert small["monthly_amount"] == pytest.approx(4000 / 12, abs=1)
+        # Larger partial-funded with whatever the pool had left.
+        assert 0 < large["monthly_amount"] < (10000 / 12)
+        assert small["months_to_target"] != large["months_to_target"]
+
+    def test_three_no_deadline_goals_snowball_order(self, basic_profile):
+        # Snowball funds each goal at its full monthly_need before moving
+        # on. Smallest first → its need is fully covered. Pool runs out at
+        # some goal → that goal gets the leftover. Later goals get £0.
+        goals = [
+            {"id": 1, "name": "Tiny",   "type": "savings_target",
+             "target_amount": 3000, "current_amount": 0},
+            {"id": 2, "name": "Medium", "type": "savings_target",
+             "target_amount": 6000, "current_amount": 0},
+            {"id": 3, "name": "Large",  "type": "savings_target",
+             "target_amount": 12000, "current_amount": 0},
+        ]
+        plan = generate_financial_plan(basic_profile, goals)
+        tiny = next(p for p in plan["pots"] if p["name"] == "Tiny")
+        medium = next(p for p in plan["pots"] if p["name"] == "Medium")
+        large = next(p for p in plan["pots"] if p["name"] == "Large")
+        # Tiny (£3000 over 12 mo = £250 need, surplus £686 covers it) gets
+        # its full need. Medium gets the leftover (under its own need).
+        # Large is starved.
+        assert tiny["monthly_amount"] == pytest.approx(3000 / 12, abs=1)
+        assert 0 < medium["monthly_amount"] < (6000 / 12)
+        assert large["monthly_amount"] < (12000 / 12)
+        # Distinct completion months between the fully-funded and the
+        # under-funded — the original bug was every goal showing identical
+        # months_to_target.
+        assert tiny["months_to_target"] != medium["months_to_target"]
+
+    def test_four_no_deadline_goals_reproduction_case(self):
+        # Reproduction case from the bug report: Emergency, Holiday, House,
+        # Wedding all without deadlines. Pre-fix: every pot ≈ 114 months.
+        # Post-fix: snowball order, smallest funded at full need.
+        profile = {
+            "monthly_income": 4000, "rent_amount": 1200, "bills_amount": 400,
+            "groceries_estimate": 250, "transport_estimate": 0,
+            "subscriptions_total": 60, "other_commitments": 333,
+        }
+        goals = [
+            {"id": 1, "name": "Emergency fund", "type": "savings_target",
+             "target_amount": 5000, "current_amount": 300},
+            {"id": 2, "name": "Holiday",        "type": "savings_target",
+             "target_amount": 2000, "current_amount": 400},
+            {"id": 3, "name": "House deposit",  "type": "savings_target",
+             "target_amount": 30000, "current_amount": 0},
+            {"id": 4, "name": "Wedding",        "type": "savings_target",
+             "target_amount": 10000, "current_amount": 0},
+        ]
+        plan = generate_financial_plan(profile, goals)
+        holiday   = next(p for p in plan["pots"] if p["name"] == "Holiday")
+        emergency = next(p for p in plan["pots"] if p["name"] == "Emergency fund")
+        wedding   = next(p for p in plan["pots"] if p["name"] == "Wedding")
+        house     = next(p for p in plan["pots"] if p["name"] == "House deposit")
+        # Snowball order by smallest _remaining: Holiday(1600) < Emergency(4700)
+        # < Wedding(10000) < House(30000). All but House should be at full need.
+        assert holiday["monthly_amount"] == pytest.approx(1600 / 12, abs=1)
+        assert emergency["monthly_amount"] == pytest.approx(4700 / 12, abs=1)
+        assert wedding["monthly_amount"] == pytest.approx(10000 / 12, abs=1)
+        # House gets the runt allocation — months_to_target must differ from
+        # the fully-funded trio (which are all "12 months").
+        assert house["months_to_target"] != holiday["months_to_target"]
+
+    def test_single_no_deadline_goal_unaffected(self, basic_profile):
+        # Only one tie-group member → snowball is a no-op; goal gets the
+        # full proportional share (capped at remaining).
+        goal = {"id": 1, "name": "Solo fund", "type": "savings_target",
+                "target_amount": 5000, "current_amount": 0}
+        plan = generate_financial_plan(basic_profile, [goal])
+        solo = next(p for p in plan["pots"] if p["name"] == "Solo fund")
+        # Single tie member gets the whole available pool.
+        assert solo["monthly_amount"] > 100
+        assert solo["months_to_target"] > 0
+
+    def test_snowball_stable_tie_breaker_by_priority_then_id(self, basic_profile):
+        # Two goals with identical _remaining → tie-breaker should be
+        # (priority_rank asc, then goal_id asc). The goal with the lower
+        # priority_rank value (higher importance) must be funded first.
+        # Names deliberately neutral — `_is_debt_goal` matches loose
+        # substrings like "owe", so "Lower-priority twin" would (correctly)
+        # trip the debt classifier.
+        goals = [
+            {"id": 99, "name": "Twin Bravo", "type": "savings_target",
+             "target_amount": 8000, "current_amount": 0,
+             "priority_rank": 5},
+            {"id": 1,  "name": "Twin Alpha", "type": "savings_target",
+             "target_amount": 8000, "current_amount": 0,
+             "priority_rank": 1},
+        ]
+        plan = generate_financial_plan(basic_profile, goals)
+        alpha = next(p for p in plan["pots"] if p["name"] == "Twin Alpha")
+        bravo = next(p for p in plan["pots"] if p["name"] == "Twin Bravo")
+        # Alpha (priority_rank=1) wins the tie-break — funded first, must
+        # get its full monthly_need. Bravo gets the (smaller) leftover.
+        assert alpha["monthly_amount"] == pytest.approx(8000 / 12, abs=1)
+        assert alpha["monthly_amount"] > bravo["monthly_amount"]
+
+
+# ─── MIXED DEADLINE / NO-DEADLINE ────────────────────────────
+
+class TestMixedDeadlines:
+    def test_one_deadline_one_no_deadline(self, basic_profile):
+        # The deadline goal has weight > 1.0, so it's outside the tie group.
+        # Its weighted-proportional behaviour must be preserved; the lone
+        # no-deadline goal sits alone in the tie group (snowball no-op).
+        deadline_goal = {
+            "id": 1, "name": "Wedding", "type": "savings_target",
+            "target_amount": 2000, "current_amount": 0,
+            "deadline": (date.today() + relativedelta(months=8)).isoformat(),
+        }
+        nodeadline_goal = {
+            "id": 2, "name": "Emergency fund", "type": "savings_target",
+            "target_amount": 5000, "current_amount": 0,
+        }
+        plan = generate_financial_plan(basic_profile, [deadline_goal, nodeadline_goal])
+        wedding   = next(p for p in plan["pots"] if p["name"] == "Wedding")
+        emergency = next(p for p in plan["pots"] if p["name"] == "Emergency fund")
+        # Both must receive non-zero allocation (existing fairness preserved).
+        assert wedding["monthly_amount"] > 0
+        assert emergency["monthly_amount"] > 0
+        # Deadline goal has weight 2.5 (≤12mo) vs 1.0 for the no-deadline →
+        # deadline pot is heavily weighted and should out-allocate.
+        assert wedding["monthly_amount"] > emergency["monthly_amount"]
+
+    def test_two_deadlines_two_no_deadline(self, couple_profile):
+        # Two deadline goals (weighted) + two no-deadline goals (tie group).
+        # Deadline goals keep proportional behaviour; the tie group is
+        # snowballed within whatever proportional gave them collectively.
+        goals = [
+            {"id": 1, "name": "Holiday", "type": "savings_target",
+             "target_amount": 1500, "current_amount": 0,
+             "deadline": (date.today() + relativedelta(months=6)).isoformat()},
+            {"id": 2, "name": "Baby fund", "type": "savings_target",
+             "target_amount": 7000, "current_amount": 0,
+             "deadline": (date.today() + relativedelta(months=18)).isoformat()},
+            {"id": 3, "name": "Emergency fund", "type": "savings_target",
+             "target_amount": 5000, "current_amount": 0},
+            {"id": 4, "name": "Car fund", "type": "savings_target",
+             "target_amount": 12000, "current_amount": 0},
+        ]
+        plan = generate_financial_plan(couple_profile, goals)
+        holiday   = next(p for p in plan["pots"] if p["name"] == "Holiday")
+        baby      = next(p for p in plan["pots"] if p["name"] == "Baby fund")
+        emergency = next(p for p in plan["pots"] if p["name"] == "Emergency fund")
+        car       = next(p for p in plan["pots"] if p["name"] == "Car fund")
+        # Deadline goals keep their proportional shares (heavy weights).
+        assert holiday["monthly_amount"] > 0
+        assert baby["monthly_amount"] > 0
+        # Inside the tie group, Emergency (smaller _remaining) sorts first
+        # and is funded to its full monthly_need. Car gets the leftover.
+        assert emergency["monthly_amount"] == pytest.approx(5000 / 12, abs=1)
+        assert car["monthly_amount"] > 0  # tie group still gets something
+
+
+# ─── USER-SET monthly_allocation AS FLOOR ────────────────────
+
+class TestUserSetFloors:
+    def test_floor_honoured_with_two_no_deadline_goals(self, basic_profile):
+        # The smaller-remaining goal would normally get its monthly_need
+        # (~£333 for 4000/12). User wants £400 on the LARGER goal regardless.
+        goals = [
+            {"id": 1, "name": "Small fund", "type": "savings_target",
+             "target_amount": 4000, "current_amount": 0},
+            {"id": 2, "name": "Large fund", "type": "savings_target",
+             "target_amount": 10000, "current_amount": 0,
+             "monthly_allocation": 400},
+        ]
+        plan = generate_financial_plan(basic_profile, goals)
+        large = next(p for p in plan["pots"] if p["name"] == "Large fund")
+        # Floor honoured — large gets at least its requested £400.
+        assert large["monthly_amount"] >= 400 - 0.01
+
+    def test_floor_sum_exceeds_surplus_scaled_down(self, basic_profile):
+        # Two goals with floors totalling £2000, available surplus only ~£686.
+        # Both floors must scale down proportionally (no crash, no over-allocation).
+        goals = [
+            {"id": 1, "name": "Want A", "type": "savings_target",
+             "target_amount": 10000, "current_amount": 0,
+             "monthly_allocation": 1000},
+            {"id": 2, "name": "Want B", "type": "savings_target",
+             "target_amount": 10000, "current_amount": 0,
+             "monthly_allocation": 1000},
+        ]
+        plan = generate_financial_plan(basic_profile, goals)
+        a = next(p for p in plan["pots"] if p["name"] == "Want A")
+        b = next(p for p in plan["pots"] if p["name"] == "Want B")
+        # Equal floors → equal scaling. Combined allocation must not exceed
+        # the available surplus (lifestyle + buffer reserved).
+        total_alloc = a["monthly_amount"] + b["monthly_amount"]
+        lifestyle = next(p for p in plan["pots"] if p["type"] == "lifestyle")
+        buffer = next(p for p in plan["pots"] if p["type"] == "buffer")
+        available = plan["surplus"] - lifestyle["monthly_amount"] - buffer["monthly_amount"]
+        assert total_alloc <= available + 1
+
+
+# ─── EDGE CASES ──────────────────────────────────────────────
+
+class TestSnowballEdgeCases:
+    def test_zero_surplus_no_crash(self):
+        # Income exactly matches essentials → surplus≤0 → returns error
+        # (existing behaviour). Snowball path must not be reached / crash.
+        profile = {"monthly_income": 1000, "rent_amount": 600,
+                   "bills_amount": 200, "groceries_estimate": 200}
+        goals = [
+            {"id": 1, "name": "Fund A", "type": "savings_target",
+             "target_amount": 5000, "current_amount": 0},
+            {"id": 2, "name": "Fund B", "type": "savings_target",
+             "target_amount": 5000, "current_amount": 0},
+        ]
+        plan = generate_financial_plan(profile, goals)
+        assert "error" in plan
+
+    def test_surplus_smaller_than_smallest_need(self):
+        # Surplus tighter than any single goal's monthly_need. Snowball
+        # should give the smallest-remaining goal the entire pool; others get £0.
+        profile = {"monthly_income": 1150, "rent_amount": 600,
+                   "bills_amount": 200, "groceries_estimate": 200}
+        # Available after lifestyle/buffer ≈ very small.
+        goals = [
+            {"id": 1, "name": "Small", "type": "savings_target",
+             "target_amount": 5000, "current_amount": 0},
+            {"id": 2, "name": "Big",   "type": "savings_target",
+             "target_amount": 50000, "current_amount": 0},
+        ]
+        plan = generate_financial_plan(profile, goals)
+        small = next(p for p in plan["pots"] if p["name"] == "Small")
+        big   = next(p for p in plan["pots"] if p["name"] == "Big")
+        # Smaller _remaining gets fed first.
+        assert small["monthly_amount"] >= big["monthly_amount"]
+        # No crashes, no negative allocations.
+        assert big["monthly_amount"] >= 0
+
+    def test_all_goals_completed_no_allocation(self, basic_profile):
+        # All goals are at target → filtered out of pool → snowball no-op.
+        goals = [
+            {"id": 1, "name": "Done A", "type": "savings_target",
+             "target_amount": 1000, "current_amount": 1000},
+            {"id": 2, "name": "Done B", "type": "savings_target",
+             "target_amount": 2000, "current_amount": 2000},
+        ]
+        plan = generate_financial_plan(basic_profile, goals)
+        assert "error" not in plan
+        for p in plan["pots"]:
+            if p.get("goal_id"):
+                assert p["completed"] is True
+                assert p["monthly_amount"] == 0
+
+
+# ─── MATHEMATICAL INTEGRITY ──────────────────────────────────
+
+class TestMathematicalIntegrity:
+    def test_sum_monthly_amounts_never_exceeds_surplus(self, couple_profile):
+        # Invariant: across snowball + proportional + floor application,
+        # the sum of all pot allocations equals surplus (no over-allocation,
+        # no money invented or lost).
+        goals = [
+            {"id": 1, "name": "Goal A", "type": "savings_target",
+             "target_amount": 3000, "current_amount": 0},
+            {"id": 2, "name": "Goal B", "type": "savings_target",
+             "target_amount": 8000, "current_amount": 0},
+            {"id": 3, "name": "Goal C", "type": "savings_target",
+             "target_amount": 20000, "current_amount": 0,
+             "monthly_allocation": 150},
+            {"id": 4, "name": "Goal D", "type": "savings_target",
+             "target_amount": 40000, "current_amount": 0},
+        ]
+        plan = generate_financial_plan(couple_profile, goals)
+        total = sum(p["monthly_amount"] for p in plan["pots"])
+        assert abs(total - plan["surplus"]) < 1
+        # No pot may receive a negative allocation.
+        for p in plan["pots"]:
+            assert p["monthly_amount"] >= 0
+        # Funded goals must show a positive months_to_target.
+        for p in plan["pots"]:
+            if p.get("goal_id") and p["monthly_amount"] > 0 and not p.get("completed"):
+                assert p.get("months_to_target", 0) > 0
