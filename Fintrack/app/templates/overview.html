@@ -460,21 +460,13 @@
         </section>
         {% endif %}
 
-        {# Companion prompt — contextual, appears after plan + goals so
-           it becomes a natural follow-up to what the user just reviewed.
-           companion_context is server-generated: references the nearest or
-           most at-risk goal. Falls back to generic prompt when no context. #}
+        {# Companion prompt — sits below Goals (positioning kept from
+           71e3726). Static "Anything on your mind?" — the contextual
+           variant from that commit was reverted because plan-summary
+           statements ("Your X is 114 months away") don't read as an
+           invitation to talk; see commit message for full rationale. #}
         {% if not is_frozen and can_access_companion %}
         <div class="stagger-5" style="margin-top: 18px;">
-            {% if companion_context and companion_context.message %}
-            <a href="{{ url_for('companion.companion_page', q=companion_context.pre_fill) }}" class="slim-companion-prompt">
-                <span class="slim-companion-prompt__icon">
-                    <svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-                </span>
-                <span class="slim-companion-prompt__text">{{ companion_context.message }}</span>
-                <span class="slim-companion-prompt__arrow"><svg viewBox="0 0 24 24"><path d="M9 18l6-6-6-6"/></svg></span>
-            </a>
-            {% else %}
             <a href="{{ url_for('companion.companion_page') }}" class="slim-companion-prompt">
                 <span class="slim-companion-prompt__icon">
                     <svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
@@ -482,16 +474,10 @@
                 <span class="slim-companion-prompt__text">Anything on your mind?</span>
                 <span class="slim-companion-prompt__arrow"><svg viewBox="0 0 24 24"><path d="M9 18l6-6-6-6"/></svg></span>
             </a>
-            {% endif %}
             <div class="slim-chips" role="list">
-                {% if companion_context and companion_context.pre_fill %}
-                <a class="slim-chip" href="{{ url_for('companion.companion_page', q=companion_context.pre_fill) }}" role="listitem">{{ companion_context.pre_fill }}</a>
-                {% endif %}
                 <a class="slim-chip" href="{{ url_for('companion.companion_page', q='Can I afford a holiday?') }}" role="listitem">Can I afford a holiday?</a>
                 <a class="slim-chip" href="{{ url_for('companion.companion_page', q='What if I got a raise?') }}" role="listitem">What if I got a raise?</a>
-                {% if not companion_context %}
                 <a class="slim-chip" href="{{ url_for('companion.companion_page', q='Am I on track?') }}" role="listitem">Am I on track?</a>
-                {% endif %}
             </div>
         </div>
         {% endif %}

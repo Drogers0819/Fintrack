@@ -1544,6 +1544,10 @@ The text rendered by `get_plan_summary` is currently a templated sentence. Follo
 
 A factfind step that asks the user to list their standing orders so the commitments panel is populated from day one instead of waiting for transactions to flow in. Deferred because onboarding length is already a measured drop-off point and adding a step without an A/B framework risks worsening completion.
 
+### Contextual companion prompt on /overview
+
+The idea — replace the static "Anything on your mind?" prompt with a plan-aware lead-in — has merit, but the May 2026 first attempt (71e3726, reverted) rendered plan-summary statements like "Your emergency fund is 114 months away." in the conversation entry point, which reads as a restatement of content shown elsewhere on the page rather than an invitation to talk. Revisit post-launch with question/invitation framing (e.g. "Want to talk about your emergency fund?") and tone work for long durations, not just a string template swap.
+
 ---
 
 ## 2026-05-13 — Follow-up audits needed for similar patterns
