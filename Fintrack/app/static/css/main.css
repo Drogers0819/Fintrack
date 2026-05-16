@@ -1,7 +1,7 @@
 @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=Inter:wght@200;300;400;500;600&display=swap');
 
 :root {
-    --obsidian: #020408;
+    --obsidian: #0A2A22;
     --racing-green: #0A2A22;
     --roman-gold: #C5A35D;
     --roman-gold-dim: rgba(197, 163, 93, 0.15);
@@ -2097,7 +2097,7 @@ body.has-slim-shell .companion-input-zone {
         overflow: hidden;
         border-top: 0.5px solid var(--glass-border);
         border-right: none;
-        background: var(--bg-primary, #020408);
+        background: var(--bg-primary, #0A2A22);
         backdrop-filter: blur(20px);
         -webkit-backdrop-filter: blur(20px);
     }

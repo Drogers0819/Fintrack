@@ -1047,28 +1047,28 @@ body.theme-obsidian       .glass-card:hover {
 
 /* ===== APP THEME: OBSIDIAN VAULT (default dark) ===== */
 body.theme-obsidian-vault {
-    --obsidian: #020408;
-    --bg-primary: #020408;
+    --obsidian: #0A2A22;
+    --bg-primary: #0A2A22;
     --roman-gold: #C5A35D;
     --roman-gold-dim: rgba(197, 163, 93, 0.18);
     --roman-gold-glow: rgba(197, 163, 93, 0.35);
     --gold-whisper-bg: rgba(197, 163, 93, 0.06);
     --gold-whisper-border: rgba(197, 163, 93, 0.12);
-    --glass: rgba(255, 255, 255, 0.05);
-    --glass-bg: rgba(255, 255, 255, 0.05);
+    --glass: rgba(255, 255, 255, 0.08);
+    --glass-bg: rgba(255, 255, 255, 0.08);
     --glass-border: rgba(255, 255, 255, 0.10);
     --glass-divider: rgba(255, 255, 255, 0.10);
     --text-primary: #F2F0EA;
     --text-secondary: rgba(242, 240, 234, 0.72);
-    --text-tertiary: rgba(242, 240, 234, 0.42);
+    --text-tertiary: rgba(242, 240, 234, 0.55);
     --progress-track: rgba(255, 255, 255, 0.18);
-    --popover-bg: #0d1017;
-    --tab-bar-bg: rgba(2, 4, 8, 0.95);
+    --popover-bg: #0E2F26;
+    --tab-bar-bg: rgba(10, 42, 34, 0.95);
     --tab-bar-border: rgba(197, 163, 93, 0.15);
     --fab-bg: #C5A35D;
     --fab-fg: #020408;
     --counter-accent: #C5A35D;
-    background: #020408;
+    background: #0A2A22;
 }
 
 body.theme-obsidian-vault .gold-card {
@@ -1302,17 +1302,17 @@ body.theme-soft-modern .slim-side-card {
 }
 
 body.theme-obsidian-vault {
-    --sidebar-bg: #0d1017;
-    --tab-bar-bg: rgba(2, 4, 8, 0.95);
+    --sidebar-bg: #0E2F26;
+    --tab-bar-bg: rgba(10, 42, 34, 0.95);
     --tab-bar-border: rgba(197, 163, 93, 0.15);
     --fab-bg: #C5A35D;
     --fab-icon: #020408;
     --fab-fg: #020408;
-    --page-bg: #020408;
-    --card-bg: rgba(255, 255, 255, 0.06);
+    --page-bg: #0A2A22;
+    --card-bg: rgba(255, 255, 255, 0.10);
     --card-border: rgba(255, 255, 255, 0.10);
     --card-hover-border: rgba(255, 255, 255, 0.18);
-    --stat-bg: rgba(255, 255, 255, 0.06);
+    --stat-bg: rgba(255, 255, 255, 0.10);
     --whisper-border-left: #C5A35D;
     --whisper-bg: rgba(197, 163, 93, 0.04);
     --progress-track: rgba(255, 255, 255, 0.10);

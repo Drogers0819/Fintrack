@@ -9,7 +9,7 @@
     {% set _is_light_theme = current_user.is_authenticated and current_user.theme in ['soft-modern', 'paper', 'ivory', 'pearl', 'sage'] %}
     <meta name="apple-mobile-web-app-status-bar-style" content="{% if _is_light_theme %}default{% else %}black-translucent{% endif %}">
     <meta name="apple-mobile-web-app-title" content="Claro">
-    <meta name="theme-color" content="{% if _is_light_theme %}#f5f3ee{% else %}#020408{% endif %}">
+    <meta name="theme-color" content="{% if _is_light_theme %}#f5f3ee{% else %}#0A2A22{% endif %}">
     <meta name="mobile-web-app-capable" content="yes">
     <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
     <meta name="description" content="Claro helps you build a real financial plan. Clear goals, honest tracking, and a smart monthly check-in that keeps your plan on track.">
@@ -25,9 +25,9 @@
     <link rel="icon" type="image/png" sizes="32x32" href="{{ url_for('static', filename='images/logo.png') }}">
     <link rel="apple-touch-icon" href="{{ url_for('static', filename='images/logo.png') }}">
     {# Critical: set body background before external CSS loads — prevents white flash in PWA and on page load #}
-    <style>html,body{background-color:{% if _is_light_theme %}#f5f3ee{% else %}#020408{% endif %};margin:0;}</style>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}?v=20260514t">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/themes.css') }}?v=20260514t">
+    <style>html,body{background-color:{% if _is_light_theme %}#f5f3ee{% else %}#0A2A22{% endif %};margin:0;}</style>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}?v=20260516a">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/themes.css') }}?v=20260516a">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
     <style>
         .pwa-install-banner[hidden] { display: none !important; }
