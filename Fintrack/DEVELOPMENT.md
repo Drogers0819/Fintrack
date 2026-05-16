@@ -1548,6 +1548,10 @@ A factfind step that asks the user to list their standing orders so the commitme
 
 The idea — replace the static "Anything on your mind?" prompt with a plan-aware lead-in — has merit, but the May 2026 first attempt (71e3726, reverted) rendered plan-summary statements like "Your emergency fund is 114 months away." in the conversation entry point, which reads as a restatement of content shown elsewhere on the page rather than an invitation to talk. Revisit post-launch with question/invitation framing (e.g. "Want to talk about your emergency fund?") and tone work for long durations, not just a string template swap.
 
+### Planner `target` arithmetic — None-guard audit
+
+`planner_service.py` lines **479, 773, 820, 1074** do `pot["target"] - pot["current"]` or equivalent arithmetic without a `None` guard. Same class of bug as the `whisper_service` /overview 500 fixed on 2026-05-16: `target_amount` is nullable on the Goal model and the planner itself emits `"target": None` for lifestyle and buffer pots (and at line 1300, for any pot whose computed target is falsy). Lower trigger probability than the whisper sites — likely only reached for typed pots that *should* have targets — but the control flow needs tracing to confirm. Audit when not under production pressure; bundle any fixes with an integration test that constructs a plan containing a null-target pot and walks the planner end-to-end.
+
 ---
 
 ## 2026-05-13 — Follow-up audits needed for similar patterns

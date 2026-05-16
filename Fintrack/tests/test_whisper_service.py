@@ -299,6 +299,53 @@ class TestUserHelpers:
 # ─── Overview integration ────────────────────────────────────
 
 
+class TestActionWhisperNullTarget:
+    """Regression: a plan pot with target=None must not crash
+    generate_action_whisper. The Goal model allows nullable
+    target_amount and the planner emits "target": None for lifestyle
+    and buffer pots (and other no-target shapes). Production /overview
+    was returning 500 with TypeError: '<=' not supported between
+    instances of 'NoneType' and 'int' at whisper_service._milestone_whisper.
+    """
+
+    def test_generate_action_whisper_does_not_crash_on_null_target(self, app):
+        """Forces the chain past the early branches so _milestone_whisper
+        (line 214) is actually reached with a target=None pot — that was
+        the exact production crash. created_at is pushed back so the
+        standing-order branch (first 7 days) doesn't fire and short-
+        circuit the chain before the bug."""
+        from app.services.whisper_service import generate_action_whisper
+        uid = _make_user(app)
+        with app.app_context():
+            user = db.session.get(User, uid)
+            user.created_at = datetime.utcnow() - timedelta(days=400)
+            db.session.commit()
+            user = db.session.get(User, uid)
+        plan = {
+            "surplus": 500,
+            "pots": [
+                {
+                    "name": "Open-ended savings",
+                    "type": "savings",
+                    "target": None,
+                    "current": 100,
+                    "monthly_amount": 200,
+                    "completed": False,
+                    "months_to_target": None,
+                }
+            ],
+            "phases": [],
+            "alerts": [],
+        }
+        with app.app_context():
+            result = generate_action_whisper(user, plan, [])
+        if result:
+            assert "None" not in result.get("message", "")
+
+
+# ─── Overview integration ────────────────────────────────────
+
+
 class TestOverviewIntegration:
 
     def test_overview_renders_whisper_card(self, app, client):

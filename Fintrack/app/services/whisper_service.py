@@ -206,7 +206,10 @@ def _milestone_whisper(pots, plan):
         if pot.get("completed"):
             continue
 
-        target = pot.get("target", 0)
+        # `or 0` coerces None target_amount (legal per Goal model) to 0
+        # at the read site, so every comparison and f-string below is
+        # safe without per-line guards.
+        target = pot.get("target") or 0
         current = pot.get("current", 0)
         name = pot.get("name", "")
         pot_type = pot.get("type", "")
@@ -349,7 +352,9 @@ def _default_whisper(plan, active_pots):
     closest_pct = 0
 
     for pot in active_pots:
-        target = pot.get("target", 0)
+        # See _milestone_whisper above: read-site coercion handles None
+        # target without per-line guards downstream.
+        target = pot.get("target") or 0
         current = pot.get("current", 0)
         if target > 0:
             pct = current / target
